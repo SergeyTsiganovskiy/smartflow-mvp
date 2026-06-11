@@ -1,0 +1,40 @@
+function doPost(e) {
+  try {
+    const update = JSON.parse(e.postData.contents);
+
+    if (update.message) {
+      handleClientMessage(update.message);
+    }
+
+    return HtmlService.createHtmlOutput('OK');
+
+  } catch (error) {
+    addAuditLog('DOPOST_ERROR', error.toString());
+    return HtmlService.createHtmlOutput('ERROR');
+  }
+}
+
+function testMessages() {
+  const text = getMessage('START');
+  Logger.log(text);
+}
+
+function testSendTelegram() {
+  const settings = getSettings();
+
+  sendTelegramMessage(
+    settings.ClientBotToken,
+    settings.OwnerTelegramId,
+    'SmartFlow test successful ✅'
+  );
+}
+
+function testSendToOwner() {
+  const settings = getSettings();
+
+  sendTelegramMessage(
+    settings.ClientBotToken,
+    settings.OwnerTelegramId,
+    'Manual test from current project ✅'
+  );
+}
