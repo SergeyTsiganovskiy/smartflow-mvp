@@ -94,7 +94,6 @@ AppsScript/
 Docs/
 │
 ├── Architecture.md
-├── ArchitectureDecision.md
 ├── DatabaseSchema.md
 └── Roadmap.md
 ```
