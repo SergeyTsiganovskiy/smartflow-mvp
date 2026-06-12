@@ -28,8 +28,6 @@ function handleClientMessage(message) {
     }
 
     setUserSessionValue(chatId, 'location_id', location.id);
-    setUserState(chatId, STATES.WAITING_SERVICE);
-
     showServices(chatId, settings);
     return;
   }
@@ -47,8 +45,6 @@ function handleClientMessage(message) {
     }
 
     setUserSessionValue(chatId, 'service_id', service.id);
-    setUserState(chatId, STATES.WAITING_PROVIDER);
-
     showProviders(chatId, settings);
     return;
   }
@@ -92,22 +88,18 @@ function handleClientMessage(message) {
 
     setUserSessionValue(chatId, 'current_option_date', selectedDate);
 
-    showPeriodOptions(chatId, settings);
+    showTimeOptions(chatId, settings);
     return;
   }
 
-  if (state === STATES.WAITING_OPTION_PERIOD) {
-    const messageKey = getMessageKeyByText(text);
+  if (state === STATES.WAITING_OPTION_TIME) {
+    const selectedTime = text.trim();
 
-    if (
-      messageKey !== MESSAGE_KEYS.MORNING &&
-      messageKey !== MESSAGE_KEYS.AFTERNOON &&
-      messageKey !== MESSAGE_KEYS.EVENING
-    ) {
+    if (!isValidTimeOption(selectedTime)) {
       sendTelegramMessage(
         settings.ClientBotToken,
         chatId,
-        getMessage(MESSAGE_KEYS.PERIOD_SELECT_FROM_LIST)
+        getMessage(MESSAGE_KEYS.TIME_SELECT_FROM_LIST)
       );
       return;
     }
@@ -115,7 +107,7 @@ function handleClientMessage(message) {
     const session = getUserSession(chatId);
     const optionCount = Number(session.option_count || 0) + 1;
 
-    setUserSessionValue(chatId, 'current_option_period', messageKey);
+    setUserSessionValue(chatId, 'current_option_time', selectedTime);
     setUserSessionValue(chatId, 'option_count', optionCount);
 
     setUserSessionValue(
@@ -126,8 +118,8 @@ function handleClientMessage(message) {
 
     setUserSessionValue(
       chatId,
-      'option' + optionCount + '_period',
-      messageKey
+      'option' + optionCount + '_time',
+      selectedTime
     );
 
     showAddAnotherOption(chatId, settings);
@@ -180,7 +172,6 @@ function handleClientMessage(message) {
     const customerPhone = text.trim();
 
     if (!customerPhone) {
-      
       askCustomerPhone(chatId, settings);
       return;
     }
@@ -213,11 +204,7 @@ function handleClientMessage(message) {
 
 function sendClientStartMenu(chatId, settings) {
   const text =
-    getMessage(MESSAGE_KEYS.START) + '\n\n' +
-    getMessage(MESSAGE_KEYS.BOOK) + ' / ' +
-    getMessage(MESSAGE_KEYS.SERVICES) + ' / ' +
-    getMessage(MESSAGE_KEYS.PRICES) + ' / ' +
-    getMessage(MESSAGE_KEYS.CONTACTS);
+    getMessage(MESSAGE_KEYS.START);
 
   const keyboard = {
     keyboard: [
@@ -245,6 +232,7 @@ function showLocations(chatId, settings) {
   setUserState(chatId, STATES.WAITING_LOCATION);
 
   const locations = getLocations();
+
   const keyboardRows = [];
 
   locations.forEach(location => {
@@ -268,6 +256,7 @@ function showServices(chatId, settings) {
   setUserState(chatId, STATES.WAITING_SERVICE);
 
   const services = getServices();
+
   const keyboardRows = [];
 
   services.forEach(service => {
@@ -302,6 +291,7 @@ function showProviders(chatId, settings) {
   setUserState(chatId, STATES.WAITING_PROVIDER);
 
   const providers = getProvidersByLocation(session.location_id);
+
   const keyboardRows = [];
 
   providers.forEach(provider => {
@@ -346,22 +336,47 @@ function showDateOptions(chatId, settings) {
   );
 }
 
-function showPeriodOptions(chatId, settings) {
-  setUserState(chatId, STATES.WAITING_OPTION_PERIOD);
+function showTimeOptions(chatId, settings) {
+  setUserState(chatId, STATES.WAITING_OPTION_TIME);
+
+  const times = [
+    '07:00', '07:30',
+    '08:00', '08:30',
+    '09:00', '09:30',
+    '10:00', '10:30',
+    '11:00', '11:30',
+    '12:00', '12:30',
+    '13:00', '13:30',
+    '14:00', '14:30',
+    '15:00', '15:30',
+    '16:00', '16:30',
+    '17:00', '17:30',
+    '18:00', '18:30',
+    '19:00', '19:30',
+    '20:00'
+  ];
+
+  const keyboardRows = [];
+
+  for (let i = 0; i < times.length; i += 2) {
+    const row = [{ text: times[i] }];
+
+    if (times[i + 1]) {
+      row.push({ text: times[i + 1] });
+    }
+
+    keyboardRows.push(row);
+  }
 
   const keyboard = {
-    keyboard: [
-      [{ text: getMessage(MESSAGE_KEYS.MORNING) }],
-      [{ text: getMessage(MESSAGE_KEYS.AFTERNOON) }],
-      [{ text: getMessage(MESSAGE_KEYS.EVENING) }]
-    ],
+    keyboard: keyboardRows,
     resize_keyboard: true
   };
 
   sendTelegramMessage(
     settings.ClientBotToken,
     chatId,
-    getMessage(MESSAGE_KEYS.SELECT_PERIOD),
+    getMessage(MESSAGE_KEYS.SELECT_TIME),
     keyboard
   );
 }
@@ -412,36 +427,171 @@ function notifyOwnerAboutRequestFromSession(session, requestId) {
   const service = findServiceById(session.service_id);
   const provider = findProviderById(session.provider_id);
 
-  let text = '<b>' + getMessage(MESSAGE_KEYS.NEW_REQUEST_OWNER_TITLE) + '</b>\n\n';
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.NEW_REQUEST_OWNER_TITLE) +
+    '</b>\n\n';
 
-  text += '🆔 ' + getMessage(MESSAGE_KEYS.OWNER_REQUEST_ID) + ': ' + requestId + '\n\n';
+  text +=
+    '👤 ' +
+    getMessage(MESSAGE_KEYS.OWNER_CUSTOMER) +
+    ': ' +
+    session.customer_name +
+    '\n';
 
-  text += '👤 ' + getMessage(MESSAGE_KEYS.OWNER_CUSTOMER) + ': ' + session.customer_name + '\n';
-  text += '📞 ' + getMessage(MESSAGE_KEYS.OWNER_PHONE) + ': ' + session.customer_phone + '\n\n';
+  text +=
+    '📞 ' +
+    getMessage(MESSAGE_KEYS.OWNER_PHONE) +
+    ': ' +
+    session.customer_phone +
+    '\n\n';
 
-  text += '📍 ' + getMessage(MESSAGE_KEYS.OWNER_LOCATION) + ': ' + (location ? location.name : session.location_id) + '\n';
-  text += '💅 ' + getMessage(MESSAGE_KEYS.OWNER_SERVICE) + ': ' + (service ? service.name : session.service_id) + '\n';
-  text += '👩‍💼 ' + getMessage(MESSAGE_KEYS.OWNER_PROVIDER) + ': ' + (provider ? provider.name : session.provider_id) + '\n\n';
+  text +=
+    '📍 ' +
+    getMessage(MESSAGE_KEYS.OWNER_LOCATION) +
+    ': ' +
+    (location ? location.name : session.location_id) +
+    '\n';
 
-  text += '<b>' + getMessage(MESSAGE_KEYS.OWNER_TIME_OPTIONS) + ':</b>\n';
+  text +=
+    '💅 ' +
+    getMessage(MESSAGE_KEYS.OWNER_SERVICE) +
+    ': ' +
+    (service ? service.name : session.service_id) +
+    '\n';
+
+  text +=
+    '👩‍💼 ' +
+    getMessage(MESSAGE_KEYS.OWNER_PROVIDER) +
+    ': ' +
+    (provider ? provider.name : session.provider_id) +
+    '\n\n';
+
+  text +=
+    '<b>' +
+    getMessage(MESSAGE_KEYS.OWNER_TIME_OPTIONS) +
+    ':</b>\n';
 
   for (let i = 1; i <= 3; i++) {
     const date = session['option' + i + '_date'];
-    const period = session['option' + i + '_period'];
+    const time = session['option' + i + '_time'];
 
-    if (date && period) {
+    if (date && time) {
       text +=
-        i + ') ' +
+        i +
+        ') ' +
         formatDateForDisplay(date) +
-        ' — ' +
-        formatPeriodForDisplay(period) +
+        ' ' +
+        formatTimeForDisplay(time) +
         '\n';
     }
   }
 
-  sendTelegramMessage(
+  const approveButtons = [];
+
+  for (let i = 1; i <= 3; i++) {
+    const date = session['option' + i + '_date'];
+    const time = session['option' + i + '_time'];
+
+    if (date && time) {
+      approveButtons.push({
+        text: '✅ ' + i,
+        callback_data: 'approve_option_' + i + '|' + requestId
+      });
+    }
+  }
+
+  const inlineKeyboard = [];
+
+  if (approveButtons.length > 0) {
+    inlineKeyboard.push(approveButtons);
+  }
+
+  inlineKeyboard.push([
+    {
+      text: '❌ Reject',
+      callback_data: 'reject_request|' + requestId
+    }
+  ]);
+
+  sendTelegramMessageWithInlineKeyboard(
     settings.ClientBotToken,
     settings.OwnerTelegramId,
-    text
+    text,
+    inlineKeyboard
   );
+}
+
+function handleOwnerCallback(callbackQuery) {
+  const settings = getSettings();
+
+  const data = callbackQuery.data;
+  const ownerChatId = callbackQuery.message.chat.id;
+
+  const parts = data.split('|');
+  const action = parts[0];
+  const requestId = parts[1];
+
+  if (action.indexOf('approve_option_') === 0) {
+    const priority = Number(action.replace('approve_option_', ''));
+
+    const request = getRequestById(requestId);
+    const option = getRequestOptionByPriority(requestId, priority);
+
+    if (!request || !option) {
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        ownerChatId,
+        getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
+      );
+      return;
+    }
+
+    createAppointmentFromRequest(request, option);
+    updateCustomerStatus(request.customer_id, 'confirmed');
+    updateRequestStatus(requestId, 'confirmed');
+    updateRequestOptionsAfterApproval(requestId, priority);
+
+    const customer = getCustomerById(request.customer_id);
+
+    sendTelegramMessage(
+      settings.ClientBotToken,
+      ownerChatId,
+      getMessage(MESSAGE_KEYS.REQUEST_APPROVED_OWNER)
+    );
+
+    if (customer && customer.telegram_id) {
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        customer.telegram_id,
+        getMessage(MESSAGE_KEYS.REQUEST_APPROVED_CLIENT)
+      );
+    }
+
+    return;
+  }
+
+  if (action === 'reject_request') {
+    updateRequestStatus(requestId, 'rejected');
+    updateRequestOptionsAfterApproval(requestId, 0);
+
+    const request = getRequestById(requestId);
+    const customer = request ? getCustomerById(request.customer_id) : null;
+
+    sendTelegramMessage(
+      settings.ClientBotToken,
+      ownerChatId,
+      getMessage(MESSAGE_KEYS.REQUEST_REJECTED_OWNER)
+    );
+
+    if (customer && customer.telegram_id) {
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        customer.telegram_id,
+        getMessage(MESSAGE_KEYS.REQUEST_REJECTED_CLIENT)
+      );
+    }
+
+    return;
+  }
 }

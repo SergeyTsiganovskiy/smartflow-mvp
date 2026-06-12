@@ -33,6 +33,37 @@
 ↓
 Создание заявки
 
+## Completed
+
+* Client bot MVP
+* Localization framework
+* Multi-language messages
+* Multi-language locations
+* Multi-language providers
+* Request creation
+* Request options
+* Customer creation
+* Customer statuses
+* Owner notifications
+* Inline approval buttons
+* Exact time selection
+
+## In Progress
+
+* Appointment creation from approved request
+* Request approval workflow
+
+## Next
+
+* Google Calendar integration
+* Client confirmation details
+* Request rejection workflow
+* Admin bot
+* Customer visit history
+* Appointment reminders
+* Availability checking
+
+
 ## v0.3
 
 Admin Bot

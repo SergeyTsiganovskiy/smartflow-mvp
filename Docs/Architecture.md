@@ -152,3 +152,44 @@ Customer matching logic:
 1. Search by phone.
 2. If customer exists, update profile.
 3. If customer does not exist, create customer.
+
+## Customer Lifecycle
+
+Client creates request
+↓
+Customer created with status = lead
+↓
+Request created with status = pending
+↓
+Owner reviews request
+↓
+Owner approves selected option
+↓
+Appointment created
+↓
+Customer status = confirmed
+↓
+Request status = confirmed
+
+Entities:
+
+Customers
+Requests
+RequestOptions
+Appointments
+
+Customer identity:
+
+Primary key:
+
+* phone
+
+Secondary identifiers:
+
+* telegram_id
+
+Reason:
+
+* one Telegram account may create appointments for multiple family members
+* future integrations may not provide Telegram ID
+

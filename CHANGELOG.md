@@ -294,6 +294,35 @@ Planned:
 * Provider dashboard
 * Daily schedule
 
+## [0.3.0] - 2026-06-12
+
+### Added
+
+* Appointment entity
+* Appointment table
+* Owner approval workflow foundation
+* Inline Telegram buttons for owner actions
+* Dynamic approval buttons based on available options
+* Customer statuses (lead, confirmed)
+* Time slot selection (07:00–20:00)
+
+### Changed
+
+* Replaced MORNING / AFTERNOON / EVENING with exact time selection
+* RequestOptions now store preferred_time instead of preferred_period
+* Owner notifications display exact date and time
+* Customer identification based on phone number
+* Locations support localization
+* Providers support localization
+
+### Fixed
+
+* Duplicate request options
+* Session option cleanup
+* Date formatting in owner notifications
+* Time formatting in owner notifications
+
+
 ---
 
 # [1.0.0] - Vision

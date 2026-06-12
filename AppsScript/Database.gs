@@ -313,45 +313,82 @@ function createOrUpdateCustomer(session) {
     .getSheetByName('Customers');
 
   const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
 
-  const telegramId = session.telegram_id;
-  const now = new Date();
+  const customerIdIndex = headers.indexOf('customer_id');
+  const telegramIdIndex = headers.indexOf('telegram_id');
+  const nameIndex = headers.indexOf('name');
+  const phoneIndex = headers.indexOf('phone');
+  const languageIndex = headers.indexOf('language');
+  const createdAtIndex = headers.indexOf('created_at');
+  const updatedAtIndex = headers.indexOf('updated_at');
+  const lastVisitAtIndex = headers.indexOf('last_visit_at');
+  const notesIndex = headers.indexOf('notes');
+  const statusIndex = headers.indexOf('status');
 
+  const telegramId = String(session.telegram_id || '').trim();
   const name = String(session.customer_name || '').trim();
   const phone = String(session.customer_phone || '').trim();
+  const language = getSettings().Language || 'ru';
+  const now = new Date();
+
+  if (!phone) {
+    throw new Error('createOrUpdateCustomer: customer_phone is empty');
+  }
+
+  if (!name) {
+    throw new Error('createOrUpdateCustomer: customer_name is empty');
+  }
 
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][1]) === String(telegramId)) {
+    if (String(rows[i][phoneIndex]).trim() === phone) {
+      sheet.getRange(i + 1, nameIndex + 1).setValue(name);
 
-      if (name) {
-        sheet.getRange(i + 1, 3).setValue(name);
+      if (telegramId) {
+        sheet.getRange(i + 1, telegramIdIndex + 1).setValue(telegramId);
       }
 
-      if (phone) {
-        sheet.getRange(i + 1, 4).setValue(phone);
+      sheet.getRange(i + 1, languageIndex + 1).setValue(language);
+
+      if (updatedAtIndex !== -1) {
+        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(now);
       }
 
-      sheet.getRange(i + 1, 7).setValue(now);
-
-      return rows[i][0];
+      return rows[i][customerIdIndex];
     }
   }
 
-  const customerId = generateId('cust');
+  const newRow = new Array(headers.length).fill('');
 
-  sheet.appendRow([
-    customerId,
-    telegramId,
-    name,
-    phone,
-    getSettings().Language || 'ru',
-    now,
-    now,
-    '',
-    ''
-  ]);
+  newRow[customerIdIndex] = generateId('cust');
+  newRow[telegramIdIndex] = telegramId;
+  newRow[nameIndex] = name;
+  newRow[phoneIndex] = phone;
+  newRow[languageIndex] = language;
 
-  return customerId;
+  if (createdAtIndex !== -1) {
+    newRow[createdAtIndex] = now;
+  }
+
+  if (updatedAtIndex !== -1) {
+    newRow[updatedAtIndex] = now;
+  }
+
+  if (lastVisitAtIndex !== -1) {
+    newRow[lastVisitAtIndex] = '';
+  }
+
+  if (notesIndex !== -1) {
+    newRow[notesIndex] = '';
+  }
+
+  if (statusIndex !== -1) {
+    newRow[statusIndex] = 'lead';
+  }
+
+  sheet.appendRow(newRow);
+
+  return newRow[customerIdIndex];
 }
 
 function createRequest(customerId, session) {
@@ -383,14 +420,14 @@ function createRequestOptions(requestId, session) {
 
   for (let i = 1; i <= 3; i++) {
     const date = session['option' + i + '_date'];
-    const period = session['option' + i + '_period'];
+    const time = session['option' + i + '_time'];
 
-    if (date && period) {
+    if (date && time) {
       sheet.appendRow([
         generateId('opt'),
         requestId,
         date,
-        period,
+        time,
         i,
         'pending',
         now
@@ -398,14 +435,6 @@ function createRequestOptions(requestId, session) {
     }
   }
 }
-
-// function finalizeRequest(chatId) {
-//   const session = getUserSession(chatId);
-//   const customerId = createOrUpdateCustomer(session);
-//   const requestId = createRequest(customerId, session);
-//   createRequestOptions(requestId, session);
-//   return requestId;
-// }
 
 function finalizeRequestFromSession(session) {
   const customerId = createOrUpdateCustomer(session);
@@ -502,16 +531,16 @@ function clearUserSessionOptions(telegramId) {
   setUserSessionValue(telegramId, 'option_count', 0);
 
   setUserSessionValue(telegramId, 'current_option_date', '');
-  setUserSessionValue(telegramId, 'current_option_period', '');
+  setUserSessionValue(telegramId, 'current_option_time', '');
 
   setUserSessionValue(telegramId, 'option1_date', '');
-  setUserSessionValue(telegramId, 'option1_period', '');
+  setUserSessionValue(telegramId, 'option1_time', '');
 
   setUserSessionValue(telegramId, 'option2_date', '');
-  setUserSessionValue(telegramId, 'option2_period', '');
+  setUserSessionValue(telegramId, 'option2_time', '');
 
   setUserSessionValue(telegramId, 'option3_date', '');
-  setUserSessionValue(telegramId, 'option3_period', '');
+  setUserSessionValue(telegramId, 'option3_time', '');
 }
 
 function clearUserSession(telegramId) {
@@ -532,6 +561,204 @@ function clearUserSession(telegramId) {
           sheet.getRange(i + 1, col + 1).setValue('');
         }
       }
+
+      return;
+    }
+  }
+}
+
+function getRequestById(requestId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Requests');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const idIndex = headers.indexOf('request_id');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIndex]) === String(requestId)) {
+      const result = {};
+
+      headers.forEach((header, index) => {
+        result[header] = rows[i][index];
+      });
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
+function getCustomerById(customerId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Customers');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const idIndex = headers.indexOf('customer_id');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIndex]) === String(customerId)) {
+      const result = {};
+
+      headers.forEach((header, index) => {
+        result[header] = rows[i][index];
+      });
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
+function getRequestOptionByPriority(requestId, priority) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('RequestOptions');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const requestIdIndex = headers.indexOf('request_id');
+  const priorityIndex = headers.indexOf('priority');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      String(rows[i][requestIdIndex]) === String(requestId) &&
+      Number(rows[i][priorityIndex]) === Number(priority)
+    ) {
+      const result = {};
+
+      headers.forEach((header, index) => {
+        result[header] = rows[i][index];
+      });
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
+function createAppointmentFromRequest(request, option) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const headers = sheet.getDataRange().getValues()[0];
+
+  const now = new Date();
+
+  const appointmentId = generateId('appt');
+
+  const startAt = buildDateTime(
+    option.preferred_date,
+    option.preferred_time
+  );
+
+  const endAt = '';
+
+  const newRow = new Array(headers.length).fill('');
+
+  newRow[headers.indexOf('appointment_id')] = appointmentId;
+  newRow[headers.indexOf('request_id')] = request.request_id;
+  newRow[headers.indexOf('customer_id')] = request.customer_id;
+  newRow[headers.indexOf('service_id')] = request.service_id;
+  newRow[headers.indexOf('provider_id')] = request.provider_id;
+  newRow[headers.indexOf('location_id')] = request.location_id;
+  newRow[headers.indexOf('start_at')] = startAt;
+  newRow[headers.indexOf('end_at')] = endAt;
+  newRow[headers.indexOf('status')] = 'confirmed';
+  newRow[headers.indexOf('calendar_event_id')] = '';
+  newRow[headers.indexOf('created_at')] = now;
+  newRow[headers.indexOf('updated_at')] = now;
+
+  sheet.appendRow(newRow);
+
+  return appointmentId;
+}
+
+function updateRequestStatus(requestId, status) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Requests');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const requestIdIndex = headers.indexOf('request_id');
+  const statusIndex = headers.indexOf('status');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][requestIdIndex]) === String(requestId)) {
+      sheet.getRange(i + 1, statusIndex + 1).setValue(status);
+      return;
+    }
+  }
+}
+
+function updateRequestOptionsAfterApproval(requestId, approvedPriority) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('RequestOptions');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const requestIdIndex = headers.indexOf('request_id');
+  const priorityIndex = headers.indexOf('priority');
+  const statusIndex = headers.indexOf('status');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][requestIdIndex]) === String(requestId)) {
+      const status =
+        Number(rows[i][priorityIndex]) === Number(approvedPriority)
+          ? 'approved'
+          : 'rejected';
+
+      sheet.getRange(i + 1, statusIndex + 1).setValue(status);
+    }
+  }
+}
+
+function updateCustomerStatus(
+  customerId,
+  status
+) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Customers');
+
+  const rows =
+    sheet.getDataRange().getValues();
+
+  const headers = rows[0];
+
+  const customerIdIndex =
+    headers.indexOf('customer_id');
+
+  const statusIndex =
+    headers.indexOf('status');
+
+  for (let i = 1; i < rows.length; i++) {
+
+    if (
+      String(rows[i][customerIdIndex]) ===
+      String(customerId)
+    ) {
+
+      sheet
+        .getRange(
+          i + 1,
+          statusIndex + 1
+        )
+        .setValue(status);
 
       return;
     }

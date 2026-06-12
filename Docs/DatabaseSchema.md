@@ -177,3 +177,47 @@ priority:
 * timestamp
 * action
 * details
+
+### Customers
+
+customer_id
+telegram_id
+name
+phone
+language
+created_at
+updated_at
+last_visit_at
+notes
+status
+
+Status values:
+
+lead
+confirmed
+
+### RequestOptions
+
+option_id
+request_id
+preferred_date
+preferred_time
+priority
+status
+created_at
+
+### Appointments
+
+appointment_id
+request_id
+customer_id
+service_id
+provider_id
+location_id
+start_at
+end_at
+status
+calendar_event_id
+created_at
+updated_at
+

@@ -6,6 +6,10 @@ function doPost(e) {
       handleClientMessage(update.message);
     }
 
+    if (update.callback_query) {
+      handleOwnerCallback(update.callback_query);
+    }
+
     return HtmlService.createHtmlOutput('OK');
 
   } catch (error) {
