@@ -220,6 +220,36 @@ Expected additions:
 * Customer creation
 * RequestOptions creation
 
+
+## Added
+
+- Provider selection
+- Date selection
+- Period selection
+- Localization refactoring
+- Constants.gs
+- MESSAGE_KEYS
+- STATES
+- PROVIDER_IDS
+
+- Customer creation
+- Request creation
+- Request options creation
+- Multiple preferred dates
+- Name collection
+- Phone collection
+- Request finalization
+
+- Owner notification on new request
+- Customer creation
+- Request creation
+- Request options creation
+- Multiple preferred dates
+- Date formatting
+- Provider formatting
+- Session cleanup between requests
+
+Status: In Progress
 ---
 
 # [0.3.0] - Planned
