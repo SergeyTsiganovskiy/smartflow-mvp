@@ -97,3 +97,36 @@ Google Sheets
 Текущая версия:
 
 SmartFlow Beauty MVP v0.1-alpha
+
+## Localization Rule
+
+All user-facing text must be stored in Messages sheet.
+
+Apps Script code must never contain business-facing text.
+
+Code may only use message keys.
+
+Example:
+
+GOOD:
+getMessage('SELECT_PROVIDER')
+
+BAD:
+'Выберите мастера'
+
+## State Update Rule
+
+When moving user to a new step:
+
+1. Save state
+2. Send message
+
+GOOD:
+
+setUserState(...)
+sendTelegramMessage(...)
+
+BAD:
+
+sendTelegramMessage(...)
+setUserState(...)

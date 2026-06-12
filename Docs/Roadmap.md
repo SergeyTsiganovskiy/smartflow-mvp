@@ -33,6 +33,25 @@
 ↓
 Создание заявки
 
+## Technical Debt
+
+### Localization Refactoring
+
+Move all user-facing text from Apps Script code into Messages table.
+
+## Added
+
+- Provider selection
+- Date selection
+- Period selection
+- Localization refactoring
+- Constants.gs
+- MESSAGE_KEYS
+- STATES
+- PROVIDER_IDS
+
+Status: In Progress
+
 ---
 
 ## v0.3
