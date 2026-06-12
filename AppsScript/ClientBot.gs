@@ -180,21 +180,26 @@ function handleClientMessage(message) {
     const customerPhone = text.trim();
 
     if (!customerPhone) {
+      
       askCustomerPhone(chatId, settings);
       return;
     }
 
     setUserSessionValue(chatId, 'customer_phone', customerPhone);
 
-    const requestId = finalizeRequest(chatId);
+    const session = getUserSession(chatId);
+    const requestId = finalizeRequestFromSession(session);
 
-    notifyOwnerAboutRequest(chatId, requestId);
+    notifyOwnerAboutRequestFromSession(session, requestId);
 
     sendTelegramMessage(
       settings.ClientBotToken,
       chatId,
       getMessage(MESSAGE_KEYS.REQUEST_CREATED)
     );
+
+    clearUserSession(chatId);
+    setUserState(chatId, '');
 
     return;
   }
@@ -400,9 +405,8 @@ function askCustomerPhone(chatId, settings) {
   );
 }
 
-function notifyOwnerAboutRequest(chatId, requestId) {
+function notifyOwnerAboutRequestFromSession(session, requestId) {
   const settings = getSettings();
-  const session = getUserSession(chatId);
 
   const location = findLocationById(session.location_id);
   const service = findServiceById(session.service_id);
@@ -410,16 +414,16 @@ function notifyOwnerAboutRequest(chatId, requestId) {
 
   let text = '<b>' + getMessage(MESSAGE_KEYS.NEW_REQUEST_OWNER_TITLE) + '</b>\n\n';
 
-  text += '🆔 ' + requestId + '\n\n';
+  text += '🆔 ' + getMessage(MESSAGE_KEYS.OWNER_REQUEST_ID) + ': ' + requestId + '\n\n';
 
-  text += '👤 Клиент: ' + session.customer_name + '\n';
-  text += '📞 Телефон: ' + session.customer_phone + '\n\n';
+  text += '👤 ' + getMessage(MESSAGE_KEYS.OWNER_CUSTOMER) + ': ' + session.customer_name + '\n';
+  text += '📞 ' + getMessage(MESSAGE_KEYS.OWNER_PHONE) + ': ' + session.customer_phone + '\n\n';
 
-  text += '📍 Филиал: ' + (location ? location.name : session.location_id) + '\n';
-  text += '💅 Услуга: ' + (service ? service.name : session.service_id) + '\n';
-  text += '👩‍💼 Мастер: ' + (provider ? provider.name : session.provider_id) + '\n\n';
+  text += '📍 ' + getMessage(MESSAGE_KEYS.OWNER_LOCATION) + ': ' + (location ? location.name : session.location_id) + '\n';
+  text += '💅 ' + getMessage(MESSAGE_KEYS.OWNER_SERVICE) + ': ' + (service ? service.name : session.service_id) + '\n';
+  text += '👩‍💼 ' + getMessage(MESSAGE_KEYS.OWNER_PROVIDER) + ': ' + (provider ? provider.name : session.provider_id) + '\n\n';
 
-  text += '<b>Варианты времени:</b>\n';
+  text += '<b>' + getMessage(MESSAGE_KEYS.OWNER_TIME_OPTIONS) + ':</b>\n';
 
   for (let i = 1; i <= 3; i++) {
     const date = session['option' + i + '_date'];

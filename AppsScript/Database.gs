@@ -65,20 +65,29 @@ function setUserSessionValue(telegramId, fieldName, value) {
 }
 
 function getLocations() {
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Locations');
 
   const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const idIndex = headers.indexOf('location_id');
+  const nameIndex = headers.indexOf('name_' + lang);
+  const activeIndex = headers.indexOf('active');
+
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const active = String(rows[i][4]).toUpperCase();
+    const active = String(rows[i][activeIndex]).toUpperCase();
 
     if (active === 'TRUE') {
       result.push({
-        id: rows[i][0],
-        name: String(rows[i][1]).trim()
+        id: rows[i][idIndex],
+        name: String(rows[i][nameIndex]).trim()
       });
     }
   }
@@ -87,21 +96,29 @@ function getLocations() {
 }
 
 function findLocationByName(locationName) {
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Locations');
 
   const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const idIndex = headers.indexOf('location_id');
+  const nameIndex = headers.indexOf('name_' + lang);
+  const activeIndex = headers.indexOf('active');
+
   const targetName = String(locationName).trim();
 
   for (let i = 1; i < rows.length; i++) {
-    const id = rows[i][0];
-    const name = String(rows[i][1]).trim();
-    const active = String(rows[i][4]).toUpperCase();
+    const name = String(rows[i][nameIndex]).trim();
+    const active = String(rows[i][activeIndex]).toUpperCase();
 
     if (name === targetName && active === 'TRUE') {
       return {
-        id: id,
+        id: rows[i][idIndex],
         name: name
       };
     }
@@ -211,6 +228,9 @@ function getUserSession(telegramId) {
 }
 
 function getProvidersByLocation(locationId) {
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Providers');
@@ -220,7 +240,7 @@ function getProvidersByLocation(locationId) {
 
   const idIndex = headers.indexOf('provider_id');
   const locationIndex = headers.indexOf('location_id');
-  const nameIndex = headers.indexOf('name');
+  const nameIndex = headers.indexOf('name_' + lang);
   const activeIndex = headers.indexOf('active');
 
   const result = [];
@@ -234,7 +254,7 @@ function getProvidersByLocation(locationId) {
     ) {
       result.push({
         id: rows[i][idIndex],
-        name: rows[i][nameIndex]
+        name: String(rows[i][nameIndex]).trim()
       });
     }
   }
@@ -252,6 +272,9 @@ function findProviderByName(providerName) {
     };
   }
 
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Providers');
@@ -260,7 +283,7 @@ function findProviderByName(providerName) {
   const headers = rows[0];
 
   const idIndex = headers.indexOf('provider_id');
-  const nameIndex = headers.indexOf('name');
+  const nameIndex = headers.indexOf('name_' + lang);
   const activeIndex = headers.indexOf('active');
 
   const targetName = String(providerName).trim();
@@ -294,10 +317,20 @@ function createOrUpdateCustomer(session) {
   const telegramId = session.telegram_id;
   const now = new Date();
 
+  const name = String(session.customer_name || '').trim();
+  const phone = String(session.customer_phone || '').trim();
+
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][1]) === String(telegramId)) {
-      sheet.getRange(i + 1, 3).setValue(session.customer_name);
-      sheet.getRange(i + 1, 4).setValue(session.customer_phone);
+
+      if (name) {
+        sheet.getRange(i + 1, 3).setValue(name);
+      }
+
+      if (phone) {
+        sheet.getRange(i + 1, 4).setValue(phone);
+      }
+
       sheet.getRange(i + 1, 7).setValue(now);
 
       return rows[i][0];
@@ -309,8 +342,8 @@ function createOrUpdateCustomer(session) {
   sheet.appendRow([
     customerId,
     telegramId,
-    session.customer_name,
-    session.customer_phone,
+    name,
+    phone,
     getSettings().Language || 'ru',
     now,
     now,
@@ -366,9 +399,15 @@ function createRequestOptions(requestId, session) {
   }
 }
 
-function finalizeRequest(chatId) {
-  const session = getUserSession(chatId);
+// function finalizeRequest(chatId) {
+//   const session = getUserSession(chatId);
+//   const customerId = createOrUpdateCustomer(session);
+//   const requestId = createRequest(customerId, session);
+//   createRequestOptions(requestId, session);
+//   return requestId;
+// }
 
+function finalizeRequestFromSession(session) {
   const customerId = createOrUpdateCustomer(session);
   const requestId = createRequest(customerId, session);
 
@@ -378,14 +417,24 @@ function finalizeRequest(chatId) {
 }
 
 function findLocationById(locationId) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Locations');
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Locations');
+
   const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const idIndex = headers.indexOf('location_id');
+  const nameIndex = headers.indexOf('name_' + lang);
 
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(locationId)) {
+    if (String(rows[i][idIndex]) === String(locationId)) {
       return {
-        id: rows[i][0],
-        name: rows[i][1]
+        id: rows[i][idIndex],
+        name: rows[i][nameIndex]
       };
     }
   }
@@ -424,6 +473,9 @@ function findProviderById(providerId) {
     };
   }
 
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Providers');
@@ -432,7 +484,7 @@ function findProviderById(providerId) {
   const headers = rows[0];
 
   const idIndex = headers.indexOf('provider_id');
-  const nameIndex = headers.indexOf('name');
+  const nameIndex = headers.indexOf('name_' + lang);
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][idIndex]) === String(providerId)) {
@@ -460,4 +512,28 @@ function clearUserSessionOptions(telegramId) {
 
   setUserSessionValue(telegramId, 'option3_date', '');
   setUserSessionValue(telegramId, 'option3_period', '');
+}
+
+function clearUserSession(telegramId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('UserSessions');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const telegramIndex = headers.indexOf('telegram_id');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][telegramIndex]) === String(telegramId)) {
+
+      for (let col = 0; col < headers.length; col++) {
+        if (col !== telegramIndex) {
+          sheet.getRange(i + 1, col + 1).setValue('');
+        }
+      }
+
+      return;
+    }
+  }
 }
