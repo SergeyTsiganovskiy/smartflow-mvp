@@ -249,6 +249,36 @@ Expected additions:
 - Provider formatting
 - Session cleanup between requests
 
+## [0.2.0] - 2026-06-12
+
+### Added
+
+* Customer creation by phone number
+* Request creation workflow
+* Request options storage
+* Owner notification in Telegram
+* Multi-language locations
+* Multi-language providers
+* Localized owner notifications
+* Session cleanup after request creation
+* Multiple preferred date/time options
+
+### Changed
+
+* Customer matching changed from telegram_id to phone number
+* Locations migrated to name_uk / name_ru / name_en
+* Providers migrated to name_uk / name_ru / name_en
+* All client-facing texts moved to Messages table
+* Most owner notification texts moved to Messages table
+
+### Fixed
+
+* Duplicate request options from previous sessions
+* State transition race conditions
+* Provider name display in owner notifications
+* Date formatting in owner notifications
+
+
 Status: In Progress
 ---
 

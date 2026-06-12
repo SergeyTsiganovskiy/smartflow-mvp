@@ -130,3 +130,25 @@ BAD:
 
 sendTelegramMessage(...)
 setUserState(...)
+
+## Customer Identification
+
+Primary customer identifier:
+
+* phone
+
+Secondary identifiers:
+
+* telegram_id
+
+Reason:
+
+* One Telegram account may be used to create appointments for multiple family members.
+* Future integrations (website, Instagram, manual entry, OLX, etc.) may not have Telegram IDs.
+* Phone number is the universal identifier across channels.
+
+Customer matching logic:
+
+1. Search by phone.
+2. If customer exists, update profile.
+3. If customer does not exist, create customer.
