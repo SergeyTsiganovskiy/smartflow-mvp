@@ -396,44 +396,24 @@ function createRequest(customerId, session) {
     .getActiveSpreadsheet()
     .getSheetByName('Requests');
 
+  const headers = sheet.getDataRange().getValues()[0];
+
   const requestId = generateId('req');
-
-  sheet.appendRow([
-    requestId,
-    customerId,
-    session.location_id,
-    session.service_id,
-    session.provider_id,
-    'pending',
-    new Date()
-  ]);
-
-  return requestId;
-}
-
-function createRequestOptions(requestId, session) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('RequestOptions');
-
   const now = new Date();
 
-  for (let i = 1; i <= 3; i++) {
-    const date = session['option' + i + '_date'];
-    const time = session['option' + i + '_time'];
+  const newRow = new Array(headers.length).fill('');
 
-    if (date && time) {
-      sheet.appendRow([
-        generateId('opt'),
-        requestId,
-        date,
-        time,
-        i,
-        'pending',
-        now
-      ]);
-    }
-  }
+  newRow[headers.indexOf('request_id')] = requestId;
+  newRow[headers.indexOf('customer_id')] = customerId;
+  newRow[headers.indexOf('service_id')] = session.service_id;
+  newRow[headers.indexOf('provider_id')] = session.provider_id;
+  newRow[headers.indexOf('location_id')] = session.location_id;
+  newRow[headers.indexOf('status')] = 'pending';
+  newRow[headers.indexOf('created_at')] = now;
+
+  sheet.appendRow(newRow);
+
+  return requestId;
 }
 
 function finalizeRequestFromSession(session) {
@@ -761,6 +741,37 @@ function updateCustomerStatus(
         .setValue(status);
 
       return;
+    }
+  }
+}
+
+function createRequestOptions(requestId, session) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('RequestOptions');
+
+  const headers = sheet.getDataRange().getValues()[0];
+  const now = new Date();
+
+  for (let i = 1; i <= 3; i++) {
+    const date = session['option' + i + '_date'];
+    const time = session['option' + i + '_time'];
+
+    if (date && time) {
+      const newRow = new Array(headers.length).fill('');
+
+      newRow[headers.indexOf('option_id')] = generateId('opt');
+      newRow[headers.indexOf('request_id')] = requestId;
+      newRow[headers.indexOf('preferred_date')] = date;
+      newRow[headers.indexOf('preferred_time')] = time;
+      newRow[headers.indexOf('priority')] = i;
+      newRow[headers.indexOf('status')] = 'pending';
+
+      if (headers.indexOf('created_at') !== -1) {
+        newRow[headers.indexOf('created_at')] = now;
+      }
+
+      sheet.appendRow(newRow);
     }
   }
 }

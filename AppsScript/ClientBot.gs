@@ -168,32 +168,39 @@ function handleClientMessage(message) {
     return;
   }
 
-  if (state === STATES.WAITING_CUSTOMER_PHONE) {
-    const customerPhone = text.trim();
+if (state === STATES.WAITING_CUSTOMER_PHONE) {
+  const customerPhone = text.trim();
 
-    if (!customerPhone) {
-      askCustomerPhone(chatId, settings);
-      return;
-    }
+  addAuditLog('PHONE_STEP', 'phone=' + customerPhone);
 
-    setUserSessionValue(chatId, 'customer_phone', customerPhone);
-
-    const session = getUserSession(chatId);
-    const requestId = finalizeRequestFromSession(session);
-
-    notifyOwnerAboutRequestFromSession(session, requestId);
-
-    sendTelegramMessage(
-      settings.ClientBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.REQUEST_CREATED)
-    );
-
-    clearUserSession(chatId);
-    setUserState(chatId, '');
-
+  if (!customerPhone) {
+    askCustomerPhone(chatId, settings);
     return;
   }
+
+  setUserSessionValue(chatId, 'customer_phone', customerPhone);
+  addAuditLog('PHONE_SAVED', customerPhone);
+
+  const session = getUserSession(chatId);
+  addAuditLog('SESSION_BEFORE_FINALIZE', JSON.stringify(session));
+
+  const requestId = finalizeRequestFromSession(session);
+  addAuditLog('REQUEST_CREATED_DEBUG', requestId);
+
+  notifyOwnerAboutRequestFromSession(session, requestId);
+  addAuditLog('OWNER_NOTIFIED', requestId);
+
+  sendTelegramMessage(
+    settings.ClientBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.REQUEST_CREATED)
+  );
+
+  clearUserSession(chatId);
+  setUserState(chatId, '');
+
+  return;
+}
 
   sendTelegramMessage(
     settings.ClientBotToken,
