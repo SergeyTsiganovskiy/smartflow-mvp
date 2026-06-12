@@ -376,3 +376,88 @@ function finalizeRequest(chatId) {
 
   return requestId;
 }
+
+function findLocationById(locationId) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Locations');
+  const rows = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(locationId)) {
+      return {
+        id: rows[i][0],
+        name: rows[i][1]
+      };
+    }
+  }
+
+  return null;
+}
+
+function findServiceById(serviceId) {
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Services');
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const idIndex = headers.indexOf('service_id');
+  const nameIndex = headers.indexOf('name_' + lang);
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIndex]) === String(serviceId)) {
+      return {
+        id: rows[i][idIndex],
+        name: rows[i][nameIndex]
+      };
+    }
+  }
+
+  return null;
+}
+
+function findProviderById(providerId) {
+  if (providerId === PROVIDER_IDS.ANY_PROVIDER) {
+    return {
+      id: PROVIDER_IDS.ANY_PROVIDER,
+      name: getMessage(MESSAGE_KEYS.ANY_PROVIDER)
+    };
+  }
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Providers');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const idIndex = headers.indexOf('provider_id');
+  const nameIndex = headers.indexOf('name');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIndex]) === String(providerId)) {
+      return {
+        id: rows[i][idIndex],
+        name: rows[i][nameIndex]
+      };
+    }
+  }
+
+  return null;
+}
+
+function clearUserSessionOptions(telegramId) {
+  setUserSessionValue(telegramId, 'option_count', 0);
+
+  setUserSessionValue(telegramId, 'current_option_date', '');
+  setUserSessionValue(telegramId, 'current_option_period', '');
+
+  setUserSessionValue(telegramId, 'option1_date', '');
+  setUserSessionValue(telegramId, 'option1_period', '');
+
+  setUserSessionValue(telegramId, 'option2_date', '');
+  setUserSessionValue(telegramId, 'option2_period', '');
+
+  setUserSessionValue(telegramId, 'option3_date', '');
+  setUserSessionValue(telegramId, 'option3_period', '');
+}

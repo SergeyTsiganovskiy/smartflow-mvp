@@ -38,3 +38,8 @@ function testSendToOwner() {
     'Manual test from current project ✅'
   );
 }
+
+function testSelectPeriodMessage() {
+  Logger.log(MESSAGE_KEYS.SELECT_PERIOD);
+  Logger.log(getMessage(MESSAGE_KEYS.SELECT_PERIOD));
+}
