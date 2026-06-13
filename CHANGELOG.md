@@ -322,6 +322,12 @@ Planned:
 * Date formatting in owner notifications
 * Time formatting in owner notifications
 
+- Owner approval buttons
+- Appointment creation after approval
+- Client notification after approval
+- Original owner message updated after approval/rejection
+- Duplicate approval protection
+
 
 ---
 

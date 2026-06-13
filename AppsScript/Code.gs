@@ -13,7 +13,6 @@ function doPost(e) {
     return HtmlService.createHtmlOutput('OK');
 
   } catch (error) {
-    addAuditLog('DOPOST_ERROR', error.toString());
     return HtmlService.createHtmlOutput('ERROR');
   }
 }

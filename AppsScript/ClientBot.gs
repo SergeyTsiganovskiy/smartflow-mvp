@@ -168,39 +168,32 @@ function handleClientMessage(message) {
     return;
   }
 
-if (state === STATES.WAITING_CUSTOMER_PHONE) {
-  const customerPhone = text.trim();
+  if (state === STATES.WAITING_CUSTOMER_PHONE) {
+    const customerPhone = text.trim();
 
-  addAuditLog('PHONE_STEP', 'phone=' + customerPhone);
+    if (!customerPhone) {
+      askCustomerPhone(chatId, settings);
+      return;
+    }
 
-  if (!customerPhone) {
-    askCustomerPhone(chatId, settings);
+    setUserSessionValue(chatId, 'customer_phone', customerPhone);
+
+    const session = getUserSession(chatId);
+    const requestId = finalizeRequestFromSession(session);
+
+    notifyOwnerAboutRequestFromSession(session, requestId);
+
+    sendTelegramMessage(
+      settings.ClientBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.REQUEST_CREATED)
+    );
+
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
     return;
   }
-
-  setUserSessionValue(chatId, 'customer_phone', customerPhone);
-  addAuditLog('PHONE_SAVED', customerPhone);
-
-  const session = getUserSession(chatId);
-  addAuditLog('SESSION_BEFORE_FINALIZE', JSON.stringify(session));
-
-  const requestId = finalizeRequestFromSession(session);
-  addAuditLog('REQUEST_CREATED_DEBUG', requestId);
-
-  notifyOwnerAboutRequestFromSession(session, requestId);
-  addAuditLog('OWNER_NOTIFIED', requestId);
-
-  sendTelegramMessage(
-    settings.ClientBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.REQUEST_CREATED)
-  );
-
-  clearUserSession(chatId);
-  setUserState(chatId, '');
-
-  return;
-}
 
   sendTelegramMessage(
     settings.ClientBotToken,
@@ -539,6 +532,15 @@ function handleOwnerCallback(callbackQuery) {
   const action = parts[0];
   const requestId = parts[1];
 
+  if (isRequestAlreadyProcessed(requestId)) {
+  sendTelegramMessage(
+    settings.ClientBotToken,
+    ownerChatId,
+    getMessage(MESSAGE_KEYS.REQUEST_ALREADY_PROCESSED)
+  );
+  return;
+  }
+
   if (action.indexOf('approve_option_') === 0) {
     const priority = Number(action.replace('approve_option_', ''));
 
@@ -561,10 +563,13 @@ function handleOwnerCallback(callbackQuery) {
 
     const customer = getCustomerById(request.customer_id);
 
-    sendTelegramMessage(
+    const originalText = callbackQuery.message.text || '';
+
+    editTelegramMessage(
       settings.ClientBotToken,
       ownerChatId,
-      getMessage(MESSAGE_KEYS.REQUEST_APPROVED_OWNER)
+      callbackQuery.message.message_id,
+      originalText + '\n\n' + getMessage(MESSAGE_KEYS.OWNER_REQUEST_CONFIRMED_STATUS)
     );
 
     if (customer && customer.telegram_id) {
@@ -585,10 +590,13 @@ function handleOwnerCallback(callbackQuery) {
     const request = getRequestById(requestId);
     const customer = request ? getCustomerById(request.customer_id) : null;
 
-    sendTelegramMessage(
+    const originalText = callbackQuery.message.text || '';
+
+    editTelegramMessage(
       settings.ClientBotToken,
       ownerChatId,
-      getMessage(MESSAGE_KEYS.REQUEST_REJECTED_OWNER)
+      callbackQuery.message.message_id,
+      originalText + '\n\n' + getMessage(MESSAGE_KEYS.OWNER_REQUEST_REJECTED_STATUS)
     );
 
     if (customer && customer.telegram_id) {

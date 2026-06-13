@@ -775,3 +775,13 @@ function createRequestOptions(requestId, session) {
     }
   }
 }
+
+function isRequestAlreadyProcessed(requestId) {
+  const request = getRequestById(requestId);
+
+  if (!request) {
+    return true;
+  }
+
+  return request.status !== 'pending';
+}

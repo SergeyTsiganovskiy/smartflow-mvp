@@ -119,3 +119,25 @@ function sendTelegramMessageWithInlineKeyboard(botToken, chatId, text, inlineKey
 
   return response.getContentText();
 }
+
+function editTelegramMessage(botToken, chatId, messageId, text) {
+  const url = `https://api.telegram.org/bot${botToken}/editMessageText`;
+
+  const payload = {
+    chat_id: String(chatId),
+    message_id: messageId,
+    text: text,
+    parse_mode: 'HTML'
+  };
+
+  const response = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  Logger.log(response.getContentText());
+
+  return response.getContentText();
+}

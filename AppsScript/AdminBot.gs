@@ -144,15 +144,3 @@ function getServices() {
 
   return result;
 }
-
-function addAuditLog(action, details) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('AuditLog');
-
-  sheet.appendRow([
-    new Date(),
-    action,
-    details
-  ]);
-}
