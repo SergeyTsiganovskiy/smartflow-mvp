@@ -42,21 +42,28 @@
 
 ---
 
-## Services
+### Services
 
-Услуги.
+service_id
+name_uk
+name_ru
+name_en
+default_duration_minutes
+base_price
+active
 
-Поля:
+Purpose:
 
-* service_id
-* name_uk
-* name_ru
-* name_en
-* min_duration
-* max_duration
-* price_from
-* price_to
-* active
+Stores default service settings.
+
+default_duration_minutes
+
+Used when no individual duration exists for the customer.
+
+base_price
+
+Default service price used when no individual customer price exists.
+
 
 ---
 
@@ -222,7 +229,7 @@ created_at
 updated_at
 
 
-### CustomerServiceDurations
+### CustomerServiceSettings
 
 customer_id
 customer_name
@@ -232,27 +239,48 @@ service_name
 provider_id
 provider_name
 duration_minutes
+price
 updated_at
 notes
 
 Purpose:
 
-Stores individual service duration for a specific customer and provider.
+Stores individual settings for a specific customer, service and provider.
 
 Examples:
 
-Анна | +380... | Окрашивание | Марина | 240
-Марина | +380... | Окрашивание | Марина | 180
+Анна | +380... | Окрашивание | Марина | 240 | 2800
+Марина | +380... | Окрашивание | Марина | 180 | 2200
 
 Notes:
 
 * customer_name, phone, service_name and provider_name are duplicated intentionally.
-* This table is maintained manually by providers.
+* The table is edited manually by providers.
 * Human readability is preferred over strict database normalization.
 
-Duration priority:
+### Appointments
 
-1. CustomerServiceDurations.duration_minutes
-2. Services.default_duration_minutes
-3. Fallback duration configured by system
+appointment_id
+request_id
+customer_id
+service_id
+provider_id
+location_id
+start_at
+end_at
+status
+calendar_event_id
+created_at
+updated_at
 
+Notes:
+
+* start_at stores confirmed appointment start datetime.
+* end_at is calculated from service duration.
+* calendar_event_id stores the related Google Calendar event ID.
+* status values include:
+
+  * confirmed
+  * cancelled
+  * completed
+  * no_show

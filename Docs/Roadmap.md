@@ -48,10 +48,40 @@
 * Inline approval buttons
 * Exact time selection
 
-## In Progress
+## v0.3
 
-* Appointment creation from approved request
-* Request approval workflow
+## Availability Engine
+
+Planned workflow
+
+Location
+↓
+Service
+↓
+Provider
+↓
+Date
+↓
+Resolve duration
+
+Duration priority:
+
+1. CustomerServiceSettings.duration_minutes
+2. Services.default_duration_minutes
+
+↓
+Read provider calendar
+↓
+Find free windows
+↓
+Generate available start times
+↓
+Show only valid slots
+
+Goal:
+
+Offer only appointment times that fit the required duration.
+
 
 ## Next
 
@@ -63,40 +93,29 @@
 * Appointment reminders
 * Availability checking
 
-## Availability Engine
+## v0.4
 
-Planned workflow:
+## Completed
 
-Location
-↓
-Service
-↓
-Provider
-↓
-Date
-↓
-Resolve service duration
+* My appointments lookup by phone
+* Phone normalization
+* Google Calendar event creation
+* Calendar event ID storage
+* Availability checks using:
 
-Priority:
+  * ProviderSchedule
+  * ProviderScheduleOverrides
+  * Appointments
+  * Google Calendar busy intervals
 
-1. CustomerServiceDurations
-2. Services.default_duration_minutes
+## Next
 
-↓
-Read provider calendar
-↓
-Find free time windows
-↓
-Generate available slots
-↓
-Show only valid appointment times to client
+* Client appointment cancellation
+* Delete or cancel Google Calendar event
+* Notify provider about cancellation
+* Reschedule appointment
+* Appointment reminders
 
-Goal:
-
-Prevent clients from selecting time slots that cannot fit the required service duration.
-
-
-## v0.3
 
 Admin Bot
 
@@ -109,8 +128,6 @@ Admin Bot
 * фильтр по мастерам
 
 ---
-
-## v0.4
 
 Напоминания
 

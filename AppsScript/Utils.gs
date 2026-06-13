@@ -126,3 +126,289 @@ function buildDateTime(dateValue, timeValue) {
   return dateString + ' ' + timeString;
 }
 
+function normalizeDateForStorage(value) {
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+
+  if (!value) {
+    return '';
+  }
+
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(value, timezone, 'yyyy-MM-dd');
+  }
+
+  const text = String(value).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return text;
+  }
+
+  let match = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (match) {
+    return (
+      match[3] + '-' +
+      String(match[2]).padStart(2, '0') + '-' +
+      String(match[1]).padStart(2, '0')
+    );
+  }
+
+  match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const first = Number(match[1]);
+    const second = Number(match[2]);
+
+    // If first number is > 12, assume DD/MM/YYYY.
+    // Otherwise assume MM/DD/YYYY.
+    if (first > 12) {
+      return (
+        match[3] + '-' +
+        String(second).padStart(2, '0') + '-' +
+        String(first).padStart(2, '0')
+      );
+    }
+
+    return (
+      match[3] + '-' +
+      String(first).padStart(2, '0') + '-' +
+      String(second).padStart(2, '0')
+    );
+  }
+
+  const parsed = new Date(text);
+
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(parsed, timezone, 'yyyy-MM-dd');
+  }
+
+  return '';
+}
+
+function normalizeTimeForStorage(value) {
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+
+  if (!value) {
+    return '';
+  }
+
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(value, timezone, 'HH:mm');
+  }
+
+  const text = String(value).trim();
+
+  let match = text.match(/^(\d{1,2})[:.](\d{2})$/);
+
+  if (match) {
+    return (
+      String(match[1]).padStart(2, '0') +
+      ':' +
+      match[2]
+    );
+  }
+
+  match = text.match(/^(\d{1,2})$/);
+
+  if (match) {
+    return String(match[1]).padStart(2, '0') + ':00';
+  }
+
+  return '';
+}
+
+function getDayOfWeekCode(dateValue) {
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+  const normalizedDate = normalizeDateForStorage(dateValue);
+
+  const date = new Date(normalizedDate + 'T12:00:00');
+
+  const dayIndex = Number(
+    Utilities.formatDate(date, timezone, 'u')
+  );
+
+  const codes = {
+    1: 'MON',
+    2: 'TUE',
+    3: 'WED',
+    4: 'THU',
+    5: 'FRI',
+    6: 'SAT',
+    7: 'SUN'
+  };
+
+  return codes[dayIndex];
+}
+
+function timeToMinutes(timeString) {
+  const parts = String(timeString).split(':');
+
+  const hours = Number(parts[0]);
+  const minutes = Number(parts[1]);
+
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return (
+    String(hours).padStart(2, '0') +
+    ':' +
+    String(minutes).padStart(2, '0')
+  );
+}
+
+function addDaysToDate(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function formatDateButton(value) {
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+
+  return Utilities.formatDate(
+    value,
+    timezone,
+    'dd.MM'
+  );
+}
+
+function parseCustomDateButton(text) {
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+  const value = String(text).trim();
+
+  const match = value.match(/^(\d{2})\.(\d{2})$/);
+
+  if (!match) {
+    return '';
+  }
+
+  const today = new Date();
+  const currentYear = Number(
+    Utilities.formatDate(today, timezone, 'yyyy')
+  );
+
+  const day = match[1];
+  const month = match[2];
+
+  let dateString = currentYear + '-' + month + '-' + day;
+
+  let parsed = new Date(dateString + 'T12:00:00');
+
+  const todayStorage = normalizeDateForStorage(today);
+  let parsedStorage = normalizeDateForStorage(parsed);
+
+  if (parsedStorage < todayStorage) {
+    dateString = (currentYear + 1) + '-' + month + '-' + day;
+    parsed = new Date(dateString + 'T12:00:00');
+    parsedStorage = normalizeDateForStorage(parsed);
+  }
+
+  return parsedStorage;
+}
+
+function extractTimeFromDateTime(value) {
+  if (!value) {
+    return '';
+  }
+
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(
+      value,
+      getSettings().TimeZone || 'Europe/Kyiv',
+      'HH:mm'
+    );
+  }
+
+  const text = String(value).trim();
+  const match = text.match(/\b\d{1,2}:\d{2}\b/);
+
+  if (match) {
+    return match[0].padStart(5, '0');
+  }
+
+  return '';
+}
+
+function addMinutesToDateTime(dateTimeValue, minutesToAdd) {
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+
+  const text = String(dateTimeValue).trim();
+
+  const match = text.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})$/);
+
+  if (!match) {
+    return '';
+  }
+
+  const datePart = match[1];
+  const timePart = match[2];
+
+  const timeMinutes = timeToMinutes(timePart);
+  const resultMinutes = timeMinutes + Number(minutesToAdd);
+
+  const resultDate = new Date(datePart + 'T12:00:00');
+  const extraDays = Math.floor(resultMinutes / (24 * 60));
+  const finalMinutes = resultMinutes % (24 * 60);
+
+  resultDate.setDate(resultDate.getDate() + extraDays);
+
+  const finalDate = Utilities.formatDate(
+    resultDate,
+    timezone,
+    'yyyy-MM-dd'
+  );
+
+  return finalDate + ' ' + minutesToTime(finalMinutes);
+}
+
+function parseDateTimeForCalendar(value) {
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return value;
+  }
+
+  const text = String(value).trim();
+
+  const match = text.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})$/);
+
+  if (!match) {
+    throw new Error('Invalid datetime: ' + text);
+  }
+
+  return new Date(match[1] + 'T' + match[2] + ':00');
+}
+
+function normalizePhone(phone) {
+  return String(phone || '').replace(/\D/g, '');
+}
+
+function getPhoneSearchKey(phone) {
+  const normalized = normalizePhone(phone);
+
+  if (normalized.length >= 9) {
+    return normalized.slice(-9);
+  }
+
+  return normalized;
+}
+
+function isValidPhone(phone) {
+  const normalized = normalizePhone(phone);
+  return normalized.length >= 7;
+}
+
+function formatDateTimeForDisplay(value) {
+  if (!value) {
+    return '';
+  }
+
+  const date = formatDateForDisplay(value);
+  const time = formatTimeForDisplay(value);
+
+  if (date && time) {
+    return date + ' ' + time;
+  }
+
+  return String(value);
+}

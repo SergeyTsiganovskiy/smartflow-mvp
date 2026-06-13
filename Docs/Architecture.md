@@ -193,3 +193,44 @@ Reason:
 * one Telegram account may create appointments for multiple family members
 * future integrations may not provide Telegram ID
 
+
+Customer Service Settings Resolution
+
+Duration priority:
+
+1. CustomerServiceSettings.duration_minutes
+2. Services.default_duration_minutes
+
+Price priority:
+
+1. CustomerServiceSettings.price
+2. Services.base_price
+
+## My Appointments
+
+The client can check active appointments from the main menu.
+
+Workflow:
+
+My appointments
+↓
+Enter phone number
+↓
+Normalize phone number
+↓
+Find customer by phone
+↓
+Find confirmed appointments
+↓
+Show active appointments
+
+Phone lookup:
+
+* telegram_id is not used as the primary lookup key.
+* phone is used because appointments may be created manually or through other channels.
+* Phone numbers are normalized before lookup.
+* Search is based on the last significant digits of the phone number.
+
+If no appointments are found, the bot keeps waiting for another phone number so the client can retry.
+
+

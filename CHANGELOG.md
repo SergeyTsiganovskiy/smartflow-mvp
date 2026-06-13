@@ -345,6 +345,36 @@ Planned:
 * Availability Engine architecture prepared
 
 
+## [0.5.0] - 2026-06-13
+
+### Added
+
+* My appointments feature
+* Appointment lookup by phone number
+* Phone number normalization
+* Support for searching appointments by last phone digits
+* Google Calendar event creation after appointment confirmation
+* Google Calendar event ID storage in Appointments
+* Google Calendar busy time support in availability checks
+
+### Changed
+
+* Customer phone is now normalized for lookup
+* My appointments no longer depends on telegram_id
+* Appointment availability now considers:
+
+  * provider schedule
+  * provider schedule overrides
+  * confirmed appointments
+  * Google Calendar busy events
+
+### Fixed
+
+* Appointment datetime formatting in client-facing messages
+* Phone lookup for different phone formats
+* Retry flow when no appointments are found
+
+
 ---
 
 # [1.0.0] - Vision

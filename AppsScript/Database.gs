@@ -642,7 +642,16 @@ function createAppointmentFromRequest(request, option) {
     option.preferred_time
   );
 
-  const endAt = '';
+  const durationMinutes = getServiceDurationMinutes(
+    request.customer_id,
+    request.service_id,
+    request.provider_id
+  );
+
+  const endAt = addMinutesToDateTime(
+    startAt,
+    durationMinutes
+  );
 
   const newRow = new Array(headers.length).fill('');
 
@@ -662,25 +671,6 @@ function createAppointmentFromRequest(request, option) {
   sheet.appendRow(newRow);
 
   return appointmentId;
-}
-
-function updateRequestStatus(requestId, status) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Requests');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const requestIdIndex = headers.indexOf('request_id');
-  const statusIndex = headers.indexOf('status');
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][requestIdIndex]) === String(requestId)) {
-      sheet.getRange(i + 1, statusIndex + 1).setValue(status);
-      return;
-    }
-  }
 }
 
 function updateRequestOptionsAfterApproval(requestId, approvedPriority) {
@@ -785,3 +775,481 @@ function isRequestAlreadyProcessed(requestId) {
 
   return request.status !== 'pending';
 }
+
+function getServiceDurationMinutes(
+  customerId,
+  serviceId,
+  providerId
+) {
+  const settingsSheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('CustomerServiceSettings');
+
+  const settingsRows =
+    settingsSheet.getDataRange().getValues();
+
+  const settingsHeaders = settingsRows[0];
+
+  const customerIdIndex =
+    settingsHeaders.indexOf('customer_id');
+
+  const serviceIdIndex =
+    settingsHeaders.indexOf('service_id');
+
+  const providerIdIndex =
+    settingsHeaders.indexOf('provider_id');
+
+  const durationIndex =
+    settingsHeaders.indexOf('duration_minutes');
+
+  for (let i = 1; i < settingsRows.length; i++) {
+
+    if (
+      String(settingsRows[i][customerIdIndex]) === String(customerId) &&
+      String(settingsRows[i][serviceIdIndex]) === String(serviceId) &&
+      String(settingsRows[i][providerIdIndex]) === String(providerId)
+    ) {
+
+      const duration =
+        Number(settingsRows[i][durationIndex]);
+
+      if (duration > 0) {
+        return duration;
+      }
+    }
+  }
+
+  return getDefaultServiceDurationMinutes(
+    serviceId
+  );
+}
+
+function getDefaultServiceDurationMinutes(
+  serviceId
+) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Services');
+
+  const rows =
+    sheet.getDataRange().getValues();
+
+  const headers = rows[0];
+
+  const serviceIdIndex =
+    headers.indexOf('service_id');
+
+  const durationIndex =
+    headers.indexOf('default_duration_minutes');
+
+  for (let i = 1; i < rows.length; i++) {
+
+    if (
+      String(rows[i][serviceIdIndex]) === String(serviceId)
+    ) {
+
+      return Number(
+        rows[i][durationIndex]
+      );
+    }
+  }
+
+  return 60;
+}
+
+function getProviderScheduleForDate(providerId, dateValue) {
+  const normalizedDate = normalizeDateForStorage(dateValue);
+
+  const override =
+    getProviderScheduleOverrideForDate(providerId, normalizedDate);
+
+  if (override) {
+    return override;
+  }
+
+  const dayOfWeek =
+    getDayOfWeekCode(normalizedDate);
+
+  return getProviderWeeklySchedule(
+    providerId,
+    dayOfWeek
+  );
+}
+
+function getProviderScheduleOverrideForDate(providerId, normalizedDate) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderScheduleOverrides');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const providerIdIndex = headers.indexOf('provider_id');
+  const dateIndex = headers.indexOf('date');
+  const startIndex = headers.indexOf('start_time');
+  const endIndex = headers.indexOf('end_time');
+  const workingIndex = headers.indexOf('is_working');
+
+  for (let i = 1; i < rows.length; i++) {
+    const rowDate = normalizeDateForStorage(rows[i][dateIndex]);
+
+    if (
+      String(rows[i][providerIdIndex]) === String(providerId) &&
+      rowDate === normalizedDate
+    ) {
+      return {
+        isWorking: String(rows[i][workingIndex]).toUpperCase() === 'TRUE',
+        startTime: normalizeTimeForStorage(rows[i][startIndex]),
+        endTime: normalizeTimeForStorage(rows[i][endIndex])
+      };
+    }
+  }
+
+  return null;
+}
+
+function getProviderWeeklySchedule(providerId, dayOfWeek) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderSchedule');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const providerIdIndex = headers.indexOf('provider_id');
+  const dayIndex = headers.indexOf('day_of_week');
+  const startIndex = headers.indexOf('start_time');
+  const endIndex = headers.indexOf('end_time');
+  const workingIndex = headers.indexOf('is_working');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      String(rows[i][providerIdIndex]) === String(providerId) &&
+      String(rows[i][dayIndex]).toUpperCase() === dayOfWeek
+    ) {
+      return {
+        isWorking: String(rows[i][workingIndex]).toUpperCase() === 'TRUE',
+        startTime: normalizeTimeForStorage(rows[i][startIndex]),
+        endTime: normalizeTimeForStorage(rows[i][endIndex])
+      };
+    }
+  }
+
+  return {
+    isWorking: false,
+    startTime: '',
+    endTime: ''
+  };
+}
+
+function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
+  const schedule = getProviderScheduleForDate(providerId, dateValue);
+
+  if (!schedule || !schedule.isWorking) {
+    return [];
+  }
+
+  if (!schedule.startTime || !schedule.endTime) {
+    return [];
+  }
+
+  const startMinutes = timeToMinutes(schedule.startTime);
+  const endMinutes = timeToMinutes(schedule.endTime);
+
+  const appointments = getProviderAppointmentsForDate(
+    providerId,
+    dateValue
+  );
+
+  const calendarBusy = getCalendarBusyIntervals(
+    providerId,
+    dateValue
+  );
+
+  const busyIntervals = appointments
+    .concat(calendarBusy)
+    .filter(item => item.startTime && item.endTime)
+    .map(item => ({
+      start: timeToMinutes(item.startTime),
+      end: timeToMinutes(item.endTime)
+    }));
+
+  const stepMinutes = 30;
+  const result = [];
+
+  for (
+    let current = startMinutes;
+    current + Number(durationMinutes) <= endMinutes;
+    current += stepMinutes
+  ) {
+    const slotStart = current;
+    const slotEnd = current + Number(durationMinutes);
+
+    const hasConflict = busyIntervals.some(interval => {
+      return slotStart < interval.end && slotEnd > interval.start;
+    });
+
+    if (!hasConflict) {
+      result.push(minutesToTime(current));
+    }
+  }
+
+  return result;
+}
+
+function getProviderAppointmentsForDate(providerId, dateValue) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const providerIdIndex = headers.indexOf('provider_id');
+  const startAtIndex = headers.indexOf('start_at');
+  const endAtIndex = headers.indexOf('end_at');
+  const statusIndex = headers.indexOf('status');
+
+  const targetDate = normalizeDateForStorage(dateValue);
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const provider = rows[i][providerIdIndex];
+    const status = String(rows[i][statusIndex]).toLowerCase();
+
+    if (String(provider) !== String(providerId)) {
+      continue;
+    }
+
+    if (status !== 'confirmed') {
+      continue;
+    }
+
+    const startAt = rows[i][startAtIndex];
+    const endAt = rows[i][endAtIndex];
+
+    const appointmentDate = normalizeDateForStorage(startAt);
+
+    if (appointmentDate !== targetDate) {
+      continue;
+    }
+
+    result.push({
+      startTime: extractTimeFromDateTime(startAt),
+      endTime: extractTimeFromDateTime(endAt)
+    });
+  }
+
+  return result;
+}
+
+function updateRequestStatus(requestId, status) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Requests');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const requestIdIndex = headers.indexOf('request_id');
+  const statusIndex = headers.indexOf('status');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][requestIdIndex]) === String(requestId)) {
+      sheet
+        .getRange(i + 1, statusIndex + 1)
+        .setValue(status);
+
+      return;
+    }
+  }
+}
+
+function appointmentExistsForRequest(requestId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const requestIdIndex = headers.indexOf('request_id');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][requestIdIndex]) === String(requestId)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getProviderCalendarId(providerId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Providers');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const providerIdIndex = headers.indexOf('provider_id');
+  const calendarIdIndex = headers.indexOf('calendar_id');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][providerIdIndex]) === String(providerId)) {
+      return String(rows[i][calendarIdIndex] || '').trim();
+    }
+  }
+
+  return '';
+}
+
+function getAppointmentById(appointmentId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const appointmentIdIndex = headers.indexOf('appointment_id');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
+      const result = {};
+
+      headers.forEach((header, index) => {
+        result[header] = rows[i][index];
+      });
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
+function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const appointmentIdIndex = headers.indexOf('appointment_id');
+  const calendarEventIdIndex = headers.indexOf('calendar_event_id');
+  const updatedAtIndex = headers.indexOf('updated_at');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
+      sheet
+        .getRange(i + 1, calendarEventIdIndex + 1)
+        .setValue(calendarEventId);
+
+      if (updatedAtIndex !== -1) {
+        sheet
+          .getRange(i + 1, updatedAtIndex + 1)
+          .setValue(new Date());
+      }
+
+      return;
+    }
+  }
+}
+
+function getActiveAppointmentsByPhone(phone) {
+  const searchPhone = getPhoneSearchKey(phone);
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Customers');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const customerIdIndex = headers.indexOf('customer_id');
+  const phoneIndex = headers.indexOf('phone');
+
+  const customerIds = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const rowPhone = getPhoneSearchKey(rows[i][phoneIndex]);
+
+    if (
+      rowPhone === searchPhone ||
+      rowPhone.endsWith(searchPhone) ||
+      searchPhone.endsWith(rowPhone)
+    ) {
+      customerIds.push(rows[i][customerIdIndex]);
+    }
+  }
+
+  if (customerIds.length === 0) {
+    return [];
+  }
+
+  return getAppointmentsByCustomerIds(customerIds);
+}
+
+function getAppointmentsByCustomerIds(customerIds) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const customerIdIndex = headers.indexOf('customer_id');
+  const statusIndex = headers.indexOf('status');
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const customerId = rows[i][customerIdIndex];
+    const status = String(rows[i][statusIndex]).toLowerCase();
+
+    if (
+      customerIds.indexOf(customerId) !== -1 &&
+      status === 'confirmed'
+    ) {
+      const item = {};
+
+      headers.forEach((header, index) => {
+        item[header] = rows[i][index];
+      });
+
+      result.push(item);
+    }
+  }
+
+  return result;
+}
+
+function getActiveAppointmentsByPhone(phone) {
+  const searchPhoneKey = getPhoneSearchKey(phone);
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Customers');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const customerIdIndex = headers.indexOf('customer_id');
+  const phoneIndex = headers.indexOf('phone');
+
+  const customerIds = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const rowPhoneKey = getPhoneSearchKey(rows[i][phoneIndex]);
+
+    if (rowPhoneKey === searchPhoneKey) {
+      customerIds.push(rows[i][customerIdIndex]);
+    }
+  }
+
+  return getAppointmentsByCustomerIds(customerIds);
+}
+
