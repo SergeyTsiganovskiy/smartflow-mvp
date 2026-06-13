@@ -328,6 +328,22 @@ Planned:
 - Original owner message updated after approval/rejection
 - Duplicate approval protection
 
+## [0.4.0] - 2026-06-12
+
+### Added
+
+* CustomerServiceDurations table
+* Individual service duration per customer
+* Human-friendly duration management for providers
+* Provider calendar preparation (calendar_id)
+
+### Changed
+
+* Duration model redesigned
+* Service duration can now be overridden for a specific customer
+* Customer duration records include readable names and phone numbers
+* Availability Engine architecture prepared
+
 
 ---
 

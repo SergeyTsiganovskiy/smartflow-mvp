@@ -221,3 +221,38 @@ calendar_event_id
 created_at
 updated_at
 
+
+### CustomerServiceDurations
+
+customer_id
+customer_name
+phone
+service_id
+service_name
+provider_id
+provider_name
+duration_minutes
+updated_at
+notes
+
+Purpose:
+
+Stores individual service duration for a specific customer and provider.
+
+Examples:
+
+Анна | +380... | Окрашивание | Марина | 240
+Марина | +380... | Окрашивание | Марина | 180
+
+Notes:
+
+* customer_name, phone, service_name and provider_name are duplicated intentionally.
+* This table is maintained manually by providers.
+* Human readability is preferred over strict database normalization.
+
+Duration priority:
+
+1. CustomerServiceDurations.duration_minutes
+2. Services.default_duration_minutes
+3. Fallback duration configured by system
+

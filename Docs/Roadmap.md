@@ -63,6 +63,38 @@
 * Appointment reminders
 * Availability checking
 
+## Availability Engine
+
+Planned workflow:
+
+Location
+↓
+Service
+↓
+Provider
+↓
+Date
+↓
+Resolve service duration
+
+Priority:
+
+1. CustomerServiceDurations
+2. Services.default_duration_minutes
+
+↓
+Read provider calendar
+↓
+Find free time windows
+↓
+Generate available slots
+↓
+Show only valid appointment times to client
+
+Goal:
+
+Prevent clients from selecting time slots that cannot fit the required service duration.
+
 
 ## v0.3
 
