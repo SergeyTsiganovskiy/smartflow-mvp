@@ -81,3 +81,30 @@ function createCalendarEventForAppointment(appointmentId) {
 
   return event.getId();
 }
+
+function deleteCalendarEvent(appointment) {
+  if (
+    !appointment ||
+    !appointment.calendar_event_id
+  ) {
+    return;
+  }
+
+  try {
+    const calendar = CalendarApp.getDefaultCalendar();
+
+    const event = calendar.getEventById(
+      appointment.calendar_event_id
+    );
+
+    if (event) {
+      event.deleteEvent();
+    }
+  } catch (error) {
+    addAuditLog(
+      'DELETE_CALENDAR_EVENT_ERROR',
+      error.toString()
+    );
+  }
+}
+

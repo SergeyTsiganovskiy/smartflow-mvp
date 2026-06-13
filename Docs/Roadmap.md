@@ -1,219 +1,88 @@
-# SmartFlow Roadmap
-
-## v0.1-alpha (текущая версия)
-
-Реализовано:
-
-* Webhook Telegram
-* Google Apps Script Backend
-* Главное меню
-* Выбор филиала
-* Выбор услуги
-* UserStates
-* UserSessions
-* AuditLog
-
----
-
-## v0.2
-
-Запись клиента
-
-Реализовать:
-
-Выбор услуги
-↓
-Выбор мастера
-↓
-До 3 вариантов времени
-↓
-Имя клиента
-↓
-Телефон клиента
-↓
-Создание заявки
+# SmartFlow Beauty Demo Roadmap
 
 ## Completed
 
-* Client bot MVP
-* Localization framework
-* Multi-language messages
-* Multi-language locations
-* Multi-language providers
-* Request creation
-* Request options
-* Customer creation
-* Customer statuses
-* Owner notifications
-* Inline approval buttons
-* Exact time selection
+### Booking
 
-## v0.3
+- Locations
+- Services
+- Providers
+- Date selection
+- Time selection
+- Up to 3 preferred options
+- Customer details
+- Request creation
 
-## Availability Engine
+### Owner Approval
 
-Planned workflow
+- Approve request
+- Reject request
+- Duplicate protection
 
-Location
-↓
-Service
-↓
-Provider
-↓
-Date
-↓
-Resolve duration
+### Scheduling
 
-Duration priority:
+- Provider schedules
+- Appointment duration support
+- Busy slot detection
+- Same-day slot filtering
+- 60-day booking window
 
-1. CustomerServiceSettings.duration_minutes
-2. Services.default_duration_minutes
+### Customer Management
 
-↓
-Read provider calendar
-↓
-Find free windows
-↓
-Generate available start times
-↓
-Show only valid slots
+- Customer creation
+- Phone normalization
+- Customer status updates
 
-Goal:
+### Calendar
 
-Offer only appointment times that fit the required duration.
+- Appointment creation
+- Shared salon calendar
+- Calendar event deletion on cancellation
 
+### My Appointments
+
+- Search by phone
+- Active appointment listing
+
+### Cancellation
+
+- Cancel appointment
+- Confirmation dialog
+- Calendar cleanup
+- Customer notification
+- Owner notification
+
+---
 
 ## Next
 
-* Google Calendar integration
-* Client confirmation details
-* Request rejection workflow
-* Admin bot
-* Customer visit history
-* Appointment reminders
-* Availability checking
+### Rescheduling
 
-## v0.4
+Client:
 
-## Completed
+- Reschedule appointment
+- New date selection
+- New time selection
+- Availability validation
+- Calendar update
+- Notifications
 
-* My appointments lookup by phone
-* Phone normalization
-* Google Calendar event creation
-* Calendar event ID storage
-* Availability checks using:
+### Customer History
 
-  * ProviderSchedule
-  * ProviderScheduleOverrides
-  * Appointments
-  * Google Calendar busy intervals
+- Previous appointments
+- Last visit
+- Statistics
 
-## Next
+### Reminders
 
-* Client appointment cancellation
-* Delete or cancel Google Calendar event
-* Notify provider about cancellation
-* Reschedule appointment
-* Appointment reminders
+- 24h reminder
+- Same day reminder
 
+### Multi-location Support
 
-Admin Bot
+- Separate calendars
+- Branch-specific notifications
 
-Функции:
+### Multi-language Improvements
 
-* новые заявки
-* подтверждение записи
-* отмена записи
-* список заявок
-* фильтр по мастерам
-
----
-
-Напоминания
-
-Клиенту:
-
-* за день
-* за 2 часа
-
-Возможность отключения каждого типа.
-
----
-
-## v0.5
-
-Google Calendar
-
-Для каждого мастера:
-
-* создание событий
-* отображение занятости
-* синхронизация записей
-
----
-
-## v0.6
-
-Многофилиальность
-
-Поддержка:
-
-* нескольких филиалов
-* нескольких мастеров
-* отдельных графиков
-
----
-
-## v0.7
-
-Website Booking
-
-Сайт-визитка:
-
-* услуги
-* портфолио
-* запись
-* переход в Telegram
-
----
-
-## v0.8
-
-Instagram Integration
-
-Поддержка:
-
-* лидов из Instagram
-* перехода в Telegram
-* автоматического создания заявок
-
----
-
-## v0.9
-
-OLX Integration
-
-Поддержка:
-
-* входящих сообщений
-* карточек товаров
-* уведомлений
-
----
-
-## v1.0
-
-SmartFlow Platform
-
-Универсальное решение для:
-
-* салонов красоты
-* массажистов
-* ремонта техники
-* мастерских
-* частных специалистов
-* OLX-магазинов
-
-Статус цели:
-
-Первая коммерческая версия.
+- Dynamic language switching

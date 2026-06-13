@@ -141,3 +141,37 @@ function editTelegramMessage(botToken, chatId, messageId, text) {
 
   return response.getContentText();
 }
+
+function editTelegramMessageWithInlineKeyboard(
+  botToken,
+  chatId,
+  messageId,
+  text,
+  inlineKeyboard
+) {
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/editMessageText';
+
+  const payload = {
+    chat_id: String(chatId),
+    message_id: messageId,
+    text: text,
+    parse_mode: 'HTML',
+    reply_markup: JSON.stringify({
+      inline_keyboard: inlineKeyboard
+    })
+  };
+
+  const response = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  Logger.log(response.getContentText());
+
+  return response.getContentText();
+}

@@ -1,236 +1,123 @@
-# SmartFlow Architecture
+# SmartFlow Beauty Demo Architecture
 
-## Концепция
+## Components
 
-SmartFlow — универсальная система автоматизации малого бизнеса.
+### Client Telegram Bot
 
-Основная идея:
+Handles:
 
-Telegram является единым окном управления бизнесом.
+- booking flow
+- appointment lookup
+- appointment cancellation
+- customer communication
 
-Клиенты могут обращаться через:
+Main scenarios:
 
-* Telegram
-* Instagram
-* Сайт
-* OLX
-* Prom
-* другие источники
-
-Но все заявки приводятся к единой внутренней модели данных.
-
----
-
-## Бизнес-модель
-
-SmartFlow продаётся как услуга настройки готового решения.
-
-Клиент получает:
-
-* собственного Telegram-бота
-* собственную Google таблицу
-* собственный Apps Script
-* полный контроль над данными
-
-Исполнитель предоставляет:
-
-* шаблон SmartFlow
-* настройку
-* поддержку
-* доработки
+- Book appointment
+- My Appointments
+- Cancel appointment
+- Contacts
 
 ---
 
-## Архитектура установки
+### Owner Telegram Bot
 
-Один клиент:
+Handles:
 
-Telegram Bot
-↓
-Google Apps Script
-↓
-Google Sheets
-
-Каждый клиент имеет собственную установку.
+- incoming booking requests
+- request approval
+- request rejection
+- cancellation notifications
 
 ---
 
-## Принцип хранения данных
+### Google Sheets Database
 
-Все данные принадлежат клиенту.
+Acts as primary database.
 
-Исполнитель не хранит:
+Tables:
 
-* клиентскую базу
-* записи
-* телефоны
-* расписания
-
-Всё находится в Google аккаунте клиента.
-
----
-
-## MVP-философия
-
-Сначала максимально простая система.
-
-Клиент предлагает до 3 вариантов времени.
-
-Мастер выбирает подходящий вариант вручную.
-
-Никакой сложной автоматической логики на первом этапе.
+- Settings
+- Messages
+- Locations
+- Services
+- Providers
+- ProviderSchedules
+- Customers
+- Requests
+- RequestOptions
+- Appointments
+- UserSessions
+- AuditLog
 
 ---
 
-## Масштабирование
+### Google Calendar
 
-После MVP планируется:
+Single shared salon calendar.
 
-* Admin Bot
-* Google Calendar
-* Instagram Integration
-* OLX Integration
-* Website Booking
-* AI Assistant
-* Analytics Dashboard
+Purpose:
 
-Текущая версия:
+- visual schedule
+- staff visibility
+- appointment overview
 
-SmartFlow Beauty MVP v0.1-alpha
+Availability is calculated from Appointments table, not Calendar events.
 
-## Localization Rule
+All providers currently use:
 
-All user-facing text must be stored in Messages sheet.
+calendar_id = primary
 
-Apps Script code must never contain business-facing text.
+---
 
-Code may only use message keys.
+## Booking Flow
 
-Example:
+Client
+→ Location
+→ Service
+→ Provider
+→ Date
+→ Time
+→ Name
+→ Phone
+→ Request
 
-GOOD:
-getMessage('SELECT_PROVIDER')
+Owner
+→ Approve
 
-BAD:
-'Выберите мастера'
+System
+→ Appointment
+→ Calendar Event
+→ Customer Notification
 
-## State Update Rule
+---
 
-When moving user to a new step:
+## Appointment Lookup
 
-1. Save state
-2. Send message
+Client
+→ My Appointments
+→ Phone Number
+→ Active Appointments
 
-GOOD:
+Search is performed by normalized phone number.
 
-setUserState(...)
-sendTelegramMessage(...)
+---
 
-BAD:
+## Cancellation Flow
 
-sendTelegramMessage(...)
-setUserState(...)
+Client
+→ My Appointments
+→ Cancel
 
-## Customer Identification
+Confirmation:
 
-Primary customer identifier:
+Cancel
+→ Yes
+→ Appointment.status = cancelled
+→ Calendar Event deleted
+→ Customer notification
+→ Owner notification
 
-* phone
-
-Secondary identifiers:
-
-* telegram_id
-
-Reason:
-
-* One Telegram account may be used to create appointments for multiple family members.
-* Future integrations (website, Instagram, manual entry, OLX, etc.) may not have Telegram IDs.
-* Phone number is the universal identifier across channels.
-
-Customer matching logic:
-
-1. Search by phone.
-2. If customer exists, update profile.
-3. If customer does not exist, create customer.
-
-## Customer Lifecycle
-
-Client creates request
-↓
-Customer created with status = lead
-↓
-Request created with status = pending
-↓
-Owner reviews request
-↓
-Owner approves selected option
-↓
-Appointment created
-↓
-Customer status = confirmed
-↓
-Request status = confirmed
-
-Entities:
-
-Customers
-Requests
-RequestOptions
-Appointments
-
-Customer identity:
-
-Primary key:
-
-* phone
-
-Secondary identifiers:
-
-* telegram_id
-
-Reason:
-
-* one Telegram account may create appointments for multiple family members
-* future integrations may not provide Telegram ID
-
-
-Customer Service Settings Resolution
-
-Duration priority:
-
-1. CustomerServiceSettings.duration_minutes
-2. Services.default_duration_minutes
-
-Price priority:
-
-1. CustomerServiceSettings.price
-2. Services.base_price
-
-## My Appointments
-
-The client can check active appointments from the main menu.
-
-Workflow:
-
-My appointments
-↓
-Enter phone number
-↓
-Normalize phone number
-↓
-Find customer by phone
-↓
-Find confirmed appointments
-↓
-Show active appointments
-
-Phone lookup:
-
-* telegram_id is not used as the primary lookup key.
-* phone is used because appointments may be created manually or through other channels.
-* Phone numbers are normalized before lookup.
-* Search is based on the last significant digits of the phone number.
-
-If no appointments are found, the bot keeps waiting for another phone number so the client can retry.
-
-
+Cancel
+→ No
+→ Appointment remains active

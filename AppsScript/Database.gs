@@ -1110,31 +1110,6 @@ function getProviderCalendarId(providerId) {
   return '';
 }
 
-function getAppointmentById(appointmentId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const appointmentIdIndex = headers.indexOf('appointment_id');
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
-      const result = {};
-
-      headers.forEach((header, index) => {
-        result[header] = rows[i][index];
-      });
-
-      return result;
-    }
-  }
-
-  return null;
-}
-
 function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
@@ -1257,4 +1232,59 @@ function getActiveAppointmentsByPhone(phone) {
 
   return getAppointmentsByCustomerIds(customerIds);
 }
+
+function updateAppointmentStatus(appointmentId, status) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const appointmentIdIndex = headers.indexOf('appointment_id');
+  const statusIndex = headers.indexOf('status');
+  const updatedAtIndex = headers.indexOf('updated_at');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
+      sheet
+        .getRange(i + 1, statusIndex + 1)
+        .setValue(status);
+
+      if (updatedAtIndex !== -1) {
+        sheet
+          .getRange(i + 1, updatedAtIndex + 1)
+          .setValue(new Date());
+      }
+
+      return;
+    }
+  }
+}
+
+function getAppointmentById(appointmentId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const appointmentIdIndex = headers.indexOf('appointment_id');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
+      const result = {};
+
+      headers.forEach(function(header, index) {
+        result[header] = rows[i][index];
+      });
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
 

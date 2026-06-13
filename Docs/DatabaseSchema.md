@@ -1,192 +1,8 @@
-# SmartFlow Database Schema
-
-## Settings
-
-Настройки системы.
-
-Поля:
-
-* ClientBotToken
-* AdminBotToken
-* Language
-* TimeZone
-* OwnerTelegramId
-* ClientWebAppUrl
-
----
-
-## Messages
-
-Локализация интерфейса.
-
-Колонки:
-
-* key
-* uk
-* ru
-* en
-
----
-
-## Locations
-
-Филиалы.
-
-Поля:
-
-* location_id
-* name
-* address
-* phone
-* active
-
----
-
-### Services
-
-service_id
-name_uk
-name_ru
-name_en
-default_duration_minutes
-base_price
-active
-
-Purpose:
-
-Stores default service settings.
-
-default_duration_minutes
-
-Used when no individual duration exists for the customer.
-
-base_price
-
-Default service price used when no individual customer price exists.
-
-
----
-
-## Providers
-
-Мастера.
-
-Планируемая структура:
-
-* provider_id
-* location_id
-* name
-* phone
-* telegram_id
-* calendar_id
-* active
-
----
+# Database Schema
 
 ## Customers
 
-Клиенты.
-
-Планируемая структура:
-
-* customer_id
-* telegram_id
-* full_name
-* phone
-* language
-* created_at
-
----
-
-## Requests
-
-Заявки.
-
-Планируемая структура:
-
-* request_id
-* customer_id
-* location_id
-* service_id
-* provider_id
-* status
-* created_at
-
----
-
-## RequestOptions
-
-Варианты времени.
-
-Поля:
-
-* option_id
-* request_id
-* datetime
-* priority
-
-priority:
-
-1 = предпочтительный вариант
-
-0 = дополнительный вариант
-
----
-
-## Appointments
-
-Подтверждённые записи.
-
-Поля:
-
-* appointment_id
-* request_id
-* provider_id
-* start_datetime
-* end_datetime
-* status
-
----
-
-## UserStates
-
-Текущее состояние диалога.
-
-Поля:
-
-* telegram_id
-* state
-* updated_at
-
----
-
-## UserSessions
-
-Временные данные мастера записи.
-
-Поля:
-
-* telegram_id
-* location_id
-* service_id
-* provider_id
-* option_count
-* updated_at
-
----
-
-## AuditLog
-
-Технический журнал.
-
-Поля:
-
-* timestamp
-* action
-* details
-
-### Customers
-
+```text
 customer_id
 telegram_id
 name
@@ -195,16 +11,25 @@ language
 created_at
 updated_at
 last_visit_at
-notes
 status
+notes
+```
 
-Status values:
+## Requests
 
-lead
-confirmed
+```text
+request_id
+customer_id
+service_id
+provider_id
+location_id
+status
+created_at
+```
 
-### RequestOptions
+## RequestOptions
 
+```text
 option_id
 request_id
 preferred_date
@@ -212,9 +37,11 @@ preferred_time
 priority
 status
 created_at
+```
 
-### Appointments
+## Appointments
 
+```text
 appointment_id
 request_id
 customer_id
@@ -227,60 +54,54 @@ status
 calendar_event_id
 created_at
 updated_at
+```
 
+## UserSessions
 
-### CustomerServiceSettings
+```text
+telegram_id
+location_id
+service_id
+provider_id
+option_count
 
-customer_id
+current_option_date
+current_option_time
+
+option1_date
+option1_time
+
+option2_date
+option2_time
+
+option3_date
+option3_time
+
 customer_name
-phone
-service_id
-service_name
-provider_id
-provider_name
-duration_minutes
-price
+customer_phone
+
 updated_at
-notes
+```
 
-Purpose:
+## Appointment Statuses
 
-Stores individual settings for a specific customer, service and provider.
+```text
+confirmed
+cancelled
+completed
+```
 
-Examples:
+## Request Statuses
 
-Анна | +380... | Окрашивание | Марина | 240 | 2800
-Марина | +380... | Окрашивание | Марина | 180 | 2200
+```text
+pending
+confirmed
+rejected
+```
 
-Notes:
+## Customer Statuses
 
-* customer_name, phone, service_name and provider_name are duplicated intentionally.
-* The table is edited manually by providers.
-* Human readability is preferred over strict database normalization.
-
-### Appointments
-
-appointment_id
-request_id
-customer_id
-service_id
-provider_id
-location_id
-start_at
-end_at
-status
-calendar_event_id
-created_at
-updated_at
-
-Notes:
-
-* start_at stores confirmed appointment start datetime.
-* end_at is calculated from service duration.
-* calendar_event_id stores the related Google Calendar event ID.
-* status values include:
-
-  * confirmed
-  * cancelled
-  * completed
-  * no_show
+```text
+lead
+confirmed
+```
