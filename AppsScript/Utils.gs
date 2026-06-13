@@ -94,8 +94,7 @@ function isValidTimeOption(value) {
 }
 
 function formatTimeForDisplay(value) {
-  const settings = getSettings();
-  const timezone = settings.TimeZone || 'Europe/Kyiv';
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
 
   if (!value) {
     return '';
@@ -110,7 +109,7 @@ function formatTimeForDisplay(value) {
   const match = stringValue.match(/\b\d{1,2}:\d{2}\b/);
 
   if (match) {
-    return match[0];
+    return match[0].padStart(5, '0');
   }
 
   return stringValue;
@@ -380,7 +379,18 @@ function parseDateTimeForCalendar(value) {
 }
 
 function normalizePhone(phone) {
-  return String(phone || '').replace(/\D/g, '');
+  const digits = String(phone || '').replace(/\D/g, '');
+
+  if (digits.length === 9) {
+    return '0' + digits;
+  }
+
+  return digits;
+}
+
+function isValidPhone(phone) {
+  const normalized = normalizePhone(phone);
+  return normalized.length >= 7;
 }
 
 function getPhoneSearchKey(phone) {
@@ -391,11 +401,6 @@ function getPhoneSearchKey(phone) {
   }
 
   return normalized;
-}
-
-function isValidPhone(phone) {
-  const normalized = normalizePhone(phone);
-  return normalized.length >= 7;
 }
 
 function formatDateTimeForDisplay(value) {
@@ -411,4 +416,37 @@ function formatDateTimeForDisplay(value) {
   }
 
   return String(value);
+}
+
+function isSameDate(dateValue1, dateValue2) {
+  return normalizeDateForStorage(dateValue1) === normalizeDateForStorage(dateValue2);
+}
+
+function getCurrentTimeMinutes() {
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+  const now = new Date();
+
+  const currentTime = Utilities.formatDate(
+    now,
+    timezone,
+    'HH:mm'
+  );
+
+  return timeToMinutes(currentTime);
+}
+
+function buildDateTime(dateValue, timeValue) {
+  const dateString = normalizeDateForStorage(dateValue);
+  const timeString = formatTimeForDisplay(timeValue);
+
+  if (!dateString || !timeString) {
+    throw new Error(
+      'buildDateTime: invalid date/time: ' +
+      String(dateValue) +
+      ' / ' +
+      String(timeValue)
+    );
+  }
+
+  return dateString + ' ' + timeString;
 }

@@ -5,7 +5,15 @@ function handleClientMessage(message) {
   const text = message.text || '';
   const state = getUserState(chatId);
 
+  addAuditLog(
+  'CLIENT_MESSAGE_DEBUG',
+  'text=' + text + ', state=' + state + ', chatId=' + chatId
+  );
+
   if (text === '/start') {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
     sendClientStartMenu(chatId, settings);
     return;
   }
@@ -22,6 +30,11 @@ function handleClientMessage(message) {
 
   if (state === STATES.WAITING_LOCATION) {
     const location = findLocationByName(text);
+
+    addAuditLog(
+      'WAITING_LOCATION_FOUND',
+      JSON.stringify(location)
+    );
 
     if (!location) {
       sendTelegramMessage(
@@ -194,9 +207,15 @@ function handleClientMessage(message) {
   }
 
   if (state === STATES.WAITING_CUSTOMER_PHONE) {
-    const customerPhone = getPhoneSearchKey(text);
+    const customerPhone = normalizePhone(text);
 
-    if (!customerPhone) {
+    if (!isValidPhone(customerPhone)) {
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        chatId,
+        getMessage(MESSAGE_KEYS.PHONE_INVALID)
+      );
+
       askCustomerPhone(chatId, settings);
       return;
     }
@@ -204,6 +223,8 @@ function handleClientMessage(message) {
     setUserSessionValue(chatId, 'customer_phone', customerPhone);
 
     const session = getUserSession(chatId);
+    session.customer_phone = customerPhone;
+
     const requestId = finalizeRequestFromSession(session);
 
     notifyOwnerAboutRequestFromSession(session, requestId);
@@ -263,15 +284,13 @@ function sendClientStartMenu(chatId, settings) {
   const keyboard = {
     keyboard: [
       [
-        { text: getMessage(MESSAGE_KEYS.BOOK) },
-        { text: getMessage(MESSAGE_KEYS.SERVICES) }
-      ],
-      [
-        { text: getMessage(MESSAGE_KEYS.PRICES) },
-        { text: getMessage(MESSAGE_KEYS.CONTACTS) }
+        { text: getMessage(MESSAGE_KEYS.BOOK) }
       ],
       [
         { text: getMessage(MESSAGE_KEYS.MY_APPOINTMENTS) }
+      ],
+      [
+        { text: getMessage(MESSAGE_KEYS.CONTACTS) }
       ]
     ],
     resize_keyboard: true
@@ -627,10 +646,16 @@ function handleOwnerCallback(callbackQuery) {
   }
 
   if (action.indexOf('approve_option_') === 0) {
+    addAuditLog('APPROVE_START', requestId);
+
     const priority = Number(action.replace('approve_option_', ''));
+    addAuditLog('APPROVE_PRIORITY', String(priority));
 
     const request = getRequestById(requestId);
+    addAuditLog('APPROVE_REQUEST', JSON.stringify(request));
+
     const option = getRequestOptionByPriority(requestId, priority);
+    addAuditLog('APPROVE_OPTION', JSON.stringify(option));
 
     if (!request || !option) {
       sendTelegramMessage(
@@ -642,6 +667,8 @@ function handleOwnerCallback(callbackQuery) {
     }
 
     if (appointmentExistsForRequest(requestId)) {
+      addAuditLog('APPROVE_APPOINTMENT_EXISTS', requestId);
+
       sendTelegramMessage(
         settings.ClientBotToken,
         ownerChatId,
@@ -651,13 +678,22 @@ function handleOwnerCallback(callbackQuery) {
     }
 
     const appointmentId = createAppointmentFromRequest(request, option);
-    createCalendarEventForAppointment(appointmentId);
+    addAuditLog('APPROVE_APPOINTMENT_CREATED', appointmentId);
+
+    const calendarEventId = createCalendarEventForAppointment(appointmentId);
+    addAuditLog('APPROVE_CALENDAR_CREATED', calendarEventId);
 
     updateCustomerStatus(request.customer_id, 'confirmed');
+    addAuditLog('APPROVE_CUSTOMER_UPDATED', request.customer_id);
+
     updateRequestStatus(requestId, 'confirmed');
+    addAuditLog('APPROVE_REQUEST_UPDATED', requestId);
+
     updateRequestOptionsAfterApproval(requestId, priority);
+    addAuditLog('APPROVE_OPTIONS_UPDATED', requestId);
 
     const customer = getCustomerById(request.customer_id);
+    addAuditLog('APPROVE_CUSTOMER_LOADED', JSON.stringify(customer));
 
     const originalText = callbackQuery.message.text || '';
 
@@ -668,17 +704,20 @@ function handleOwnerCallback(callbackQuery) {
       originalText + '\n\n' + getMessage(MESSAGE_KEYS.OWNER_REQUEST_CONFIRMED_STATUS)
     );
 
+    addAuditLog('APPROVE_OWNER_MESSAGE_EDITED', requestId);
+
     if (customer && customer.telegram_id) {
       sendTelegramMessage(
         settings.ClientBotToken,
         customer.telegram_id,
         getMessage(MESSAGE_KEYS.REQUEST_APPROVED_CLIENT)
       );
+
+      addAuditLog('APPROVE_CLIENT_NOTIFIED', customer.telegram_id);
     }
 
     return;
   }
-
   if (action === 'reject_request') {
     updateRequestStatus(requestId, 'rejected');
     updateRequestOptionsAfterApproval(requestId, 0);

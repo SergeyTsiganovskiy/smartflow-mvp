@@ -42,7 +42,7 @@ function setUserSessionValue(telegramId, fieldName, value) {
 
   const telegramIndex = headers.indexOf('telegram_id');
   const fieldIndex = headers.indexOf(fieldName);
-  const updatedIndex = headers.indexOf('updated_at');
+  const updatedAtIndex = headers.indexOf('updated_at');
 
   if (fieldIndex === -1) {
     throw new Error('Field not found in UserSessions: ' + fieldName);
@@ -50,16 +50,24 @@ function setUserSessionValue(telegramId, fieldName, value) {
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][telegramIndex]) === String(telegramId)) {
-      sheet.getRange(i + 1, fieldIndex + 1).setValue(value);
-      sheet.getRange(i + 1, updatedIndex + 1).setValue(new Date());
+      sheet.getRange(i + 1, fieldIndex + 1).setValue(String(value));
+
+      if (updatedAtIndex !== -1) {
+        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(new Date());
+      }
+
       return;
     }
   }
 
   const newRow = new Array(headers.length).fill('');
-  newRow[telegramIndex] = telegramId;
-  newRow[fieldIndex] = value;
-  newRow[updatedIndex] = new Date();
+
+  newRow[telegramIndex] = String(telegramId);
+  newRow[fieldIndex] = String(value);
+
+  if (updatedAtIndex !== -1) {
+    newRow[updatedAtIndex] = new Date();
+  }
 
   sheet.appendRow(newRow);
 }
@@ -323,8 +331,8 @@ function createOrUpdateCustomer(session) {
   const createdAtIndex = headers.indexOf('created_at');
   const updatedAtIndex = headers.indexOf('updated_at');
   const lastVisitAtIndex = headers.indexOf('last_visit_at');
-  const notesIndex = headers.indexOf('notes');
   const statusIndex = headers.indexOf('status');
+  const notesIndex = headers.indexOf('notes');
 
   const telegramId = String(session.telegram_id || '').trim();
   const name = String(session.customer_name || '').trim();
@@ -341,54 +349,42 @@ function createOrUpdateCustomer(session) {
   }
 
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][phoneIndex]).trim() === phone) {
+    const rowPhone = String(rows[i][phoneIndex] || '').trim();
+
+    if (rowPhone === phone) {
       sheet.getRange(i + 1, nameIndex + 1).setValue(name);
-
-      if (telegramId) {
-        sheet.getRange(i + 1, telegramIdIndex + 1).setValue(telegramId);
-      }
-
+      sheet.getRange(i + 1, telegramIdIndex + 1).setValue(telegramId);
+      sheet.getRange(i + 1, phoneIndex + 1).setNumberFormat('@');
+      sheet.getRange(i + 1, phoneIndex + 1).setValue(phone);
       sheet.getRange(i + 1, languageIndex + 1).setValue(language);
-
-      if (updatedAtIndex !== -1) {
-        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(now);
-      }
+      sheet.getRange(i + 1, updatedAtIndex + 1).setValue(now);
 
       return rows[i][customerIdIndex];
     }
   }
 
+  const customerId = generateId('cust');
+
   const newRow = new Array(headers.length).fill('');
 
-  newRow[customerIdIndex] = generateId('cust');
+  newRow[customerIdIndex] = customerId;
   newRow[telegramIdIndex] = telegramId;
   newRow[nameIndex] = name;
   newRow[phoneIndex] = phone;
   newRow[languageIndex] = language;
-
-  if (createdAtIndex !== -1) {
-    newRow[createdAtIndex] = now;
-  }
-
-  if (updatedAtIndex !== -1) {
-    newRow[updatedAtIndex] = now;
-  }
-
-  if (lastVisitAtIndex !== -1) {
-    newRow[lastVisitAtIndex] = '';
-  }
-
-  if (notesIndex !== -1) {
-    newRow[notesIndex] = '';
-  }
-
-  if (statusIndex !== -1) {
-    newRow[statusIndex] = 'lead';
-  }
+  newRow[createdAtIndex] = now;
+  newRow[updatedAtIndex] = now;
+  newRow[lastVisitAtIndex] = '';
+  newRow[statusIndex] = 'lead';
+  newRow[notesIndex] = '';
 
   sheet.appendRow(newRow);
 
-  return newRow[customerIdIndex];
+  const rowIndex = sheet.getLastRow();
+  sheet.getRange(rowIndex, phoneIndex + 1).setNumberFormat('@');
+  sheet.getRange(rowIndex, phoneIndex + 1).setValue(phone);
+
+  return customerId;
 }
 
 function createRequest(customerId, session) {
@@ -417,10 +413,16 @@ function createRequest(customerId, session) {
 }
 
 function finalizeRequestFromSession(session) {
+  addAuditLog('FINALIZE_START', JSON.stringify(session));
+
   const customerId = createOrUpdateCustomer(session);
+  addAuditLog('FINALIZE_CUSTOMER_CREATED', customerId);
+
   const requestId = createRequest(customerId, session);
+  addAuditLog('FINALIZE_REQUEST_CREATED', requestId);
 
   createRequestOptions(requestId, session);
+  addAuditLog('FINALIZE_OPTIONS_CREATED', requestId);
 
   return requestId;
 }
@@ -953,21 +955,24 @@ function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
     return [];
   }
 
-  const startMinutes = timeToMinutes(schedule.startTime);
+  let startMinutes = timeToMinutes(schedule.startTime);
   const endMinutes = timeToMinutes(schedule.endTime);
+
+  if (isSameDate(dateValue, new Date())) {
+    const bufferMinutes = 30;
+    const earliestMinutes = getCurrentTimeMinutes() + bufferMinutes;
+
+    if (earliestMinutes > startMinutes) {
+      startMinutes = earliestMinutes;
+    }
+  }
 
   const appointments = getProviderAppointmentsForDate(
     providerId,
     dateValue
   );
 
-  const calendarBusy = getCalendarBusyIntervals(
-    providerId,
-    dateValue
-  );
-
   const busyIntervals = appointments
-    .concat(calendarBusy)
     .filter(item => item.startTime && item.endTime)
     .map(item => ({
       start: timeToMinutes(item.startTime),
