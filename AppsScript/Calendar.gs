@@ -140,3 +140,126 @@ function updateCalendarEventForAppointment(appointmentId) {
 
   return event.getId();
 }
+
+function getCalendarAppointmentsByPhone(phone) {
+  const settings = getSettings();
+  const calendarId = 'primary';
+
+  const calendar = CalendarApp.getCalendarById(calendarId);
+
+  if (!calendar) {
+    return [];
+  }
+
+  const phoneKey = getPhoneSearchKey(phone);
+  const knownEventIds = getAllAppointmentCalendarEventIds();
+
+  const now = new Date();
+  const future = new Date();
+
+  future.setDate(future.getDate() + 60);
+
+  const events = calendar.getEvents(now, future);
+
+  const result = [];
+
+  events.forEach(function(event) {
+    if (knownEventIds.indexOf(event.getId()) !== -1) {
+      return;
+    }
+    const description = event.getDescription() || '';
+    const title = event.getTitle() || '';
+
+    const eventPhone = extractPhoneFromText(description + '\n' + title);
+
+    if (!eventPhone) {
+      return;
+    }
+
+    if (getPhoneSearchKey(eventPhone) !== phoneKey) {
+      return;
+    }
+
+    result.push({
+      source: 'calendar',
+      title: title,
+      description: description,
+      start_at: event.getStartTime(),
+      end_at: event.getEndTime(),
+      calendar_event_id: event.getId()
+    });
+  });
+
+  return result;
+}
+
+function deleteCalendarEventById(calendarEventId) {
+  const calendar = CalendarApp.getDefaultCalendar();
+
+  const event = calendar.getEventById(calendarEventId);
+
+  if (event) {
+    event.deleteEvent();
+    return true;
+  }
+
+  return false;
+}
+
+function getCalendarEventById(calendarEventId) {
+  const calendar = CalendarApp.getDefaultCalendar();
+
+  const event = calendar.getEventById(calendarEventId);
+
+  if (!event) {
+    return null;
+  }
+
+  return {
+    calendar_event_id: event.getId(),
+    title: event.getTitle(),
+    description: event.getDescription() || '',
+    start_at: event.getStartTime(),
+    end_at: event.getEndTime()
+  };
+}
+
+function updateCalendarEventDateTimeById(calendarEventId, startAt) {
+  addAuditLog(
+    'UPDATE_CALENDAR_EVENT_START',
+    calendarEventId + ' / ' + startAt
+  );
+
+  const calendar = CalendarApp.getDefaultCalendar();
+
+  const event = calendar.getEventById(calendarEventId);
+
+  if (!event) {
+    addAuditLog(
+      'UPDATE_CALENDAR_EVENT_NOT_FOUND',
+      calendarEventId
+    );
+    return false;
+  }
+
+  const oldStart = event.getStartTime();
+  const oldEnd = event.getEndTime();
+
+  const durationMs =
+    oldEnd.getTime() - oldStart.getTime();
+
+  const newStart =
+    parseDateTimeForCalendar(startAt);
+
+  const newEnd =
+    new Date(newStart.getTime() + durationMs);
+
+  event.setTime(newStart, newEnd);
+
+  addAuditLog(
+    'UPDATE_CALENDAR_EVENT_DONE',
+    newStart + ' / ' + newEnd
+  );
+
+  return true;
+}

@@ -1333,4 +1333,27 @@ function updateAppointmentDateTime(
   }
 }
 
+function getAllAppointmentCalendarEventIds() {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const calendarEventIdIndex = headers.indexOf('calendar_event_id');
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const calendarEventId = String(rows[i][calendarEventIdIndex] || '').trim();
+
+    if (calendarEventId) {
+      result.push(calendarEventId);
+    }
+  }
+
+  return result;
+}
+
 

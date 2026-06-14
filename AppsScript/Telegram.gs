@@ -159,9 +159,9 @@ function editTelegramMessageWithInlineKeyboard(
     message_id: messageId,
     text: text,
     parse_mode: 'HTML',
-    reply_markup: JSON.stringify({
+    reply_markup: {
       inline_keyboard: inlineKeyboard
-    })
+    }
   };
 
   const response = UrlFetchApp.fetch(url, {
@@ -171,7 +171,12 @@ function editTelegramMessageWithInlineKeyboard(
     muteHttpExceptions: true
   });
 
-  Logger.log(response.getContentText());
+  const result = response.getContentText();
 
-  return response.getContentText();
+  addAuditLog(
+    'EDIT_MESSAGE_WITH_KEYBOARD_RESULT',
+    result
+  );
+
+  return result;
 }

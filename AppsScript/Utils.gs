@@ -450,3 +450,38 @@ function buildDateTime(dateValue, timeValue) {
 
   return dateString + ' ' + timeString;
 }
+
+function extractPhoneFromText(text) {
+  const value = String(text || '');
+
+  const match = value.match(/(?:Phone|Телефон|Тел|Phone number)\s*[:\-]?\s*([+\d\s().-]{7,20})/i);
+
+  if (match) {
+    return normalizePhone(match[1]);
+  }
+
+  const fallback = value.match(/(\+?\d[\d\s().-]{6,18}\d)/);
+
+  if (fallback) {
+    return normalizePhone(fallback[1]);
+  }
+
+  return '';
+}
+
+function extractFieldFromText(text, fieldName) {
+  const value = String(text || '');
+
+  const regex = new RegExp(
+    fieldName + '\\s*[:\\-]\\s*(.+)',
+    'i'
+  );
+
+  const match = value.match(regex);
+
+  if (match) {
+    return String(match[1]).trim();
+  }
+
+  return '';
+}
