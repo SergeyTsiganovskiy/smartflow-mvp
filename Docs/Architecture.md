@@ -1,49 +1,65 @@
 # SmartFlow Beauty Demo Architecture
 
-## Components
+## Overview
+
+SmartFlow Beauty Demo is a Telegram-based booking system for a beauty salon.
+
+The system uses:
+
+- Telegram Bot for client interaction
+- Telegram inline buttons for owner/client actions
+- Google Sheets as the main database
+- Google Calendar as a shared salon schedule
+- Google Apps Script as the backend
+
+---
+
+## Main Components
 
 ### Client Telegram Bot
 
-Handles:
+Used by clients to:
 
-- booking flow
-- appointment lookup
-- appointment cancellation
-- customer communication
+- create booking requests
+- view active appointments
+- cancel appointments
+- reschedule appointments
+- view contacts
 
-Main scenarios:
+Start menu:
 
-- Book appointment
-- My Appointments
-- Cancel appointment
+- Book
+- My appointments
 - Contacts
 
 ---
 
-### Owner Telegram Bot
+### Owner Flow
 
-Handles:
+The owner receives booking requests in Telegram and can:
 
-- incoming booking requests
-- request approval
-- request rejection
-- cancellation notifications
+- approve selected time option
+- reject request
+- receive cancellation notifications
+- receive reschedule notifications
 
 ---
 
 ### Google Sheets Database
 
-Acts as primary database.
+Google Sheets is the primary source of structured data.
 
-Tables:
+Main sheets:
 
 - Settings
 - Messages
 - Locations
 - Services
 - Providers
-- ProviderSchedules
+- ProviderSchedule
+- ProviderScheduleOverrides
 - Customers
+- CustomerServiceSettings
 - Requests
 - RequestOptions
 - Appointments
@@ -54,70 +70,211 @@ Tables:
 
 ### Google Calendar
 
-Single shared salon calendar.
+Google Calendar is used as a shared salon calendar.
 
-Purpose:
+Current model:
 
-- visual schedule
-- staff visibility
-- appointment overview
+- one shared salon calendar
+- all providers can use the same `calendar_id`
+- `primary` can be used for MVP
+- records created by the bot are written to Google Calendar
+- manual Google Calendar events can also be shown in My appointments
 
-Availability is calculated from Appointments table, not Calendar events.
+Availability is calculated mainly from Appointments, not from all Calendar events.
 
-All providers currently use:
-
-calendar_id = primary
+This allows different providers to have appointments at the same time in the shared calendar.
 
 ---
 
 ## Booking Flow
 
-Client
-→ Location
-→ Service
-→ Provider
-→ Date
-→ Time
-→ Name
-→ Phone
-→ Request
+Client flow:
 
-Owner
-→ Approve
+```text
+/start
+↓
+Book
+↓
+Location
+↓
+Service
+↓
+Provider
+↓
+Date
+↓
+Time
+↓
+Optional additional time options
+↓
+Customer name
+↓
+Phone
+↓
+Request created
 
-System
-→ Appointment
-→ Calendar Event
-→ Customer Notification
 
----
+Owner flow:
 
-## Appointment Lookup
+New request
+↓
+Approve selected option
+↓
+Appointment created
+↓
+Google Calendar event created
+↓
+Customer notified
 
-Client
-→ My Appointments
-→ Phone Number
-→ Active Appointments
+Availability Engine
 
-Search is performed by normalized phone number.
+Availability uses:
 
----
+Provider weekly schedule
+Provider date overrides
+Appointment duration
+Confirmed Appointments
+Current time filtering for today
 
-## Cancellation Flow
+Manual Calendar events are not used to block slots globally, because the salon uses one shared calendar.
 
-Client
-→ My Appointments
-→ Cancel
+Appointment Duration
 
-Confirmation:
+Duration priority:
 
+CustomerServiceSettings.duration_minutes
+↓
+Services.default_duration_minutes
+My Appointments
+
+Client flow:
+
+My appointments
+↓
+Enter phone
+↓
+Normalize phone
+↓
+Search Appointments
+↓
+Search manual Google Calendar events
+↓
+Show active records
+
+Appointments created by the bot are shown from the Appointments table.
+
+Manual events from Google Calendar are shown only if they are not already linked to an Appointment by calendar_event_id.
+
+Manual Google Calendar Events
+
+Manual event description should contain:
+
+Customer: Anna
+Phone: 0664452124
+Service: Haircut
+Provider: Alice
+Location: Center
+
+Minimum required field:
+
+Phone: 0664452124
+
+Manual Calendar events can be:
+
+viewed in My appointments
+cancelled
+rescheduled
+
+They are handled by calendar_event_id.
+
+Cancellation Flow
+
+For Appointments created by the bot:
+
+My appointments
+↓
 Cancel
-→ Yes
-→ Appointment.status = cancelled
-→ Calendar Event deleted
-→ Customer notification
-→ Owner notification
+↓
+Confirm
+↓
+Appointment.status = cancelled
+↓
+Calendar event deleted
+↓
+Client notified
+↓
+Owner notified
 
+For manual Calendar events:
+
+My appointments
+↓
 Cancel
-→ No
-→ Appointment remains active
+↓
+Confirm
+↓
+Calendar event deleted
+Reschedule Flow
+
+For Appointments created by the bot:
+
+My appointments
+↓
+Reschedule
+↓
+Confirm
+↓
+Select new date
+↓
+Select new time
+↓
+Appointment start/end updated
+↓
+Google Calendar event updated
+↓
+Client notified
+↓
+Owner notified
+
+For manual Calendar events:
+
+My appointments
+↓
+Reschedule
+↓
+Confirm
+↓
+Select new date
+↓
+Select new time
+↓
+Google Calendar event updated
+
+Manual Calendar event duration is preserved during reschedule.
+
+Phone Search
+
+Phone numbers are normalized to digits.
+
+Supported input examples:
+
+0664452124
+380664452124
++380 66 445 21 24
+
+Search uses significant trailing digits, so different common formats can match the same customer.
+
+Current Stable Features
+Booking
+Owner approval
+Request rejection
+Appointment creation
+Shared Google Calendar event creation
+My appointments by phone
+Manual Calendar event lookup
+Appointment cancellation
+Calendar event cancellation
+Appointment reschedule
+Calendar event reschedule
+Client notifications
+Owner notifications
