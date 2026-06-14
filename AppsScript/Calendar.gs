@@ -108,3 +108,35 @@ function deleteCalendarEvent(appointment) {
   }
 }
 
+function updateCalendarEventForAppointment(appointmentId) {
+  const appointment = getAppointmentById(appointmentId);
+
+  if (!appointment || !appointment.calendar_event_id) {
+    return '';
+  }
+
+  const calendarId = getProviderCalendarId(appointment.provider_id);
+
+  if (!calendarId) {
+    return '';
+  }
+
+  const calendar = CalendarApp.getCalendarById(calendarId);
+
+  if (!calendar) {
+    return '';
+  }
+
+  const event = calendar.getEventById(appointment.calendar_event_id);
+
+  if (!event) {
+    return '';
+  }
+
+  const start = parseDateTimeForCalendar(appointment.start_at);
+  const end = parseDateTimeForCalendar(appointment.end_at);
+
+  event.setTime(start, end);
+
+  return event.getId();
+}

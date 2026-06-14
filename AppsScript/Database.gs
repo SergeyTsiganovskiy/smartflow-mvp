@@ -1287,4 +1287,50 @@ function getAppointmentById(appointmentId) {
   return null;
 }
 
+function updateAppointmentDateTime(
+  appointmentId,
+  startAt,
+  endAt
+) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const appointmentIdIndex =
+    headers.indexOf('appointment_id');
+
+  const startAtIndex =
+    headers.indexOf('start_at');
+
+  const endAtIndex =
+    headers.indexOf('end_at');
+
+  const updatedAtIndex =
+    headers.indexOf('updated_at');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      String(rows[i][appointmentIdIndex]) ===
+      String(appointmentId)
+    ) {
+      sheet
+        .getRange(i + 1, startAtIndex + 1)
+        .setValue(startAt);
+
+      sheet
+        .getRange(i + 1, endAtIndex + 1)
+        .setValue(endAt);
+
+      sheet
+        .getRange(i + 1, updatedAtIndex + 1)
+        .setValue(new Date());
+
+      return;
+    }
+  }
+}
+
 
