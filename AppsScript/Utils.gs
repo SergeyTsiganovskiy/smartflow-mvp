@@ -485,3 +485,31 @@ function extractFieldFromText(text, fieldName) {
 
   return '';
 }
+
+function formatDateTimeForStorage(value) {
+  if (!value) {
+    return '';
+  }
+
+  const timezone =
+    getSettings().TimeZone || 'Europe/Kyiv';
+
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(
+      value,
+      timezone,
+      'yyyy-MM-dd HH:mm'
+    );
+  }
+
+  const stringValue = String(value).trim();
+
+  const date = normalizeDateForStorage(stringValue);
+  const time = formatTimeForDisplay(stringValue);
+
+  if (date && time) {
+    return date + ' ' + time;
+  }
+
+  return stringValue;
+}

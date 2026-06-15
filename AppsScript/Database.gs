@@ -406,7 +406,10 @@ function createRequest(customerId, session) {
   newRow[headers.indexOf('location_id')] = session.location_id;
   newRow[headers.indexOf('status')] = 'pending';
   newRow[headers.indexOf('created_at')] = now;
-
+  if (headers.indexOf('customer_note') !== -1) {
+    newRow[headers.indexOf('customer_note')] =
+      session.customer_note || '';
+  }
   sheet.appendRow(newRow);
 
   return requestId;
@@ -669,7 +672,10 @@ function createAppointmentFromRequest(request, option) {
   newRow[headers.indexOf('calendar_event_id')] = '';
   newRow[headers.indexOf('created_at')] = now;
   newRow[headers.indexOf('updated_at')] = now;
-
+  if (headers.indexOf('customer_note') !== -1) {
+    newRow[headers.indexOf('customer_note')] =
+      request.customer_note || '';
+  }
   sheet.appendRow(newRow);
 
   return appointmentId;
@@ -972,6 +978,15 @@ function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
     dateValue
   );
 
+  addAuditLog(
+    'PROVIDER_APPOINTMENTS',
+    JSON.stringify({
+      providerId: providerId,
+      date: dateValue,
+      appointments: appointments
+    })
+  );
+
   const busyIntervals = appointments
     .filter(item => item.startTime && item.endTime)
     .map(item => ({
@@ -981,6 +996,20 @@ function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
 
   const stepMinutes = 30;
   const result = [];
+
+  addAuditLog(
+    'SLOTS_DEBUG_FULL',
+    JSON.stringify({
+      providerId: providerId,
+      dateValue: dateValue,
+      durationMinutes: durationMinutes,
+      schedule: schedule,
+      startMinutes: startMinutes,
+      endMinutes: endMinutes,
+      appointments: appointments,
+      busyIntervals: busyIntervals
+    })
+  );
 
   for (
     let current = startMinutes;
@@ -1311,6 +1340,9 @@ function updateAppointmentDateTime(
   const updatedAtIndex =
     headers.indexOf('updated_at');
 
+  const reminder24hIndex =
+    headers.indexOf('reminder_24h_sent_at');
+
   for (let i = 1; i < rows.length; i++) {
     if (
       String(rows[i][appointmentIdIndex]) ===
@@ -1324,9 +1356,17 @@ function updateAppointmentDateTime(
         .getRange(i + 1, endAtIndex + 1)
         .setValue(endAt);
 
-      sheet
-        .getRange(i + 1, updatedAtIndex + 1)
-        .setValue(new Date());
+      if (reminder24hIndex !== -1) {
+        sheet
+          .getRange(i + 1, reminder24hIndex + 1)
+          .setValue('');
+      }
+
+      if (updatedAtIndex !== -1) {
+        sheet
+          .getRange(i + 1, updatedAtIndex + 1)
+          .setValue(new Date());
+      }
 
       return;
     }
@@ -1356,4 +1396,99 @@ function getAllAppointmentCalendarEventIds() {
   return result;
 }
 
+function getAppointmentsFor24hReminder() {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
 
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const statusIndex = headers.indexOf('status');
+  const reminderIndex = headers.indexOf('reminder_24h_sent_at');
+
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+
+  const now = new Date();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const tomorrowString = Utilities.formatDate(
+    tomorrow,
+    timezone,
+    'yyyy-MM-dd'
+  );
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const status = String(rows[i][statusIndex] || '').toLowerCase();
+    const reminderSentAt = rows[i][reminderIndex];
+
+    if (status !== 'confirmed') {
+      continue;
+    }
+
+    if (reminderSentAt) {
+      continue;
+    }
+
+    let appointment = {};
+
+    headers.forEach(function(header, index) {
+      appointment[header] = rows[i][index];
+    });
+
+    appointment = syncAppointmentWithCalendar(
+      appointment,
+      true
+    );
+
+    const appointmentDateString =
+      normalizeDateForStorage(
+        appointment.start_at
+      );
+
+    if (appointmentDateString !== tomorrowString) {
+      continue;
+    }
+
+    result.push(appointment);
+  }
+
+  return result;
+}
+
+function updateAppointmentField(appointmentId, fieldName, value) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const appointmentIdIndex = headers.indexOf('appointment_id');
+  const fieldIndex = headers.indexOf(fieldName);
+  const updatedAtIndex = headers.indexOf('updated_at');
+
+  if (fieldIndex === -1) {
+    throw new Error('Appointments field not found: ' + fieldName);
+  }
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
+      sheet
+        .getRange(i + 1, fieldIndex + 1)
+        .setValue(value);
+
+      if (updatedAtIndex !== -1) {
+        sheet
+          .getRange(i + 1, updatedAtIndex + 1)
+          .setValue(new Date());
+      }
+
+      return;
+    }
+  }
+}
