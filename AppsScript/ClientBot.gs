@@ -682,7 +682,8 @@ function showTimeOptions(chatId, settings) {
   const slots = getAvailableTimeSlots(
     session.provider_id,
     session.current_option_date,
-    durationMinutes
+    durationMinutes,
+    session.customer_id
   );
 
   addAuditLog(
@@ -1533,6 +1534,7 @@ function showRescheduleTimeOptions(chatId, settings) {
 
   let providerId = '';
   let durationMinutes = 60;
+  let customerId = '';
 
   if (session.pending_calendar_event_id) {
     const event = getCalendarEventById(
@@ -1569,6 +1571,20 @@ function showRescheduleTimeOptions(chatId, settings) {
     durationMinutes = Math.round(
       (event.end_at.getTime() - event.start_at.getTime()) / 60000
     );
+
+    const phone = extractFieldFromText(
+      event.description,
+      'Phone'
+    );
+
+    const customer = phone
+      ? getCustomerByPhone(phone)
+      : null;
+
+    customerId =
+      customer && customer.customer_id
+        ? customer.customer_id
+        : '';
   } else {
     const appointment = getAppointmentById(
       session.reschedule_appointment_id
@@ -1584,6 +1600,7 @@ function showRescheduleTimeOptions(chatId, settings) {
     }
 
     providerId = appointment.provider_id;
+    customerId = appointment.customer_id;
 
     durationMinutes = getServiceDurationMinutes(
       appointment.customer_id,
@@ -1595,7 +1612,8 @@ function showRescheduleTimeOptions(chatId, settings) {
   const slots = getAvailableTimeSlots(
     providerId,
     session.reschedule_date,
-    durationMinutes
+    durationMinutes,
+    customerId
   );
 
   if (slots.length === 0) {
@@ -1625,10 +1643,9 @@ function showRescheduleTimeOptions(chatId, settings) {
     keyboardRows.push(row);
   }
 
-  const keyboard = {
-    keyboard: keyboardRows,
-    resize_keyboard: true
-  };
+  const keyboard = buildKeyboardWithMainMenu(
+    keyboardRows
+  );
 
   setUserState(
     chatId,

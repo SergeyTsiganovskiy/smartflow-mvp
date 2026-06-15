@@ -910,7 +910,12 @@ function getProviderWeeklySchedule(providerId, dayOfWeek) {
   };
 }
 
-function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
+function getAvailableTimeSlots(
+  providerId,
+  dateValue,
+  durationMinutes,
+  customerId
+) {
   const schedule = getProviderScheduleForDate(providerId, dateValue);
 
   if (!schedule || !schedule.isWorking) {
@@ -942,26 +947,50 @@ function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
     }
   }
 
-  const appointments = getProviderAppointmentsForDate(
-    providerId,
-    dateValue
-  );
+  const providerAppointments =
+    getProviderAppointmentsForDate(
+      providerId,
+      dateValue
+    );
+
+  const conflictCustomerIds =
+    customerId
+      ? getConflictingCustomerIds(customerId)
+      : [];
+
+  const conflictAppointments =
+    getAppointmentsForCustomersOnDate(
+      conflictCustomerIds,
+      dateValue
+    );
+
+  const allBlockingAppointments =
+    providerAppointments.concat(
+      conflictAppointments
+    );
 
   addAuditLog(
-    'PROVIDER_APPOINTMENTS',
+    'AVAILABLE_SLOT_BLOCKERS',
     JSON.stringify({
       providerId: providerId,
+      customerId: customerId || '',
       date: dateValue,
-      appointments: appointments
+      providerAppointments: providerAppointments,
+      conflictCustomerIds: conflictCustomerIds,
+      conflictAppointments: conflictAppointments
     })
   );
 
-  const busyIntervals = appointments
-    .filter(item => item.startTime && item.endTime)
-    .map(item => ({
-      start: timeToMinutes(item.startTime),
-      end: timeToMinutes(item.endTime)
-    }));
+  const busyIntervals = allBlockingAppointments
+    .filter(function(item) {
+      return item.startTime && item.endTime;
+    })
+    .map(function(item) {
+      return {
+        start: timeToMinutes(item.startTime),
+        end: timeToMinutes(item.endTime)
+      };
+    });
 
   const stepMinutes = 30;
   const result = [];
@@ -970,12 +999,12 @@ function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
     'SLOTS_DEBUG_FULL',
     JSON.stringify({
       providerId: providerId,
+      customerId: customerId || '',
       dateValue: dateValue,
       durationMinutes: durationMinutes,
       schedule: schedule,
       startMinutes: startMinutes,
       endMinutes: endMinutes,
-      appointments: appointments,
       busyIntervals: busyIntervals
     })
   );
@@ -986,14 +1015,21 @@ function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
     current += stepMinutes
   ) {
     const slotStart = current;
-    const slotEnd = current + Number(durationMinutes);
+    const slotEnd =
+      current + Number(durationMinutes);
 
-    const hasConflict = busyIntervals.some(interval => {
-      return slotStart < interval.end && slotEnd > interval.start;
-    });
+    const hasConflict =
+      busyIntervals.some(function(interval) {
+        return (
+          slotStart < interval.end &&
+          slotEnd > interval.start
+        );
+      });
 
     if (!hasConflict) {
-      result.push(minutesToTime(current));
+      result.push(
+        minutesToTime(current)
+      );
     }
   }
 
@@ -1548,5 +1584,115 @@ function getServiceDurationMinutesForSession(session) {
   );
 }
 
+function getConflictingCustomerIds(customerId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('CustomerConflicts');
 
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
 
+  const customerIdIndex =
+    headers.indexOf('customer_id');
+
+  const conflictCustomerIdIndex =
+    headers.indexOf('conflict_customer_id');
+
+  const activeIndex =
+    headers.indexOf('active');
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const active =
+      String(rows[i][activeIndex])
+        .toUpperCase();
+
+    if (active !== 'TRUE') {
+      continue;
+    }
+
+    if (
+      String(rows[i][customerIdIndex]) ===
+      String(customerId)
+    ) {
+      result.push(
+        rows[i][conflictCustomerIdIndex]
+      );
+    }
+  }
+
+  return result;
+}
+
+function getAppointmentsForCustomersOnDate(
+  customerIds,
+  dateValue
+) {
+  if (!customerIds || customerIds.length === 0) {
+    return [];
+  }
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const customerIdIndex =
+    headers.indexOf('customer_id');
+
+  const startAtIndex =
+    headers.indexOf('start_at');
+
+  const endAtIndex =
+    headers.indexOf('end_at');
+
+  const statusIndex =
+    headers.indexOf('status');
+
+  const targetDate =
+    normalizeDateForStorage(dateValue);
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const customerId =
+      String(rows[i][customerIdIndex]);
+
+    const status =
+      String(rows[i][statusIndex])
+        .toLowerCase();
+
+    if (status !== 'confirmed') {
+      continue;
+    }
+
+    if (
+      customerIds.indexOf(customerId) === -1
+    ) {
+      continue;
+    }
+
+    const startAt = rows[i][startAtIndex];
+    const endAt = rows[i][endAtIndex];
+
+    const appointmentDate =
+      normalizeDateForStorage(startAt);
+
+    if (appointmentDate !== targetDate) {
+      continue;
+    }
+
+    result.push({
+      customer_id: customerId,
+      startTime:
+        extractTimeFromDateTime(startAt),
+      endTime:
+        extractTimeFromDateTime(endAt)
+    });
+  }
+
+  return result;
+}
