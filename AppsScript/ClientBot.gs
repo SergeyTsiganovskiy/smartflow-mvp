@@ -21,6 +21,11 @@ function handleClientMessage(message) {
     return;
   }
 
+  if (text === getMessage(MESSAGE_KEYS.CONTACTS)) {
+    showContacts(chatId, settings);
+    return;
+  }
+
   if (text === getMessage(MESSAGE_KEYS.BOOK)) {
     clearUserSession(chatId);
     askCustomerName(chatId, settings);
@@ -65,6 +70,17 @@ function handleClientMessage(message) {
       'customer_phone',
       customerPhone
     );
+
+    const existingCustomer =
+      getCustomerByPhone(customerPhone);
+
+    if (existingCustomer && existingCustomer.customer_id) {
+      setUserSessionValue(
+        chatId,
+        'customer_id',
+        existingCustomer.customer_id
+      );
+    }
 
     showLocations(chatId, settings);
     return;
@@ -604,10 +620,6 @@ function showProviders(chatId, settings) {
     ]);
   });
 
-  keyboardRows.push([
-    { text: getMessage(MESSAGE_KEYS.ANY_PROVIDER) }
-  ]);
-
   const keyboard = buildKeyboardWithMainMenu(keyboardRows);
 
   sendTelegramMessage(
@@ -657,9 +669,10 @@ function showTimeOptions(chatId, settings) {
     session.provider_id
   );
 
-  const durationMinutes = getDefaultServiceDurationMinutes(
-    session.service_id
-  );
+  const durationMinutes =
+    getServiceDurationMinutesForSession(
+      session
+    );
 
   addAuditLog(
     'TIME_OPTIONS_DURATION',
@@ -1792,4 +1805,60 @@ function buildKeyboardWithMainMenu(keyboardRows) {
     keyboard: rows,
     resize_keyboard: true
   };
+}
+
+function showContacts(chatId, settings) {
+  const locations = getLocations();
+
+  let text =
+    '📞 ' +
+    getMessage(MESSAGE_KEYS.CONTACTS) +
+    '\n\n';
+
+  locations.forEach(function(location) {
+    text += '📍 ' + location.name + '\n';
+
+    if (location.address) {
+      text += '🏠 ' + location.address + '\n';
+    }
+
+    if (location.phone_1) {
+      text += '📞 +' + String(location.phone_1) + '\n';
+    }
+
+    if (location.phone_2) {
+      text += '📞 +' + String(location.phone_2) + '\n';
+    }
+
+    if (location.working_hours) {
+      text += '🕒 ' + location.working_hours + '\n';
+    }
+
+    if (location.telegram) {
+      text += '💬 ' + location.telegram + '\n';
+    }
+
+    if (location.instagram) {
+      text += '📷 ' + location.instagram + '\n';
+    }
+
+    if (location.website) {
+      text += '🌐 ' + location.website + '\n';
+    }
+
+    if (location.google_maps_url) {
+      text += '🗺️ ' + location.google_maps_url + '\n';
+    }
+
+    text += '\n';
+  });
+
+  const keyboard = buildKeyboardWithMainMenu([]);
+
+  sendTelegramMessage(
+    settings.ClientBotToken,
+    chatId,
+    text,
+    keyboard
+  );
 }

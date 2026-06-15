@@ -73,9 +73,6 @@ function setUserSessionValue(telegramId, fieldName, value) {
 }
 
 function getLocations() {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Locations');
@@ -83,52 +80,44 @@ function getLocations() {
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
 
-  const idIndex = headers.indexOf('location_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-  const activeIndex = headers.indexOf('active');
-
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const active = String(rows[i][activeIndex]).toUpperCase();
+    const item = {};
 
-    if (active === 'TRUE') {
-      result.push({
-        id: rows[i][idIndex],
-        name: String(rows[i][nameIndex]).trim()
-      });
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    if (String(item.active).toUpperCase() !== 'TRUE') {
+      continue;
     }
+
+    result.push({
+      id: item.location_id,
+      name: getMessage(item.name_key),
+      address: getMessage(item.address_key),
+      working_hours: item.working_hours,
+      instagram: item.instagram,
+      telegram: item.telegram,
+      website: item.website,
+      google_maps_url: item.google_maps_url,
+      phone_1: item.phone_1,
+      phone_2: item.phone_2,
+      active: item.active
+    });
   }
 
   return result;
 }
 
 function findLocationByName(locationName) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Locations');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const idIndex = headers.indexOf('location_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-  const activeIndex = headers.indexOf('active');
-
+  const locations = getLocations();
   const targetName = String(locationName).trim();
 
-  for (let i = 1; i < rows.length; i++) {
-    const name = String(rows[i][nameIndex]).trim();
-    const active = String(rows[i][activeIndex]).toUpperCase();
-
-    if (name === targetName && active === 'TRUE') {
-      return {
-        id: rows[i][idIndex],
-        name: name
-      };
+  for (let i = 0; i < locations.length; i++) {
+    if (String(locations[i].name).trim() === targetName) {
+      return locations[i];
     }
   }
 
@@ -272,14 +261,6 @@ function getProvidersByLocation(locationId) {
 
 function findProviderByName(providerName) {
   const messageKey = getMessageKeyByText(providerName);
-
-  if (messageKey === MESSAGE_KEYS.ANY_PROVIDER) {
-    return {
-      id: PROVIDER_IDS.ANY_PROVIDER,
-      name: getMessage(MESSAGE_KEYS.ANY_PROVIDER)
-    };
-  }
-
   const settings = getSettings();
   const lang = settings.Language || 'ru';
 
@@ -431,25 +412,11 @@ function finalizeRequestFromSession(session) {
 }
 
 function findLocationById(locationId) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
+  const locations = getLocations();
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Locations');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const idIndex = headers.indexOf('location_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][idIndex]) === String(locationId)) {
-      return {
-        id: rows[i][idIndex],
-        name: rows[i][nameIndex]
-      };
+  for (let i = 0; i < locations.length; i++) {
+    if (String(locations[i].id) === String(locationId)) {
+      return locations[i];
     }
   }
 
@@ -480,13 +447,6 @@ function findServiceById(serviceId) {
 }
 
 function findProviderById(providerId) {
-  if (providerId === PROVIDER_IDS.ANY_PROVIDER) {
-    return {
-      id: PROVIDER_IDS.ANY_PROVIDER,
-      name: getMessage(MESSAGE_KEYS.ANY_PROVIDER)
-    };
-  }
-
   const settings = getSettings();
   const lang = settings.Language || 'ru';
 
@@ -966,10 +926,19 @@ function getAvailableTimeSlots(providerId, dateValue, durationMinutes) {
 
   if (isSameDate(dateValue, new Date())) {
     const bufferMinutes = 30;
-    const earliestMinutes = getCurrentTimeMinutes() + bufferMinutes;
+    const stepMinutes = 30;
 
-    if (earliestMinutes > startMinutes) {
-      startMinutes = earliestMinutes;
+    const earliestMinutes =
+      getCurrentTimeMinutes() + bufferMinutes;
+
+    const roundedEarliestMinutes =
+      roundMinutesUpToStep(
+        earliestMinutes,
+        stepMinutes
+      );
+
+    if (roundedEarliestMinutes > startMinutes) {
+      startMinutes = roundedEarliestMinutes;
     }
   }
 
@@ -1492,3 +1461,92 @@ function updateAppointmentField(appointmentId, fieldName, value) {
     }
   }
 }
+
+function getCustomerByPhone(phone) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Customers');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const phoneIndex = headers.indexOf('phone');
+
+  const searchKey = getPhoneSearchKey(phone);
+
+  for (let i = 1; i < rows.length; i++) {
+    const rowPhone = rows[i][phoneIndex];
+
+    if (getPhoneSearchKey(rowPhone) === searchKey) {
+      const result = {};
+
+      headers.forEach(function(header, index) {
+        result[header] = rows[i][index];
+      });
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
+function getCustomerServiceDurationMinutes(
+  customerId,
+  serviceId,
+  providerId
+) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('CustomerServiceSettings');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const customerIdIndex = headers.indexOf('customer_id');
+  const serviceIdIndex = headers.indexOf('service_id');
+  const providerIdIndex = headers.indexOf('provider_id');
+  const durationIndex = headers.indexOf('duration_minutes');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      String(rows[i][customerIdIndex]) === String(customerId) &&
+      String(rows[i][serviceIdIndex]) === String(serviceId) &&
+      String(rows[i][providerIdIndex]) === String(providerId)
+    ) {
+      const duration = Number(rows[i][durationIndex]);
+
+      if (duration > 0) {
+        return duration;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getServiceDurationMinutesForSession(session) {
+  if (
+    session.customer_id &&
+    session.service_id &&
+    session.provider_id
+  ) {
+    const individualDuration =
+      getCustomerServiceDurationMinutes(
+        session.customer_id,
+        session.service_id,
+        session.provider_id
+      );
+
+    if (individualDuration) {
+      return individualDuration;
+    }
+  }
+
+  return getDefaultServiceDurationMinutes(
+    session.service_id
+  );
+}
+
+
+

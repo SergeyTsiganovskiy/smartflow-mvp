@@ -513,3 +513,8 @@ function formatDateTimeForStorage(value) {
 
   return stringValue;
 }
+
+function roundMinutesUpToStep(minutes, stepMinutes) {
+  return Math.ceil(minutes / stepMinutes) * stepMinutes;
+}
+
