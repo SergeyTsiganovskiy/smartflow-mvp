@@ -6,48 +6,44 @@ SmartFlow Beauty Demo is a Telegram-based booking system for a beauty salon.
 
 The system uses:
 
-- Telegram Bot for client interaction
-- Telegram inline buttons for owner/client actions
+- Client Telegram Bot for customers
+- Telegram inline buttons for appointment actions
 - Google Sheets as the main database
-- Google Calendar as a shared salon schedule
-- Google Apps Script as the backend
+- Google Calendar as a shared salon calendar
+- Google Apps Script as backend
 
 ---
 
 ## Main Components
 
-### Client Telegram Bot
+### ClientBot
 
-Used by clients to:
+ClientBot is used by customers to:
 
 - create booking requests
-- view active appointments
+- enter name and phone before selecting service/time
+- select location, service, provider, date and time
+- add customer note
+- view active appointments by phone
 - cancel appointments
 - reschedule appointments
 - view contacts
+- receive appointment reminders
 
-Start menu:
+Main menu:
 
 - Book
 - My appointments
 - Contacts
+- Main menu
+
+The bot always provides a Main menu button in normal reply keyboards.
 
 ---
 
-### Owner Flow
+### Google Sheets
 
-The owner receives booking requests in Telegram and can:
-
-- approve selected time option
-- reject request
-- receive cancellation notifications
-- receive reschedule notifications
-
----
-
-### Google Sheets Database
-
-Google Sheets is the primary source of structured data.
+Google Sheets is the primary structured database.
 
 Main sheets:
 
@@ -60,6 +56,7 @@ Main sheets:
 - ProviderScheduleOverrides
 - Customers
 - CustomerServiceSettings
+- CustomerConflicts
 - Requests
 - RequestOptions
 - Appointments
@@ -75,25 +72,26 @@ Google Calendar is used as a shared salon calendar.
 Current model:
 
 - one shared salon calendar
-- all providers can use the same `calendar_id`
-- `primary` can be used for MVP
-- records created by the bot are written to Google Calendar
-- manual Google Calendar events can also be shown in My appointments
+- all providers may use the same calendar
+- bot-created appointments are written to Google Calendar
+- `calendar_event_id` is stored in Appointments
+- manual Calendar events can be shown in My appointments
+- manual Calendar events can be cancelled and rescheduled from the bot
 
-Availability is calculated mainly from Appointments, not from all Calendar events.
-
-This allows different providers to have appointments at the same time in the shared calendar.
+Google Calendar is also used as a source of truth for actual appointment time if a master manually moves the event.
 
 ---
 
 ## Booking Flow
 
-Client flow:
-
 ```text
-/start
+Main menu
 ↓
 Book
+↓
+Customer name
+↓
+Customer phone
 ↓
 Location
 ↓
@@ -107,44 +105,86 @@ Time
 ↓
 Optional additional time options
 ↓
-Customer name
-↓
-Phone
+Customer note
 ↓
 Request created
-
-
-Owner flow:
-
-New request
 ↓
-Approve selected option
-↓
-Appointment created
-↓
-Google Calendar event created
-↓
-Customer notified
+Owner notified
 
+Phone and name are collected before availability calculation so the system can use customer-specific rules.
+
+Owner Approval Flow
+Owner receives request
+↓
+Owner approves one selected option
+↓
+Appointment is created
+↓
+Google Calendar event is created
+↓
+Request and RequestOptions are updated
+↓
+Customer is notified with confirmed date/time
+
+Customer confirmation message includes:
+
+date and time
+service
+provider
+location
 Availability Engine
 
-Availability uses:
+Availability is calculated using:
 
-Provider weekly schedule
-Provider date overrides
-Appointment duration
-Confirmed Appointments
+ProviderSchedule
+ProviderScheduleOverrides
+Service duration
+CustomerServiceSettings duration override
+Confirmed Appointments of the selected provider
+CustomerConflicts blocking rules
 Current time filtering for today
 
-Manual Calendar events are not used to block slots globally, because the salon uses one shared calendar.
+Availability does not use shared Calendar busy slots globally, because one shared calendar may contain appointments for different providers.
 
-Appointment Duration
+Provider Schedule
 
-Duration priority:
+Default schedule is stored in:
+
+ProviderSchedule
+
+Date-specific overrides are stored in:
+
+ProviderScheduleOverrides
+
+ProviderExceptions is not used.
+
+Customer-Specific Duration
+
+The system supports individual service duration for a specific customer, service and provider.
+
+Priority:
 
 CustomerServiceSettings.duration_minutes
 ↓
 Services.default_duration_minutes
+
+The lookup is based on:
+
+customer_id + service_id + provider_id
+Customer Conflicts
+
+Some customers should not be present in the salon at the same time.
+
+These rules are stored in:
+
+CustomerConflicts
+
+If customer A conflicts with customer B, appointments of customer B block available slots for customer A, regardless of provider.
+
+Pairs are stored in both directions:
+
+A → B
+B → A
 My Appointments
 
 Client flow:
@@ -153,43 +193,44 @@ My appointments
 ↓
 Enter phone
 ↓
-Normalize phone
-↓
 Search Appointments
 ↓
 Search manual Google Calendar events
 ↓
 Show active records
 
-Appointments created by the bot are shown from the Appointments table.
+Bot-created appointments are shown from Appointments.
 
-Manual events from Google Calendar are shown only if they are not already linked to an Appointment by calendar_event_id.
+Manual Google Calendar events are shown only if they are not already linked to an Appointment by calendar_event_id.
+
+When My appointments is opened, bot-created appointments are synchronized with Google Calendar. If a master manually moved an event in Calendar, Appointments.start_at and Appointments.end_at are updated.
 
 Manual Google Calendar Events
 
-Manual event description should contain:
+Recommended event description:
 
 Customer: Anna
 Phone: 0664452124
 Service: Haircut
 Provider: Alice
 Location: Center
+Note: -
 
-Minimum required field:
+Minimum required field for lookup:
 
 Phone: 0664452124
 
 Manual Calendar events can be:
 
-viewed in My appointments
+viewed
 cancelled
 rescheduled
 
-They are handled by calendar_event_id.
+They are handled directly by calendar_event_id.
 
 Cancellation Flow
 
-For Appointments created by the bot:
+For bot-created appointments:
 
 My appointments
 ↓
@@ -216,7 +257,7 @@ Confirm
 Calendar event deleted
 Reschedule Flow
 
-For Appointments created by the bot:
+For bot-created appointments:
 
 My appointments
 ↓
@@ -228,9 +269,9 @@ Select new date
 ↓
 Select new time
 ↓
-Appointment start/end updated
+Appointment updated
 ↓
-Google Calendar event updated
+Calendar event updated
 ↓
 Client notified
 ↓
@@ -250,31 +291,51 @@ Select new time
 ↓
 Google Calendar event updated
 
-Manual Calendar event duration is preserved during reschedule.
+Manual Calendar event duration is preserved.
 
-Phone Search
+Reminders
 
-Phone numbers are normalized to digits.
+The system sends appointment reminders one day before the appointment.
 
-Supported input examples:
+Rule:
 
-0664452124
-380664452124
-+380 66 445 21 24
+appointment is tomorrow
+status = confirmed
+reminder_24h_sent_at is empty
+customer.telegram_id exists
+current time is between 08:00 and 21:00
 
-Search uses significant trailing digits, so different common formats can match the same customer.
+After successful sending:
 
-Current Stable Features
+Appointments.reminder_24h_sent_at is filled
+
+If appointment time is changed, reminder status is reset.
+
+Contacts
+
+Contacts are stored in Locations.
+
+Location text is stored through Messages using:
+
+name_key
+address_key
+
+This keeps Locations technical and Messages responsible for multilingual text.
+
+Current ClientBot v1 Features
+Main menu
 Booking
+Name and phone before booking
+Customer note
+Individual customer-service-provider duration
+Provider schedule and overrides
+Customer conflict blocking
 Owner approval
-Request rejection
-Appointment creation
-Shared Google Calendar event creation
+Owner rejection
+Google Calendar sync
+Manual Calendar event support
 My appointments by phone
-Manual Calendar event lookup
-Appointment cancellation
-Calendar event cancellation
-Appointment reschedule
-Calendar event reschedule
-Client notifications
-Owner notifications
+Cancellation
+Reschedule
+Contacts
+24h reminders

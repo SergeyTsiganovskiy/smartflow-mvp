@@ -4,64 +4,73 @@
 
 Stores global configuration.
 
-Typical fields:
-
 ```text
 Key
 Value
-```
 
 Important keys:
 
-```text
 ClientBotToken
 OwnerTelegramId
 Language
 TimeZone
 Currency
-```
+Messages
 
----
+Stores localized text.
 
-## Messages
-
-Stores localized bot messages.
-
-```text
 message_key
 uk
 ru
 en
-```
 
 Used through:
 
-```javascript
 getMessage(MESSAGE_KEYS.KEY)
-```
 
----
+Examples:
 
-## Locations
+START
+MAIN_MENU
+MAIN_MENU_TEXT
+BOOK
+MY_APPOINTMENTS
+CONTACTS
+LOCATION_CENTER_NAME
+LOCATION_CENTER_ADDRESS
+Locations
 
-```text
+Stores technical location data.
+
 location_id
-name_uk
-name_ru
-name_en
-address
+name_key
+address_key
+working_hours
+instagram
+telegram
+website
+google_maps_url
+phone_1
+phone_2
 active
-```
 
-Purpose:
+Example:
 
-Stores salon branches.
+loc_001
+LOCATION_CENTER_NAME
+LOCATION_CENTER_ADDRESS
+Пн-Сб 09:00-18:00
+instagram.com/alice_hair_hub
+@alice_hair_hub
+https://example.com
+https://maps.google.com/...
+380000000001
+380000000002
+TRUE
 
----
+Localized name and address are stored in Messages.
 
-## Services
-
-```text
+Services
 service_id
 name_uk
 name_ru
@@ -69,21 +78,14 @@ name_en
 default_duration_minutes
 base_price
 active
-```
 
 Purpose:
 
-Stores default service settings.
+Stores service defaults.
 
-`default_duration_minutes` is used when no individual duration exists.
+default_duration_minutes is used if no individual customer duration exists.
 
-`base_price` is used when no individual price exists.
-
----
-
-## Providers
-
-```text
+Providers
 provider_id
 location_id
 name_uk
@@ -93,23 +95,14 @@ phone
 telegram_id
 calendar_id
 active
-```
 
 Purpose:
 
 Stores providers/masters.
 
-For MVP all providers may use the same shared calendar:
+For MVP, multiple providers may use the same shared calendar.
 
-```text
-primary
-```
-
----
-
-## ProviderSchedule
-
-```text
+ProviderSchedule
 provider_id
 provider_name
 day_of_week
@@ -117,11 +110,9 @@ start_time
 end_time
 is_working
 notes
-```
 
-Allowed `day_of_week` values:
+Allowed day values:
 
-```text
 MON
 TUE
 WED
@@ -129,19 +120,12 @@ THU
 FRI
 SAT
 SUN
-```
 
 Purpose:
 
 Default weekly schedule for each provider.
 
-`provider_name` is duplicated for human readability.
-
----
-
-## ProviderScheduleOverrides
-
-```text
+ProviderScheduleOverrides
 provider_id
 provider_name
 date
@@ -149,35 +133,22 @@ start_time
 end_time
 is_working
 notes
-```
 
 Purpose:
 
-Overrides weekly schedule for specific dates.
+Overrides default weekly schedule for specific dates.
 
 Examples:
 
-```text
 day off
+vacation
 short day
 extra working day
-vacation
 holiday
-```
 
-Date format should preferably be:
+ProviderExceptions is not used.
 
-```text
-YYYY-MM-DD
-```
-
-The code also normalizes common date formats.
-
----
-
-## Customers
-
-```text
+Customers
 customer_id
 telegram_id
 name
@@ -188,28 +159,17 @@ updated_at
 last_visit_at
 status
 notes
-```
 
 Statuses:
 
-```text
 lead
 confirmed
-```
-
-Purpose:
-
-Stores customers.
 
 Phone is the main lookup key.
 
-Telegram ID is used only as a communication channel when available.
+Telegram ID is used for notifications and reminders when available.
 
----
-
-## CustomerServiceSettings
-
-```text
+CustomerServiceSettings
 customer_id
 customer_name
 phone
@@ -221,68 +181,66 @@ duration_minutes
 price
 updated_at
 notes
-```
 
 Purpose:
 
 Stores individual customer settings for a specific service and provider.
 
-Examples:
-
-```text
-Customer A + Coloring + Marina = 240 minutes
-Customer B + Coloring + Marina = 180 minutes
-```
-
-Human-readable columns are duplicated intentionally.
-
 Duration priority:
 
-```text
 CustomerServiceSettings.duration_minutes
 ↓
 Services.default_duration_minutes
-```
 
 Price priority:
 
-```text
 CustomerServiceSettings.price
 ↓
 Services.base_price
-```
 
----
+Lookup key:
 
-## Requests
+customer_id + service_id + provider_id
+CustomerConflicts
+customer_id
+conflict_customer_id
+active
+notes
 
-```text
+Purpose:
+
+Prevents conflicting customers from being present at the same time.
+
+Store both directions:
+
+cust_001 | cust_005 | TRUE
+cust_005 | cust_001 | TRUE
+
+When customer cust_001 books, appointments of cust_005 block available slots.
+
+This rule works salon-wide, regardless of provider.
+
+Requests
 request_id
 customer_id
 service_id
 provider_id
 location_id
+customer_note
 status
 created_at
-```
 
 Statuses:
 
-```text
 pending
 confirmed
 rejected
-```
 
 Purpose:
 
-Stores booking requests before they become appointments.
+Stores booking requests before approval.
 
----
-
-## RequestOptions
-
-```text
+RequestOptions
 option_id
 request_id
 preferred_date
@@ -290,27 +248,16 @@ preferred_time
 priority
 status
 created_at
-```
 
 Statuses:
 
-```text
 pending
 approved
 rejected
-```
 
-Purpose:
+A request can have up to 3 preferred time options.
 
-Stores client preferred time options.
-
-A request can have up to 3 options.
-
----
-
-## Appointments
-
-```text
+Appointments
 appointment_id
 request_id
 customer_id
@@ -323,44 +270,36 @@ status
 calendar_event_id
 created_at
 updated_at
-```
+customer_note
+reminder_24h_sent_at
 
 Statuses:
 
-```text
 confirmed
 cancelled
 completed
 no_show
-```
 
 Purpose:
 
 Stores confirmed appointments.
 
-`calendar_event_id` links the Appointment to Google Calendar.
+calendar_event_id links Appointment to Google Calendar.
 
 When appointment is cancelled:
 
-```text
 status = cancelled
 calendar event is deleted
-```
 
 When appointment is rescheduled:
 
-```text
 start_at updated
 end_at updated
 calendar event updated
-```
-
----
-
-## UserSessions
-
-```text
+reminder_24h_sent_at reset
+UserSessions
 telegram_id
+customer_id
 location_id
 service_id
 provider_id
@@ -379,97 +318,65 @@ reschedule_date
 reschedule_time
 customer_name
 customer_phone
+customer_note
 updated_at
-```
 
 Purpose:
 
-Stores temporary user state and flow data.
+Temporary user state and flow data.
 
 Used for:
 
-- booking flow
-- My appointments phone retry
-- appointment reschedule
-- manual Calendar event cancellation
-- manual Calendar event reschedule
-
-Important temporary fields:
-
-```text
-reschedule_appointment_id
-pending_calendar_event_id
-reschedule_date
-reschedule_time
-```
-
----
-
-## AuditLog
-
-```text
+booking
+customer lookup
+individual duration
+My appointments
+cancellation
+reschedule
+manual Calendar event actions
+AuditLog
 created_at
 event
 details
-```
 
 Purpose:
 
 Debugging and operational visibility.
 
-Temporary debug logs should be removed or reduced before production use.
+Temporary debug logs should be reduced before production.
 
----
-
-## Manual Google Calendar Event Format
+Manual Google Calendar Event Format
 
 Recommended event title:
 
-```text
-Haircut
-```
+Haircut — Anna
 
 Recommended description:
 
-```text
 Customer: Anna
 Phone: 0664452124
 Service: Haircut
 Provider: Alice
 Location: Center
-```
+Note: -
 
 Minimum required for lookup:
 
-```text
 Phone: 0664452124
-```
 
-Manual Calendar events are not stored in Appointments unless created through the bot.
+Manual Calendar events are not stored in Appointments unless created by the bot.
 
-They are handled directly by `calendar_event_id`.
+Phone Normalization
 
----
+Supported input examples:
 
-## Phone Normalization
-
-Input examples:
-
-```text
 0664452124
 380664452124
 +380 66 445 21 24
-```
 
-The system normalizes phone numbers and searches by significant trailing digits.
+Search uses normalized phone digits.
 
----
-
-## Callback Actions
-
-Main callback actions:
-
-```text
+Callback Actions
 approve_option_1|request_id
 approve_option_2|request_id
 approve_option_3|request_id
@@ -488,12 +395,20 @@ back_to_calendar_event
 
 reschedule_calendar_event|calendar_event_id
 confirm_reschedule_calendar_event
-```
 
-Long Calendar event IDs are stored in UserSessions as:
+Long Calendar event IDs are stored in UserSessions:
 
-```text
 pending_calendar_event_id
-```
 
 because Telegram callback data has a length limit.
+
+Removed / Not Used
+Any Provider
+ProviderExceptions
+ClientConflicts
+START_BUTTON
+
+Current names:
+
+CustomerConflicts
+MAIN_MENU

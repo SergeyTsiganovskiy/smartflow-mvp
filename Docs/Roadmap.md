@@ -3,22 +3,32 @@
 ```markdown
 # SmartFlow Beauty Demo Roadmap
 
-## Completed
+## Completed in ClientBot v1
+
+### Client UX
+
+- Main menu
+- Main menu button available during flows
+- Book appointment
+- My appointments
+- Contacts
+- Name is collected before booking details
+- Phone is collected before booking details
+- Customer note is collected before request creation
+
+---
 
 ### Booking
 
-- Client start menu
 - Location selection
 - Service selection
 - Provider selection
 - Date selection
 - Custom date selection
-- 60-day booking window
 - Time selection
-- Up to 3 preferred options
-- Customer name input
-- Customer phone input
+- Up to 3 preferred time options
 - Request creation
+- Owner notification
 
 ---
 
@@ -26,165 +36,182 @@
 
 - Provider weekly schedule
 - Provider date overrides
-- Working day detection
-- Day-off detection
-- Service duration support
-- Individual customer-service duration support
-- Busy slot detection from Appointments
 - Current-day past slot filtering
 - 30-minute slot step
+- Rounded current-day slots
+- Provider-specific busy slots
+- Customer-specific duration
+- Customer conflict blocking
+
+---
+
+### Customer-Specific Settings
+
+- Customer lookup by phone
+- CustomerServiceSettings support
+- Individual duration by:
+  - customer
+  - service
+  - provider
+- Fallback to default service duration
+
+---
+
+### Customer Conflicts
+
+- CustomerConflicts table
+- Conflict customer lookup
+- Conflict appointments block availability
+- Supports salon-level conflict rule:
+  - conflicting customers should not be present at the same time
 
 ---
 
 ### Owner Approval
 
-- Request notification to owner
-- Approve selected option
-- Reject request
+- Owner receives request
+- Owner can approve selected option
+- Owner can reject request
 - Duplicate approval protection
-- Request status update
-- Request option status update
-- Customer status update
+- Customer receives confirmed appointment details
 
 ---
 
 ### Appointments
 
 - Appointment creation
-- Appointment start time
-- Appointment end time
-- Appointment status
-- Appointment calendar_event_id
 - Appointment cancellation
 - Appointment reschedule
+- Appointment status updates
+- Google Calendar event creation
+- Google Calendar event update
+- Google Calendar event deletion
 
 ---
 
 ### Google Calendar
 
 - Shared salon calendar
-- Calendar event creation from Appointment
+- Bot-created Calendar events
 - Calendar event ID storage
-- Calendar event deletion on cancellation
-- Calendar event update on reschedule
-- Manual Calendar event lookup by phone
+- Manual Calendar event lookup
 - Manual Calendar event cancellation
 - Manual Calendar event reschedule
+- Sync Appointment time from Calendar when event is manually moved
 
 ---
 
 ### My Appointments
 
 - Lookup by phone
-- Phone normalization
-- Retry flow if no appointments found
-- Active Appointments display
-- Manual Calendar events display
-- Appointment cards with inline actions
+- Shows bot-created appointments
+- Shows manual Calendar events
+- Shows customer note
+- Cancel action
+- Reschedule action
 
 ---
 
-### Cancellation
+### Reminders
 
-- Confirmation before cancellation
-- Back to appointment card
-- Appointment status changed to cancelled
-- Calendar event deleted
-- Client notification
-- Owner notification
+- 24h appointment reminder
+- Reminder sending window: 08:00–21:00
+- Reminder is sent only once
+- Reminder is reset after appointment time change
 
 ---
 
-### Reschedule
+### Contacts
 
-- Confirmation before reschedule
-- Back to appointment card
-- New date selection
-- Custom date selection
-- New time selection
-- Appointment date/time update
-- Calendar event date/time update
-- Client notification
-- Owner notification
-- Manual Calendar event reschedule
-
----
-
-## Next Priority
-
-### 1. Cleanup
-
-- Remove temporary debug logs
-- Remove unused functions
-- Replace hardcoded text with Messages keys
-- Review duplicate helper functions
-- Check all callback actions naming
+- Contacts shown from Locations
+- Multilingual location names and addresses through Messages
+- Supports:
+  - address
+  - working hours
+  - phone 1
+  - phone 2
+  - Instagram
+  - Telegram
+  - website
+  - Google Maps URL
 
 ---
 
-### 2. Reminders
+## Next Major Phase
 
-Planned reminders:
+### AdminBot v1
+
+Primary goal:
 
 ```text
-24 hours before appointment
-2 hours before appointment
+make data entry easy for salon owner/admin
 
-Possible implementation:
+AdminBot should manage:
 
-time-driven Apps Script trigger
-check Appointments with status confirmed
-send Telegram reminder
-mark reminder as sent
+customers
+services
+providers
+schedules
+schedule overrides
+customer-specific duration
+customer conflicts
+AdminBot Priority 1
+1. Customers
+Search customer by phone
+Create customer
+Edit customer
+View customer card
+View customer appointments
+2. Services
+Add service
+Edit service
+Set default duration
+Set base price
+Activate/deactivate service
+3. Providers
+Add provider
+Edit provider
+Assign location
+Set provider Telegram ID
+Set provider calendar ID
+Activate/deactivate provider
+4. Schedules
+Set weekly schedule
+Add date override
+Mark day off
+Set short working day
+Set extra working day
+5. CustomerServiceSettings
+Search customer
+Select service
+Select provider
+Set individual duration
+Set individual price
+6. CustomerConflicts
+Search customer A
+Search customer B
+Add conflict
+Remove conflict
+List conflicts
+AdminBot Priority 2
+Today's appointments
+Tomorrow's appointments
+Appointments by provider
+Cancel appointment
+Reschedule appointment
+Mark appointment as completed
+Mark no-show
+Create manual appointment
+AdminBot Priority 3
+Broadcasts to customers
+Statistics
+Visit history
+Revenue reports
+Service popularity
+Provider workload
+Customer retention
+Future Option
 
-May require new columns:
+Telegram Web App may be added later for complex forms.
 
-reminder_24h_sent_at
-reminder_2h_sent_at
-3. Appointment Completion
-
-Add status flow:
-
-confirmed
-↓
-completed
-
-Useful for:
-
-visit history
-customer last_visit_at
-future analytics
-4. Customer History
-
-Show:
-
-previous appointments
-cancelled appointments
-no-show appointments
-total visits
-last visit date
-5. Admin Improvements
-
-Possible features:
-
-owner command to list today's appointments
-owner command to list tomorrow's appointments
-manual appointment creation from bot
-quick customer search
-provider daily workload
-6. Reporting
-
-Possible reports:
-
-appointments by provider
-appointments by service
-cancellations
-revenue estimate
-customer return rate
-Later
-Multi-branch calendars
-Separate provider calendars
-Role-based access
-Admin bot
-Customer language preference per Telegram user
-Web dashboard
+For now, AdminBot should use step-by-step Telegram flows.

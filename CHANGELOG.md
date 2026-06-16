@@ -3,38 +3,78 @@
 ```markdown
 # Changelog
 
+## 2026-06-15
+
+### Added
+
+- Main menu button available during client flows.
+- Contacts branch.
+- Contacts are now generated from Locations.
+- Multilingual location names and addresses are now stored in Messages.
+- Locations now use `name_key` and `address_key`.
+- CustomerServiceSettings integration for individual duration.
+- Customer lookup by phone before availability calculation.
+- CustomerConflicts table.
+- Conflict customers now block availability slots.
+- Availability now supports customer-specific blocking rules.
+- Approved request notification to customer now includes:
+  - date
+  - time
+  - service
+  - provider
+  - location
+
+### Changed
+
+- Booking flow now starts with customer name and phone.
+- Phone is collected before location/service/provider selection.
+- Customer-specific duration is used when available.
+- Default service duration is used only as fallback.
+- Removed Any Provider from ClientBot.
+- Rounded same-day available slots to 30-minute steps.
+- ProviderExceptions is no longer used.
+- ClientConflicts was renamed to CustomerConflicts.
+
+### Fixed
+
+- Same-day slots no longer produce invalid times like 17:23.
+- Contact button now works.
+- Main menu is available inside booking and My appointments flows.
+- Location multilingual architecture was cleaned up.
+- Availability investigation confirmed provider-specific filtering works correctly.
+
+---
+
 ## 2026-06-14
 
 ### Added
 
-- Manual Google Calendar events can now appear in My appointments.
-- Manual Calendar events are found by phone number in event title or description.
-- Manual Calendar event cards now show parsed fields:
-  - Customer
-  - Phone
-  - Service
-  - Provider
-  - Location
-- Manual Calendar events can be cancelled from the bot.
-- Manual Calendar events can be rescheduled from the bot.
+- Manual Google Calendar events can appear in My appointments.
+- Manual Calendar events are found by phone number.
+- Manual Calendar event cards show parsed fields.
+- Manual Calendar events can be cancelled.
+- Manual Calendar events can be rescheduled.
 - Calendar event reschedule preserves original event duration.
-- Added pending calendar event handling through UserSessions.
-- Added safe callback handling for long Google Calendar event IDs.
+- Safe callback handling for long Google Calendar event IDs.
+- 24h reminders.
+- Appointment time sync from Google Calendar.
+- Reminder reset after appointment time changes.
 
 ### Changed
 
-- Calendar events created by the bot are excluded from manual Calendar lookup to avoid duplicate display.
-- Reschedule flow now supports both Appointments and manual Calendar events.
-- Calendar event IDs are no longer passed directly in long callback payloads for confirmation actions.
-- Reschedule date flow now has separate messages for normal booking and rescheduling.
+- Calendar events created by the bot are excluded from manual Calendar lookup.
+- Reschedule flow supports both Appointments and manual Calendar events.
+- Calendar event IDs are stored in UserSessions for confirmation actions.
+- Reminder logic uses “day before appointment” rather than exact 24h time.
 
 ### Fixed
 
-- Duplicate “Select new date” message during reschedule.
-- Custom date selection during Calendar event reschedule.
-- Telegram `BUTTON_DATA_INVALID` caused by long callback data.
-- Manual Calendar event cancellation flow.
-- Manual Calendar event reschedule flow.
+- Telegram `BUTTON_DATA_INVALID` for long Calendar event IDs.
+- Duplicate “Select new date” message.
+- Custom date selection during reschedule.
+- Manual Calendar event cancellation.
+- Manual Calendar event reschedule.
+- My appointments now shows updated time if Calendar event was manually moved.
 
 ---
 
@@ -42,41 +82,38 @@
 
 ### Added
 
-- My appointments feature.
-- Appointment lookup by phone number.
-- Phone number normalization.
-- Search by significant trailing phone digits.
-- Google Calendar event creation after appointment confirmation.
-- Google Calendar event ID storage in Appointments.
+- My appointments by phone.
+- Phone normalization.
+- Google Calendar event creation after approval.
 - Appointment cancellation.
 - Cancellation confirmation.
-- Back to appointment card action.
+- Back to appointment card.
 - Appointment reschedule.
 - Reschedule confirmation.
-- Google Calendar event update after reschedule.
-- Owner notification after cancellation.
-- Owner notification after reschedule.
-- Client notification after cancellation.
-- Client notification after reschedule.
+- Calendar update after reschedule.
+- Client notifications.
+- Owner notifications.
+- Customer note.
+- Customer note in owner request.
+- Customer note in Appointment.
+- Customer note in Google Calendar.
+- Customer note in My appointments.
 
 ### Changed
 
-- My appointments no longer depends on telegram_id.
-- Phone is the primary lookup key for client appointment lookup.
+- My appointments no longer depends only on Telegram ID.
+- Phone became primary lookup key.
 - Availability is calculated from Appointments and provider schedule.
-- Shared calendar is used for salon visibility.
-- Calendar events no longer block availability for all providers in the shared calendar.
+- Shared Calendar no longer blocks all providers globally.
 
 ### Fixed
 
-- Leading zero issues in phone numbers.
-- Appointment date/time formatting.
+- Leading zero phone issues.
 - Request approval callback issues.
-- Appointment end_at generation.
-- Google Calendar sync after approval.
-- Google Calendar sync after cancellation.
-- Google Calendar sync after reschedule.
-- Past time slots shown for the current day.
+- Appointment end time generation.
+- Calendar sync after approval.
+- Calendar sync after cancellation.
+- Calendar sync after reschedule.
 
 ---
 
@@ -84,36 +121,41 @@
 
 ### Added
 
-- ProviderSchedule table.
-- ProviderScheduleOverrides table.
-- CustomerServiceSettings table.
-- Individual service duration support.
-- Individual service price support.
-- Availability Engine design.
-- Appointment table integration.
-- RequestOptions flow.
+- ProviderSchedule.
+- ProviderScheduleOverrides.
+- CustomerServiceSettings.
+- Individual duration model design.
+- Individual price model design.
+- Availability Engine.
+- RequestOptions.
+- Appointments table integration.
 
 ### Changed
 
-- Simplified Services duration model.
-- Replaced min/max duration logic with default duration and customer-specific settings.
-- Replaced price range with base_price.
-- Customers are created/updated by phone instead of Telegram-only identity.
+- Services duration model simplified.
+- Default duration moved to Services.
+- Individual duration moved to CustomerServiceSettings.
 
 ---
 
-## Current Stable Version
+## Current Stable State
 
-The system currently supports:
+ClientBot v1 is functionally complete.
+
+Supported:
 
 - booking
+- customer note
+- individual duration
+- customer conflicts
+- provider schedules
+- schedule overrides
 - owner approval
-- appointment creation
-- shared Google Calendar sync
+- owner rejection
+- Google Calendar sync
+- manual Calendar events
 - My appointments
-- manual Calendar event lookup
 - cancellation
 - reschedule
-- Calendar cleanup
-- client notifications
-- owner notifications
+- reminders
+- contacts
