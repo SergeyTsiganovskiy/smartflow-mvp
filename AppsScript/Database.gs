@@ -1696,3 +1696,45 @@ function getAppointmentsForCustomersOnDate(
 
   return result;
 }
+
+function getActiveRequestRecipients() {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('RequestRecipients');
+
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0];
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    const active =
+      String(item.active).toUpperCase();
+
+    const receiveRequests =
+      String(item.receive_new_requests)
+        .toUpperCase();
+
+    if (
+      active === 'TRUE' &&
+      receiveRequests === 'TRUE' &&
+      item.telegram_id
+    ) {
+      result.push(item);
+    }
+  }
+
+  return result;
+}
+

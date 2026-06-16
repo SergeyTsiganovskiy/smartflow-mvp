@@ -95,24 +95,3 @@ function testFindAppointmentsByPhone() {
 
   Logger.log(JSON.stringify(appointments));
 }
-
-function testConflicts() {
-  Logger.log(
-    getConflictingCustomerIds('cust_001')
-  );
-}
-
-function testConflictAppointments() {
-  const customerIds =
-    getConflictingCustomerIds('cust_001');
-
-  const result =
-    getAppointmentsForCustomersOnDate(
-      customerIds,
-      new Date('2026-06-16')
-    );
-
-  Logger.log(
-    JSON.stringify(result)
-  );
-}

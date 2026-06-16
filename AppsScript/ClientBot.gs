@@ -886,12 +886,28 @@ function notifyOwnerAboutRequestFromSession(session, requestId) {
     }
   ]);
 
-  sendTelegramMessageWithInlineKeyboard(
-    settings.ClientBotToken,
-    settings.OwnerTelegramId,
-    text,
-    inlineKeyboard
-  );
+  const recipients =
+    getActiveRequestRecipients();
+
+  if (recipients.length === 0) {
+    sendTelegramMessageWithInlineKeyboard(
+      settings.ClientBotToken,
+      settings.OwnerTelegramId,
+      text,
+      inlineKeyboard
+    );
+
+    return;
+  }
+
+  recipients.forEach(function(recipient) {
+    sendTelegramMessageWithInlineKeyboard(
+      settings.ClientBotToken,
+      recipient.telegram_id,
+      text,
+      inlineKeyboard
+    );
+  });
 }
 
 function handleOwnerCallback(callbackQuery) {
@@ -1217,13 +1233,21 @@ if (action.indexOf('approve_option_') === 0) {
   const provider = findProviderById(request.provider_id);
   const location = findLocationById(request.location_id);
 
-  const originalText = callbackQuery.message.text || '';
+  const requestOptions =
+    getRequestOptionsByRequestId(requestId);
+
+  const ownerText =
+    buildOwnerRequestConfirmedText(
+      request,
+      requestOptions,
+      priority
+    );
 
   editTelegramMessage(
     settings.ClientBotToken,
     ownerChatId,
     callbackQuery.message.message_id,
-    originalText + '\n\n' + getMessage(MESSAGE_KEYS.OWNER_REQUEST_CONFIRMED_STATUS)
+    ownerText
   );
 
   if (customer && customer.telegram_id) {
@@ -1505,21 +1529,18 @@ function showRescheduleDateOptions(chatId, settings) {
     STATES.WAITING_RESCHEDULE_DATE
   );
 
-  const keyboard = {
-    keyboard: [
-      [
-        { text: getMessage(MESSAGE_KEYS.TODAY) },
-        { text: getMessage(MESSAGE_KEYS.TOMORROW) }
-      ],
-      [
-        { text: getMessage(MESSAGE_KEYS.DAY_AFTER_TOMORROW) }
-      ],
-      [
-        { text: getMessage(MESSAGE_KEYS.OTHER_DATE) }
-      ]
+  const keyboard = buildKeyboardWithMainMenu([
+    [
+      { text: getMessage(MESSAGE_KEYS.TODAY) },
+      { text: getMessage(MESSAGE_KEYS.TOMORROW) }
     ],
-    resize_keyboard: true
-  };
+    [
+      { text: getMessage(MESSAGE_KEYS.DAY_AFTER_TOMORROW) }
+    ],
+    [
+      { text: getMessage(MESSAGE_KEYS.OTHER_DATE) }
+    ]
+  ]);
 
   sendTelegramMessage(
     settings.ClientBotToken,
@@ -1550,12 +1571,15 @@ function showRescheduleTimeOptions(chatId, settings) {
       return;
     }
 
-    const providerName = extractFieldFromText(
-      event.description,
-      'Provider'
-    );
+    const data =
+      extractSmartflowCalendarData(
+        event.description
+      ) || {};
 
-    const provider = findProviderByName(providerName);
+    const provider =
+      data.provider_id
+        ? findProviderById(data.provider_id)
+        : null;
 
     if (!provider) {
       sendTelegramMessage(
@@ -1572,14 +1596,10 @@ function showRescheduleTimeOptions(chatId, settings) {
       (event.end_at.getTime() - event.start_at.getTime()) / 60000
     );
 
-    const phone = extractFieldFromText(
-      event.description,
-      'Phone'
-    );
-
-    const customer = phone
-      ? getCustomerByPhone(phone)
-      : null;
+    const customer =
+      data.customer_id
+        ? getCustomerById(data.customer_id)
+        : null;
 
     customerId =
       customer && customer.customer_id
@@ -1679,10 +1699,9 @@ function showRescheduleCustomDateOptions(chatId, settings) {
     ]);
   }
 
-  const keyboard = {
-    keyboard: keyboardRows,
-    resize_keyboard: true
-  };
+  const keyboard = buildKeyboardWithMainMenu(
+    keyboardRows
+  );
 
   sendTelegramMessage(
     settings.ClientBotToken,
@@ -1721,46 +1740,62 @@ function notifyOwnerAboutReschedule(appointment, oldStartAt, oldEndAt) {
 }
 
 function sendCalendarAppointmentCard(chatId, settings, appointment) {
-  const description = appointment.description || '';
+  const description =
+    appointment.description || '';
 
-  const customer =
-    extractFieldFromText(description, 'Customer');
+  const appointmentId =
+    extractCalendarTechValue(
+      description,
+      'appointment_id'
+    );
 
-  const phone =
-    extractFieldFromText(description, 'Phone');
+  if (!appointmentId) {
+    return;
+  }
+
+  const linkedAppointment =
+    getAppointmentById(appointmentId);
+
+  if (!linkedAppointment) {
+    return;
+  }
 
   const service =
-    extractFieldFromText(description, 'Service') ||
-    appointment.title;
+    findServiceById(
+      linkedAppointment.service_id
+    );
 
   const provider =
-    extractFieldFromText(description, 'Provider');
+    findProviderById(
+      linkedAppointment.provider_id
+    );
 
   const location =
-    extractFieldFromText(description, 'Location');
+    findLocationById(
+      linkedAppointment.location_id
+    );
 
-  let text =
-    formatDateTimeForDisplay(appointment.start_at) +
-    '\n\n';
+  const customerNote =
+    String(
+      linkedAppointment.customer_note || ''
+    ).trim() || '-';
 
-  text +=
+  const text =
+    formatDateTimeForDisplay(
+      appointment.start_at
+    ) +
+    '\n\n' +
     '💅 ' +
-    service +
-    '\n';
-
-  if (provider) {
-    text +=
-      '👩‍💼 ' +
-      provider +
-      '\n';
-  }
-
-  if (location) {
-    text +=
-      '📍 ' +
-      location +
-      '\n';
-  }
+    (service ? service.name : linkedAppointment.service_id) +
+    '\n' +
+    '👩‍💼 ' +
+    (provider ? provider.name : linkedAppointment.provider_id) +
+    '\n' +
+    '📍 ' +
+    (location ? location.name : linkedAppointment.location_id) +
+    '\n' +
+    '📝 Комментарий: ' +
+    customerNote;
 
   const inlineKeyboard = [
     [
@@ -1878,4 +1913,124 @@ function showContacts(chatId, settings) {
     text,
     keyboard
   );
+}
+
+function buildOwnerRequestConfirmedText(
+  request,
+  options,
+  approvedPriority
+) {
+  const customer = getCustomerById(request.customer_id);
+  const service = findServiceById(request.service_id);
+  const provider = findProviderById(request.provider_id);
+  const location = findLocationById(request.location_id);
+
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.NEW_REQUEST_OWNER_TITLE) +
+    '</b>\n\n';
+
+  text +=
+    '👤 ' +
+    getMessage(MESSAGE_KEYS.OWNER_CUSTOMER) +
+    ': ' +
+    (customer ? customer.name : request.customer_id) +
+    '\n';
+
+  text +=
+    '📞 ' +
+    getMessage(MESSAGE_KEYS.OWNER_PHONE) +
+    ': ' +
+    (customer ? customer.phone : '') +
+    '\n';
+
+  text +=
+    '📝 Комментарий: ' +
+    (String(request.customer_note || '').trim() || '-') +
+    '\n\n';
+
+  text +=
+    '📍 ' +
+    getMessage(MESSAGE_KEYS.OWNER_LOCATION) +
+    ': ' +
+    (location ? location.name : request.location_id) +
+    '\n';
+
+  text +=
+    '💅 ' +
+    getMessage(MESSAGE_KEYS.OWNER_SERVICE) +
+    ': ' +
+    (service ? service.name : request.service_id) +
+    '\n';
+
+  text +=
+    '👩‍💼 ' +
+    getMessage(MESSAGE_KEYS.OWNER_PROVIDER) +
+    ': ' +
+    (provider ? provider.name : request.provider_id) +
+    '\n\n';
+
+  text +=
+    '<b>' +
+    getMessage(MESSAGE_KEYS.OWNER_TIME_OPTIONS) +
+    ':</b>\n';
+
+  options.forEach(function(option) {
+    const line =
+      option.priority +
+      ') ' +
+      formatDateForDisplay(option.preferred_date) +
+      ' ' +
+      formatTimeForDisplay(option.preferred_time);
+
+    if (
+      options.length > 1 &&
+      Number(option.priority) ===
+      Number(approvedPriority)
+    ) {
+      text += '<b>' + line + '</b>\n';
+    } else {
+      text += line + '\n';
+    }
+  });
+
+  text +=
+    '\n' +
+    getMessage(
+      MESSAGE_KEYS.OWNER_REQUEST_CONFIRMED_STATUS
+    );
+
+  return text;
+}
+
+function getRequestOptionsByRequestId(requestId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('RequestOptions');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    if (
+      String(item.request_id) ===
+      String(requestId)
+    ) {
+      result.push(item);
+    }
+  }
+
+  result.sort(function(a, b) {
+    return Number(a.priority) - Number(b.priority);
+  });
+
+  return result;
 }

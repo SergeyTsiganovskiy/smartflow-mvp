@@ -1,47 +1,69 @@
-# Database Schema
+# DatabaseSchema.md
+
+# SmartFlow Beauty Demo Database Schema
 
 ## Settings
 
-Stores global configuration.
+Global application settings.
+
+### Columns
 
 ```text
-Key
-Value
+key
+value
+```
 
-Important keys:
+### Examples
 
+```text
 ClientBotToken
 OwnerTelegramId
 Language
 TimeZone
-Currency
-Messages
+```
 
-Stores localized text.
+---
 
+# Messages
+
+Localization table.
+
+All user-facing text is stored here.
+
+### Columns
+
+```text
 message_key
 uk
 ru
 en
+```
 
-Used through:
+### Examples
 
-getMessage(MESSAGE_KEYS.KEY)
-
-Examples:
-
+```text
 START
-MAIN_MENU
-MAIN_MENU_TEXT
 BOOK
 MY_APPOINTMENTS
 CONTACTS
-LOCATION_CENTER_NAME
-LOCATION_CENTER_ADDRESS
-Locations
+MAIN_MENU
+CALENDAR_CUSTOMER
+CALENDAR_PHONE
+CALENDAR_SERVICE
+CALENDAR_PROVIDER
+CALENDAR_LOCATION
+CALENDAR_NOTE
+```
 
-Stores technical location data.
+---
 
+# Locations
+
+Business locations.
+
+### Columns
+
+```text
 location_id
 name_key
 address_key
@@ -53,24 +75,35 @@ google_maps_url
 phone_1
 phone_2
 active
+```
 
-Example:
+### Example
 
+```text
 loc_001
-LOCATION_CENTER_NAME
-LOCATION_CENTER_ADDRESS
+LOCATION_001_NAME
+LOCATION_001_ADDRESS
 Пн-Сб 09:00-18:00
-instagram.com/alice_hair_hub
-@alice_hair_hub
-https://example.com
+instagram.com/alice
+@alice
+https://site.com
 https://maps.google.com/...
 380000000001
 380000000002
 TRUE
+```
 
-Localized name and address are stored in Messages.
+Localized values are retrieved through Messages.
 
-Services
+---
+
+# Services
+
+Services offered by the salon.
+
+### Columns
+
+```text
 service_id
 name_uk
 name_ru
@@ -78,14 +111,29 @@ name_en
 default_duration_minutes
 base_price
 active
+```
 
-Purpose:
+### Example
 
-Stores service defaults.
+```text
+serv_001
+Стрижка
+Стрижка
+Haircut
+60
+500
+TRUE
+```
 
-default_duration_minutes is used if no individual customer duration exists.
+---
 
-Providers
+# Providers
+
+Salon masters.
+
+### Columns
+
+```text
 provider_id
 location_id
 name_uk
@@ -95,14 +143,31 @@ phone
 telegram_id
 calendar_id
 active
+```
 
-Purpose:
+### Example
 
-Stores providers/masters.
+```text
+prov_001
+loc_001
+Аліса
+Алиса
+Alice
+380000000001
+123456789
+calendar@gmail.com
+TRUE
+```
 
-For MVP, multiple providers may use the same shared calendar.
+---
 
-ProviderSchedule
+# ProviderSchedule
+
+Weekly schedule.
+
+### Columns
+
+```text
 provider_id
 provider_name
 day_of_week
@@ -110,9 +175,23 @@ start_time
 end_time
 is_working
 notes
+```
 
-Allowed day values:
+### Example
 
+```text
+prov_001
+Алиса
+MON
+09:00
+18:00
+TRUE
+-
+```
+
+### Allowed Days
+
+```text
 MON
 TUE
 WED
@@ -120,12 +199,17 @@ THU
 FRI
 SAT
 SUN
+```
 
-Purpose:
+---
 
-Default weekly schedule for each provider.
+# ProviderScheduleOverrides
 
-ProviderScheduleOverrides
+Date-specific schedule overrides.
+
+### Columns
+
+```text
 provider_id
 provider_name
 date
@@ -133,22 +217,35 @@ start_time
 end_time
 is_working
 notes
+```
 
-Purpose:
+### Examples
 
-Overrides default weekly schedule for specific dates.
+```text
+Vacation
+Holiday
+Day Off
+Extra Working Day
+Short Day
+```
 
-Examples:
+Priority:
 
-day off
-vacation
-short day
-extra working day
-holiday
+```text
+Override
+↓
+ProviderSchedule
+```
 
-ProviderExceptions is not used.
+---
 
-Customers
+# Customers
+
+Customer directory.
+
+### Columns
+
+```text
 customer_id
 telegram_id
 name
@@ -159,17 +256,47 @@ updated_at
 last_visit_at
 status
 notes
+```
 
-Statuses:
+### Statuses
 
+```text
 lead
 confirmed
+```
 
-Phone is the main lookup key.
+### Example
 
-Telegram ID is used for notifications and reminders when available.
+```text
+cust_001
+123456789
+Иван
+0661234567
+ru
+...
+confirmed
+VIP
+```
 
-CustomerServiceSettings
+Primary lookup:
+
+```text
+phone
+```
+
+---
+
+# CustomerServiceSettings
+
+Individual customer settings.
+
+### Purpose
+
+Override service duration and price for a specific customer.
+
+### Columns
+
+```text
 customer_id
 customer_name
 phone
@@ -181,46 +308,103 @@ duration_minutes
 price
 updated_at
 notes
+```
 
-Purpose:
+### Lookup Key
 
-Stores individual customer settings for a specific service and provider.
+```text
+customer_id
++
+service_id
++
+provider_id
+```
 
-Duration priority:
+### Duration Priority
 
+```text
 CustomerServiceSettings.duration_minutes
 ↓
 Services.default_duration_minutes
+```
 
-Price priority:
+### Price Priority
 
+```text
 CustomerServiceSettings.price
 ↓
 Services.base_price
+```
 
-Lookup key:
+### Example
 
-customer_id + service_id + provider_id
-CustomerConflicts
+```text
+cust_001
+Иван
+0661234567
+serv_001
+Стрижка
+prov_001
+Алиса
+90
+700
+...
+VIP
+```
+
+---
+
+# CustomerConflicts
+
+Customers that must not overlap in the salon.
+
+### Columns
+
+```text
 customer_id
 conflict_customer_id
 active
 notes
+```
 
-Purpose:
+### Example
 
-Prevents conflicting customers from being present at the same time.
+```text
+cust_001
+cust_005
+TRUE
+Не пересекать
+```
 
-Store both directions:
+And reverse:
 
-cust_001 | cust_005 | TRUE
-cust_005 | cust_001 | TRUE
+```text
+cust_005
+cust_001
+TRUE
+Не пересекать
+```
 
-When customer cust_001 books, appointments of cust_005 block available slots.
+### Behavior
 
-This rule works salon-wide, regardless of provider.
+When customer A books:
 
-Requests
+```text
+Appointments of customer B
+also block availability
+```
+
+Conflict works salon-wide.
+
+---
+
+# Requests
+
+Booking requests awaiting approval.
+
+### Columns
+
+```text
 request_id
 customer_id
 service_id
@@ -229,18 +413,25 @@ location_id
 customer_note
 status
 created_at
+```
 
-Statuses:
+### Statuses
 
+```text
 pending
 confirmed
 rejected
+```
 
-Purpose:
+---
 
-Stores booking requests before approval.
+# RequestOptions
 
-RequestOptions
+Preferred appointment options.
+
+### Columns
+
+```text
 option_id
 request_id
 preferred_date
@@ -248,16 +439,43 @@ preferred_time
 priority
 status
 created_at
+```
 
-Statuses:
+### Statuses
 
+```text
 pending
 approved
 rejected
+```
 
-A request can have up to 3 preferred time options.
+### Example
 
-Appointments
+```text
+option_001
+req_001
+2026-06-20
+10:00
+1
+pending
+...
+```
+
+Maximum:
+
+```text
+3 options per request
+```
+
+---
+
+# Appointments
+
+Confirmed appointments.
+
+### Columns
+
+```text
 appointment_id
 request_id
 customer_id
@@ -272,143 +490,188 @@ created_at
 updated_at
 customer_note
 reminder_24h_sent_at
+```
 
-Statuses:
+### Statuses
 
+```text
 confirmed
 cancelled
 completed
 no_show
+```
 
-Purpose:
+### Example
 
-Stores confirmed appointments.
+```text
+appt_001
+req_001
+cust_001
+serv_001
+prov_001
+loc_001
+2026-06-20 10:00
+2026-06-20 11:00
+confirmed
+calendar_event_id
+...
+```
 
-calendar_event_id links Appointment to Google Calendar.
+---
 
-When appointment is cancelled:
+# UserSessions
 
-status = cancelled
-calendar event is deleted
+Temporary Telegram state storage.
 
-When appointment is rescheduled:
+### Columns
 
-start_at updated
-end_at updated
-calendar event updated
-reminder_24h_sent_at reset
-UserSessions
+```text
 telegram_id
+state
 customer_id
+customer_name
+customer_phone
+
 location_id
 service_id
 provider_id
-reschedule_appointment_id
-pending_calendar_event_id
-option_count
+
 current_option_date
 current_option_time
+
+option_count
+
 option1_date
 option1_time
+
 option2_date
 option2_time
+
 option3_date
 option3_time
+
+customer_note
+
+reschedule_appointment_id
+pending_calendar_event_id
+
 reschedule_date
 reschedule_time
-customer_name
-customer_phone
-customer_note
+
 updated_at
+```
 
-Purpose:
+### Purpose
 
-Temporary user state and flow data.
+Stores active Telegram conversations.
 
 Used for:
 
-booking
-customer lookup
-individual duration
-My appointments
-cancellation
-reschedule
-manual Calendar event actions
-AuditLog
+```text
+Booking
+My Appointments
+Reschedule
+Cancellation
+Calendar Operations
+```
+
+---
+
+# AuditLog
+
+System log.
+
+### Columns
+
+```text
 created_at
 event
 details
+```
 
-Purpose:
+### Examples
 
-Debugging and operational visibility.
+```text
+AVAILABLE_SLOTS
+TIME_OPTIONS_DURATION
+PROVIDER_APPOINTMENTS
+SLOTS_DEBUG_FULL
+REQUEST_CREATED
+CALENDAR_SYNC
+```
 
-Temporary debug logs should be reduced before production.
+Used for debugging and investigations.
 
-Manual Google Calendar Event Format
+---
 
-Recommended event title:
+# Google Calendar Event Format
 
-Haircut — Anna
+### Event Title
 
-Recommended description:
+```text
+Haircut — Ivan
+```
 
-Customer: Anna
-Phone: 0664452124
-Service: Haircut
-Provider: Alice
-Location: Center
-Note: -
+### Event Description
 
-Minimum required for lookup:
+Localized block:
 
-Phone: 0664452124
+```text
+Клиент: Иван
+Телефон: 0661234567
+Услуга: Стрижка
+Мастер: Алиса
+Локация: Центр
+Комментарий: VIP
+```
 
-Manual Calendar events are not stored in Appointments unless created by the bot.
+Technical block:
 
-Phone Normalization
+```text
+[TECH]
+appointment_id=appt_001
+```
 
-Supported input examples:
+### Purpose
 
-0664452124
-380664452124
-+380 66 445 21 24
+System uses only:
 
-Search uses normalized phone digits.
+```text
+appointment_id
+```
 
-Callback Actions
-approve_option_1|request_id
-approve_option_2|request_id
-approve_option_3|request_id
-reject_request|request_id
+for all technical operations.
 
-cancel_appointment|appointment_id
-confirm_cancel|appointment_id
-back_to_appointment|appointment_id
+The visible localized section is never parsed.
 
-reschedule_appointment|appointment_id
-confirm_reschedule|appointment_id
+---
 
-cancel_calendar_event|calendar_event_id
-confirm_cancel_calendar_event
-back_to_calendar_event
+# Availability Sources
 
-reschedule_calendar_event|calendar_event_id
-confirm_reschedule_calendar_event
+Availability calculation uses:
 
-Long Calendar event IDs are stored in UserSessions:
-
-pending_calendar_event_id
-
-because Telegram callback data has a length limit.
-
-Removed / Not Used
-Any Provider
-ProviderExceptions
-ClientConflicts
-START_BUTTON
-
-Current names:
-
+```text
+ProviderSchedule
+ProviderScheduleOverrides
+Appointments
+CustomerServiceSettings
 CustomerConflicts
-MAIN_MENU
+```
+
+### Excluded
+
+Not used:
+
+```text
+Google Calendar Busy Time
+ProviderExceptions
+Any Provider
+```
+
+---
+
+# Current Stable Version
+
+```text
+ClientBot v1 Stable
+```
