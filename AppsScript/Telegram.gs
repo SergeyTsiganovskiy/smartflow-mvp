@@ -1,5 +1,8 @@
 function sendTelegramMessage(botToken, chatId, text, keyboard) {
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/sendMessage';
 
   const payload = {
     chat_id: String(chatId),
@@ -25,79 +28,16 @@ function sendTelegramMessage(botToken, chatId, text, keyboard) {
   return result;
 }
 
-function setClientWebhook() {
-  const settings = getSettings();
-
-  const botToken = settings.ClientBotToken;
-  const webAppUrl = settings.ClientWebAppUrl;
-
-  const url = `https://api.telegram.org/bot${botToken}/setWebhook`;
-
-  const payload = {
-    url: webAppUrl,
-    drop_pending_updates: true,
-    allowed_updates: ['message', 'callback_query']
-  };
-
-  const response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  Logger.log(response.getContentText());
-}
-
-function getClientWebhookInfo() {
-  const settings = getSettings();
-  const botToken = settings.ClientBotToken;
-
-  const url = `https://api.telegram.org/bot${botToken}/getWebhookInfo`;
-
-  const response = UrlFetchApp.fetch(url);
-  Logger.log(response.getContentText());
-}
-
-function deleteClientWebhook() {
-  const settings = getSettings();
-  const botToken = settings.ClientBotToken;
-
-  const url = `https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`;
-
-  const response = UrlFetchApp.fetch(url);
-  Logger.log(response.getContentText());
-}
-
-function pollClientBot() {
-  const settings = getSettings();
-  const botToken = settings.ClientBotToken;
-
-  const offset = Number(PropertiesService.getScriptProperties().getProperty('CLIENT_OFFSET') || 0);
-
-  const url = `https://api.telegram.org/bot${botToken}/getUpdates?offset=${offset}&timeout=10`;
-
-  const response = UrlFetchApp.fetch(url);
-  const data = JSON.parse(response.getContentText());
-
-  if (!data.ok) {
-    Logger.log(data);
-    return;
-  }
-
-  data.result.forEach(update => {
-    if (update.message) {
-      handleClientMessage(update.message);
-    }
-
-    PropertiesService
-      .getScriptProperties()
-      .setProperty('CLIENT_OFFSET', update.update_id + 1);
-  });
-}
-
-function sendTelegramMessageWithInlineKeyboard(botToken, chatId, text, inlineKeyboard) {
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+function sendTelegramMessageWithInlineKeyboard(
+  botToken,
+  chatId,
+  text,
+  inlineKeyboard
+) {
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/sendMessage';
 
   const payload = {
     chat_id: String(chatId),
@@ -115,13 +55,23 @@ function sendTelegramMessageWithInlineKeyboard(botToken, chatId, text, inlineKey
     muteHttpExceptions: true
   });
 
-  Logger.log(response.getContentText());
+  const result = response.getContentText();
 
-  return response.getContentText();
+  Logger.log(result);
+
+  return result;
 }
 
-function editTelegramMessage(botToken, chatId, messageId, text) {
-  const url = `https://api.telegram.org/bot${botToken}/editMessageText`;
+function editTelegramMessage(
+  botToken,
+  chatId,
+  messageId,
+  text
+) {
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/editMessageText';
 
   const payload = {
     chat_id: String(chatId),
@@ -137,9 +87,11 @@ function editTelegramMessage(botToken, chatId, messageId, text) {
     muteHttpExceptions: true
   });
 
-  Logger.log(response.getContentText());
+  const result = response.getContentText();
 
-  return response.getContentText();
+  Logger.log(result);
+
+  return result;
 }
 
 function editTelegramMessageWithInlineKeyboard(
@@ -179,4 +131,161 @@ function editTelegramMessageWithInlineKeyboard(
   );
 
   return result;
+}
+
+function setWebhook(botToken, webhookUrl) {
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/setWebhook';
+
+  const payload = {
+    url: webhookUrl,
+    drop_pending_updates: true
+  };
+
+  const response = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  const result = response.getContentText();
+
+  Logger.log(result);
+
+  return result;
+}
+
+function deleteWebhook(botToken) {
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/deleteWebhook?drop_pending_updates=true';
+
+  const response = UrlFetchApp.fetch(url, {
+    method: 'get',
+    muteHttpExceptions: true
+  });
+
+  const result = response.getContentText();
+
+  Logger.log(result);
+
+  return result;
+}
+
+function getWebhookInfo(botToken) {
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/getWebhookInfo';
+
+  const response = UrlFetchApp.fetch(url, {
+    method: 'get',
+    muteHttpExceptions: true
+  });
+
+  const result = response.getContentText();
+
+  Logger.log(result);
+
+  return result;
+}
+
+function setClientWebhook() {
+  const settings = getSettings();
+
+  return setWebhook(
+    settings.ClientBotToken,
+    settings.AppsScriptUrl + '?bot=client'
+  );
+}
+
+function setAdminWebhook() {
+  const settings = getSettings();
+
+  return setWebhook(
+    settings.AdminBotToken,
+    settings.AppsScriptUrl + '?bot=admin'
+  );
+}
+
+function deleteClientWebhook() {
+  const settings = getSettings();
+
+  return deleteWebhook(
+    settings.ClientBotToken
+  );
+}
+
+function deleteAdminWebhook() {
+  const settings = getSettings();
+
+  return deleteWebhook(
+    settings.AdminBotToken
+  );
+}
+
+function getClientWebhookInfo() {
+  const settings = getSettings();
+
+  return getWebhookInfo(
+    settings.ClientBotToken
+  );
+}
+
+function getAdminWebhookInfo() {
+  const settings = getSettings();
+
+  return getWebhookInfo(
+    settings.AdminBotToken
+  );
+}
+
+function pollClientBot() {
+  const settings = getSettings();
+  const botToken = settings.ClientBotToken;
+
+  const offset = Number(
+    PropertiesService
+      .getScriptProperties()
+      .getProperty('CLIENT_OFFSET') || 0
+  );
+
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/getUpdates?offset=' +
+    offset +
+    '&timeout=10';
+
+  const response = UrlFetchApp.fetch(url, {
+    method: 'get',
+    muteHttpExceptions: true
+  });
+
+  const data =
+    JSON.parse(
+      response.getContentText()
+    );
+
+  if (!data.ok) {
+    Logger.log(data);
+    return;
+  }
+
+  data.result.forEach(function(update) {
+    if (update.message) {
+      handleClientMessage(update.message);
+    }
+
+    PropertiesService
+      .getScriptProperties()
+      .setProperty(
+        'CLIENT_OFFSET',
+        String(update.update_id + 1)
+      );
+  });
 }

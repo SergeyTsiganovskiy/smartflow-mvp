@@ -1,146 +1,882 @@
-function setUserState(telegramId, state) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('UserStates');
+function sendAdminMainMenu(chatId, settings) {
+  const keyboard = {
+    keyboard: [
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_SERVICES) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_SCHEDULES) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_CUSTOMERS) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_SETTINGS) }]
+    ],
+    resize_keyboard: true
+  };
 
-  const rows = sheet.getDataRange().getValues();
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.ADMIN_MAIN_MENU),
+    keyboard
+  );
+}
 
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(telegramId)) {
-      sheet.getRange(i + 1, 2).setValue(state);
-      sheet.getRange(i + 1, 3).setValue(new Date());
-      return;
-    }
+function handleAdminMessage(message) {
+
+  addAuditLog(
+  'HANDLE_ADMIN_MESSAGE',
+  JSON.stringify({
+    chatId: message.chat.id,
+    text: message.text || ''
+  })
+);
+
+  const settings = getSettings();
+
+  const chatId = message.chat.id;
+  const text = message.text || '';
+  const state = String(getUserState(chatId) || '').trim();
+
+  if (!isAdminUser(chatId)) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.ADMIN_ACCESS_DENIED)
+    );
+    return;
   }
 
-  sheet.appendRow([
-    telegramId,
-    state,
-    new Date()
+  if (text === '/start') {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
+    sendAdminMainMenu(chatId, settings);
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.MAIN_MENU)
+  ) {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
+    sendAdminMainMenu(chatId, settings);
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS)
+  ) {
+    sendProvidersMenu(chatId, settings);
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.ADMIN_ADD_PROVIDER)
+  ) {
+    clearUserSession(chatId);
+
+    startCreateProvider(chatId, settings);
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_LIST)
+  ) {
+    showProvidersListAdmin(chatId, settings);
+    return;
+  }
+
+  if (
+    text === getMessage( MESSAGE_KEYS.ADMIN_PROVIDER_EDIT)
+  ) {
+    startEditProvider(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_TO_EDIT) 
+  {
+    processProviderToEdit(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
+
+  if (state ===  ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT ) {
+    processProviderFieldToEdit(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE) {
+    processProviderNewValue(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE) {
+    processProviderToDisable(chatId, text, settings);
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_DISABLE)) {
+    startDisableProvider(chatId, settings);
+    return;
+  }
+
+  if (
+    state === ADMIN_STATES.WAITING_PROVIDER_NAME
+  ) {
+    processProviderName(
+      chatId,
+      text,
+      settings
+    );
+    return;
+  }
+
+  if (
+    state === ADMIN_STATES.WAITING_PROVIDER_LOCATION
+  ) {
+    processProviderLocation(
+      chatId,
+      text,
+      settings
+    );
+    return;
+  }
+
+  if (
+    state === ADMIN_STATES.WAITING_PROVIDER_PHONE
+  ) {
+    processProviderPhone(
+      chatId,
+      text,
+      settings
+    );
+    return;
+  }
+
+  if (
+    state === ADMIN_STATES.WAITING_PROVIDER_TELEGRAM_ID
+  ) {
+    processProviderTelegramId(
+      chatId,
+      text,
+      settings
+    );
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_LIST)
+  ) {
+    showProvidersListAdmin(chatId, settings);
+    return;
+  }
+
+  sendAdminMainMenu(chatId, settings);
+}
+
+function isAdminUser(chatId) {
+  const settings = getSettings();
+
+  const ids =
+    String(settings.AdminTelegramIds || '')
+      .split(',')
+      .map(function(item) {
+        return String(item).trim();
+      });
+
+  return ids.indexOf(String(chatId)) !== -1;
+}
+
+function sendProvidersMenu(chatId, settings) {
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS),
+    buildProvidersMenuKeyboard()
+  );
+}
+
+function startCreateProvider(
+  chatId,
+  settings
+) {
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_NAME
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.ENTER_PROVIDER_NAME
+    )
+  );
+}
+
+function processProviderName(
+  chatId,
+  providerName,
+  settings
+) {
+  setUserSessionValue(
+    chatId,
+    'provider_name',
+    providerName
+  );
+
+  showProviderLocations(
+    chatId,
+    settings
+  );
+}
+
+function showProviderLocations(
+  chatId,
+  settings
+) {
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_LOCATION
+  );
+
+  const locations =
+    getLocations();
+
+  const keyboardRows = [];
+
+  locations.forEach(function(location) {
+    keyboardRows.push([
+      {
+        text: location.name
+      }
+    ]);
+  });
+
+  const keyboard = {
+    keyboard: keyboardRows,
+    resize_keyboard: true
+  };
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.SELECT_PROVIDER_LOCATION
+    ),
+    keyboard
+  );
+}
+
+function startCreateProvider(chatId, settings) {
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_NAME
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.ENTER_PROVIDER_NAME)
+  );
+}
+
+function processProviderName(chatId, text, settings) {
+  const providerName = String(text || '').trim();
+
+  if (!providerName) {
+    startCreateProvider(chatId, settings);
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'provider_name',
+    providerName
+  );
+
+  showProviderLocations(chatId, settings);
+}
+
+function showProviderLocations(chatId, settings) {
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_LOCATION
+  );
+
+  const locations = getLocations();
+  const keyboardRows = [];
+
+  locations.forEach(function(location) {
+    keyboardRows.push([
+      {
+        text: location.name
+      }
+    ]);
+  });
+
+  const keyboard = {
+    keyboard: keyboardRows,
+    resize_keyboard: true
+  };
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SELECT_PROVIDER_LOCATION),
+    keyboard
+  );
+}
+
+function processProviderLocation(chatId, text, settings) {
+  const location = findLocationByName(text);
+
+  if (!location) {
+    showProviderLocations(chatId, settings);
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'provider_location_id',
+    location.id
+  );
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_PHONE
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.ENTER_PROVIDER_PHONE)
+  );
+}
+
+function processProviderPhone(chatId, text, settings) {
+  const phone = normalizePhone(text);
+
+  if (!isValidPhone(phone)) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.PHONE_INVALID)
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.ENTER_PROVIDER_PHONE)
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'provider_phone',
+    phone
+  );
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_TELEGRAM_ID
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.ENTER_PROVIDER_TELEGRAM_ID)
+  );
+}
+
+function processProviderTelegramId(chatId, text, settings) {
+  const telegramId =
+    String(text || '').trim();
+
+  setUserSessionValue(
+    chatId,
+    'provider_telegram_id',
+    telegramId
+  );
+
+  const session =
+    getUserSession(chatId);
+
+  const providerId =
+    createProviderFromAdminSession(session);
+
+  clearUserSession(chatId);
+  setUserState(chatId, '');
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.PROVIDER_CREATED) +
+      '\n\nID: ' +
+      providerId
+  );
+
+  sendProvidersMenu(chatId, settings);
+}
+
+function showProvidersListAdmin(chatId, settings) {
+  const providers = getProviders();
+
+  if (providers.length === 0) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      'Мастеров пока нет.',
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  let text = '<b>👩‍💼 Мастера</b>\n\n';
+
+  providers.forEach(function(provider, index) {
+    const location =
+      findLocationById(provider.location_id);
+
+    text +=
+      String(index + 1) +
+      '. <b>' +
+      provider.name +
+      '</b>\n';
+
+    text +=
+      '📍 ' +
+      (location ? location.name : provider.location_id) +
+      '\n';
+
+    if (provider.phone) {
+      text +=
+        '📞 ' +
+        provider.phone +
+        '\n';
+    }
+
+    text += '\n';
+  });
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    buildProvidersMenuKeyboard()
+  );
+}
+
+function startEditProvider(
+  chatId,
+  settings
+) {
+  const providers =
+    getProviders();
+
+  const keyboardRows = [];
+
+  providers.forEach(function(provider) {
+    keyboardRows.push([
+      {
+        text: provider.name
+      }
+    ]);
+  });
+
+  const keyboard =
+    buildKeyboardWithMainMenu(
+      keyboardRows
+    );
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_TO_EDIT
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    'Выберите мастера',
+    keyboard
+  );
+}
+
+function processProviderToEdit(
+  chatId,
+  text,
+  settings
+) {
+  const provider =
+    findProviderByName(text);
+
+  if (!provider) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      'Выберите мастера из списка'
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'edit_provider_id',
+    provider.id
+  );
+
+  const keyboard =
+    buildKeyboardWithMainMenu([
+      [
+        {
+          text: 'Имя'
+        }
+      ],
+      [
+        {
+          text: 'Филиал'
+        }
+      ],
+      [
+        {
+          text: 'Телефон'
+        }
+      ],
+      [
+        {
+          text: 'Telegram ID'
+        }
+      ]
+    ]);
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    'Что изменить?',
+    keyboard
+  );
+}
+
+function buildProvidersMenuKeyboard() {
+  return buildKeyboardWithMainMenu([
+    [
+      {
+        text: getMessage(
+          MESSAGE_KEYS.ADMIN_ADD_PROVIDER
+        )
+      }
+    ],
+    [
+      {
+        text: getMessage(
+          MESSAGE_KEYS.ADMIN_PROVIDER_LIST
+        )
+      }
+    ],
+    [
+      {
+        text: getMessage(
+          MESSAGE_KEYS.ADMIN_PROVIDER_EDIT
+        )
+      }
+    ],
+    [
+      {
+        text: getMessage(
+          MESSAGE_KEYS.ADMIN_PROVIDER_DISABLE
+        )
+      }
+    ]
   ]);
 }
 
-function getUserState(telegramId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('UserStates');
+function processProviderFieldToEdit(chatId, text, settings) {
+  const fieldText = String(text || '').trim();
 
-  const rows = sheet.getDataRange().getValues();
+  const allowedFields = {
+    'Имя': 'name',
+    'Филиал': 'location_id',
+    'Телефон': 'phone',
+    'Telegram ID': 'telegram_id'
+  };
 
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(telegramId)) {
-      return rows[i][1];
-    }
+  const field = allowedFields[fieldText];
+
+  if (!field) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      'Выберите поле из списка',
+      buildProvidersMenuKeyboard()
+    );
+    return;
   }
 
-  return '';
+  setUserSessionValue(
+    chatId,
+    'edit_provider_field',
+    field
+  );
+
+  if (field === 'location_id') {
+    showProviderEditLocations(chatId, settings);
+    return;
+  }
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    'Введите новое значение',
+    buildKeyboardWithMainMenu([])
+  );
 }
 
-function setUserSessionValue(telegramId, fieldName, value) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
+function showProviderEditLocations(chatId, settings) {
+  const locations = getLocations();
+  const keyboardRows = [];
 
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
+  locations.forEach(function(location) {
+    keyboardRows.push([
+      {
+        text: location.name
+      }
+    ]);
+  });
 
-  const telegramIndex = headers.indexOf('telegram_id');
-  const fieldIndex = headers.indexOf(fieldName);
-  const updatedIndex = headers.indexOf('updated_at');
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE
+  );
 
-  if (fieldIndex === -1) {
-    throw new Error('Field not found in UserSessions: ' + fieldName);
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    'Выберите новый филиал',
+    buildKeyboardWithMainMenu(keyboardRows)
+  );
+}
+
+function processProviderNewValue(
+  chatId,
+  text,
+  settings
+) {
+  const session =
+    getUserSession(chatId);
+
+  const providerId =
+    session.edit_provider_id;
+
+  const field =
+    session.edit_provider_field;
+
+  if (!providerId || !field) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      'Ошибка редактирования'
+    );
+
+    sendProvidersMenu(
+      chatId,
+      settings
+    );
+
+    return;
   }
 
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][telegramIndex]) === String(telegramId)) {
-      sheet.getRange(i + 1, fieldIndex + 1).setValue(value);
-      sheet.getRange(i + 1, updatedIndex + 1).setValue(new Date());
+  let value = String(text || '').trim();
+
+  if (field === 'location_id') {
+    const location =
+      findLocationByName(value);
+
+    if (!location) {
+      sendTelegramMessage(
+        settings.AdminBotToken,
+        chatId,
+        'Выберите филиал из списка'
+      );
+
       return;
     }
+
+    value = location.id;
   }
 
-  const newRow = new Array(headers.length).fill('');
-  newRow[telegramIndex] = telegramId;
-  newRow[fieldIndex] = value;
-  newRow[updatedIndex] = new Date();
+  updateProviderField(
+    providerId,
+    field,
+    value
+  );
 
-  sheet.appendRow(newRow);
+  clearUserSession(chatId);
+
+  setUserState(chatId, '');
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    '✅ Изменения сохранены'
+  );
+
+  sendProvidersMenu(
+    chatId,
+    settings
+  );
 }
 
-function getLocations() {
+function updateProviderField(
+  providerId,
+  field,
+  value
+) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Locations');
+    .getSheetByName('Providers');
 
-  const rows = sheet.getDataRange().getValues();
-  const result = [];
+  const rows =
+    sheet.getDataRange().getValues();
 
-  for (let i = 1; i < rows.length; i++) {
-    const active = String(rows[i][4]).toUpperCase();
-
-    if (active === 'TRUE') {
-      result.push({
-        id: rows[i][0],
-        name: String(rows[i][1]).trim()
-      });
-    }
-  }
-
-  return result;
-}
-
-function findLocationByName(locationName) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Locations');
-
-  const rows = sheet.getDataRange().getValues();
-  const targetName = String(locationName).trim();
-
-  for (let i = 1; i < rows.length; i++) {
-    const id = rows[i][0];
-    const name = String(rows[i][1]).trim();
-    const active = String(rows[i][4]).toUpperCase();
-
-    if (name === targetName && active === 'TRUE') {
-      return {
-        id: id,
-        name: name
-      };
-    }
-  }
-
-  return null;
-}
-
-function getServices() {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Services');
-
-  const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
 
-  const idIndex = headers.indexOf('service_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-  const activeIndex = headers.indexOf('active');
-
-  const result = [];
+  const providerIdIndex =
+    headers.indexOf('provider_id');
 
   for (let i = 1; i < rows.length; i++) {
-    const active = String(rows[i][activeIndex]).toUpperCase();
-
-    if (active === 'TRUE') {
-      result.push({
-        id: rows[i][idIndex],
-        name: rows[i][nameIndex]
-      });
+    if (
+      String(rows[i][providerIdIndex]) !==
+      String(providerId)
+    ) {
+      continue;
     }
+
+    const provider = {};
+
+    headers.forEach(function(header, index) {
+      provider[header] =
+        rows[i][index];
+    });
+
+    if (field === 'name') {
+      createOrUpdateMessageValues(
+        provider.name_key,
+        createMessageValuesForAllLanguages(
+          value
+        )
+      );
+
+      return;
+    }
+
+    const fieldIndex =
+      headers.indexOf(field);
+
+    if (fieldIndex === -1) {
+      throw new Error(
+        'Field not found: ' +
+        field
+      );
+    }
+
+    sheet
+      .getRange(
+        i + 1,
+        fieldIndex + 1
+      )
+      .setValue(value);
+
+    return;
   }
 
-  return result;
+  throw new Error(
+    'Provider not found: ' +
+    providerId
+  );
+}
+
+function startDisableProvider(chatId, settings) {
+  const providers = getProviders();
+  const keyboardRows = [];
+
+  providers.forEach(function(provider) {
+    keyboardRows.push([
+      {
+        text: provider.name
+      }
+    ]);
+  });
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    'Выберите мастера для отключения',
+    buildKeyboardWithMainMenu(keyboardRows)
+  );
+}
+
+function processProviderToDisable(chatId, text, settings) {
+  const provider = findProviderByName(text);
+
+  if (!provider) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      'Выберите мастера из списка'
+    );
+    return;
+  }
+
+  updateProviderField(
+    provider.id,
+    'active',
+    false
+  );
+
+  clearUserSession(chatId);
+  setUserState(chatId, '');
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    '✅ Мастер отключён'
+  );
+
+  sendProvidersMenu(chatId, settings);
 }

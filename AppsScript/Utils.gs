@@ -485,3 +485,201 @@ function extractFieldFromText(text, fieldName) {
 
   return '';
 }
+
+function formatDateTimeForStorage(value) {
+  if (!value) {
+    return '';
+  }
+
+  const timezone =
+    getSettings().TimeZone || 'Europe/Kyiv';
+
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(
+      value,
+      timezone,
+      'yyyy-MM-dd HH:mm'
+    );
+  }
+
+  const stringValue = String(value).trim();
+
+  const date = normalizeDateForStorage(stringValue);
+  const time = formatTimeForDisplay(stringValue);
+
+  if (date && time) {
+    return date + ' ' + time;
+  }
+
+  return stringValue;
+}
+
+function roundMinutesUpToStep(minutes, stepMinutes) {
+  return Math.ceil(minutes / stepMinutes) * stepMinutes;
+}
+
+function extractCalendarTechValue(description, key) {
+  const text = String(description || '');
+
+  const marker = '[TECH]';
+  const markerIndex = text.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return '';
+  }
+
+  const techText =
+    text.substring(markerIndex + marker.length);
+
+  const lines = techText.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = String(lines[i]).trim();
+
+    if (line.indexOf(key + '=') === 0) {
+      return line
+        .substring((key + '=').length)
+        .trim();
+    }
+  }
+
+  return '';
+}
+
+function generateNextEntityId(
+  sheetName,
+  idColumnName,
+  prefix
+) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName(sheetName);
+
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return prefix + '_001';
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
+
+  const idIndex = headers.indexOf(idColumnName);
+
+  if (idIndex === -1) {
+    throw new Error(
+      'Column not found: ' + idColumnName
+    );
+  }
+
+  let maxNumber = 0;
+
+  for (let i = 1; i < rows.length; i++) {
+    const value = String(rows[i][idIndex] || '').trim();
+
+    const regex = new RegExp(
+      '^' + prefix + '_(\\d+)$'
+    );
+
+    const match = value.match(regex);
+
+    if (!match) {
+      continue;
+    }
+
+    const number = Number(match[1]);
+
+    if (number > maxNumber) {
+      maxNumber = number;
+    }
+  }
+
+  return (
+    prefix +
+    '_' +
+    String(maxNumber + 1).padStart(3, '0')
+  );
+}
+
+function generateLocationId() {
+  return generateNextEntityId(
+    'Locations',
+    'location_id',
+    'loc'
+  );
+}
+
+function generateProviderId() {
+  return generateNextEntityId(
+    'Providers',
+    'provider_id',
+    'prov'
+  );
+}
+
+function generateServiceId() {
+  return generateNextEntityId(
+    'Services',
+    'service_id',
+    'serv'
+  );
+}
+
+function generateCustomerId() {
+  return generateNextEntityId(
+    'Customers',
+    'customer_id',
+    'cust'
+  );
+}
+
+function generateRequestId() {
+  return generateNextEntityId(
+    'Requests',
+    'request_id',
+    'req'
+  );
+}
+
+function generateAppointmentId() {
+  return generateNextEntityId(
+    'Appointments',
+    'appointment_id',
+    'appt'
+  );
+}
+
+function createDefaultProviderSchedule(providerId) {
+  const settings = getSettings();
+
+  const startTime =
+    settings.DefaultWorkStartTime || '09:00';
+
+  const endTime =
+    settings.DefaultWorkEndTime || '20:00';
+
+  const days = [
+    'MON',
+    'TUE',
+    'WED',
+    'THU',
+    'FRI',
+    'SAT',
+    'SUN'
+  ];
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderSchedule');
+
+  days.forEach(function(day) {
+    sheet.appendRow([
+      providerId,
+      day,
+      startTime,
+      endTime,
+      true
+    ]);
+  });
+}

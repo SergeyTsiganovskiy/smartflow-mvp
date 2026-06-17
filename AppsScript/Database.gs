@@ -78,8 +78,12 @@ function getLocations() {
     .getSheetByName('Locations');
 
   const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
 
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0];
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
@@ -95,6 +99,8 @@ function getLocations() {
 
     result.push({
       id: item.location_id,
+      name_key: item.name_key,
+      address_key: item.address_key,
       name: getMessage(item.name_key),
       address: getMessage(item.address_key),
       working_hours: item.working_hours,
@@ -125,31 +131,51 @@ function findLocationByName(locationName) {
 }
 
 function getServices() {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Services');
 
   const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+  }
+
   const headers = rows[0];
-
-  const idIndex = headers.indexOf('service_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-  const activeIndex = headers.indexOf('active');
-
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const active = String(rows[i][activeIndex]).toUpperCase();
+    const item = {};
 
-    if (active === 'TRUE') {
-      result.push({
-        id: rows[i][idIndex],
-        name: rows[i][nameIndex]
-      });
+    headers.forEach(function(header, index) {
+      item[String(header).trim()] = rows[i][index];
+    });
+
+    if (String(item.active).toUpperCase() !== 'TRUE') {
+      continue;
     }
+
+    const nameKey =
+      String(item.name_key || '').trim();
+
+    const serviceName =
+      nameKey
+        ? getMessage(nameKey)
+        : '';
+
+    result.push({
+      id: item.service_id,
+      service_id: item.service_id,
+      name_key: nameKey,
+      name:
+        serviceName ||
+        nameKey ||
+        item.service_id,
+      default_duration_minutes:
+        item.default_duration_minutes,
+      base_price: item.base_price,
+      active: item.active
+    });
   }
 
   return result;
@@ -168,31 +194,12 @@ function addAuditLog(action, details) {
 }
 
 function findServiceByName(serviceName) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Services');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const idIndex = headers.indexOf('service_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-  const activeIndex = headers.indexOf('active');
-
+  const services = getServices();
   const targetName = String(serviceName).trim();
 
-  for (let i = 1; i < rows.length; i++) {
-    const name = String(rows[i][nameIndex]).trim();
-    const active = String(rows[i][activeIndex]).toUpperCase();
-
-    if (name === targetName && active === 'TRUE') {
-      return {
-        id: rows[i][idIndex],
-        name: name
-      };
+  for (let i = 0; i < services.length; i++) {
+    if (String(services[i].name).trim() === targetName) {
+      return services[i];
     }
   }
 
@@ -224,72 +231,97 @@ function getUserSession(telegramId) {
   return null;
 }
 
-function getProvidersByLocation(locationId) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
+function getProviders() {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Providers');
 
   const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+  }
+
   const headers = rows[0];
-
-  const idIndex = headers.indexOf('provider_id');
-  const locationIndex = headers.indexOf('location_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-  const activeIndex = headers.indexOf('active');
-
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const active = String(rows[i][activeIndex]).toUpperCase();
+    const item = {};
 
-    if (
-      String(rows[i][locationIndex]) === String(locationId) &&
-      active === 'TRUE'
-    ) {
-      result.push({
-        id: rows[i][idIndex],
-        name: String(rows[i][nameIndex]).trim()
-      });
+    headers.forEach(function(header, index) {
+      item[String(header).trim()] = rows[i][index];
+    });
+
+    if (String(item.active).toUpperCase() !== 'TRUE') {
+      continue;
     }
+
+    const nameKey =
+      String(item.name_key || '').trim();
+
+    const providerName =
+      nameKey
+        ? getMessage(nameKey)
+        : '';
+
+    addAuditLog(
+      'PROVIDER_NAME_DEBUG',
+      JSON.stringify({
+        provider_id: item.provider_id,
+        raw_name_key: item.name_key,
+        name_key: nameKey,
+        message: getMessage(nameKey)
+      })
+    );
+
+    result.push({
+      id: item.provider_id,
+      provider_id: item.provider_id,
+      location_id: item.location_id,
+      name_key: nameKey,
+      name:
+        providerName ||
+        nameKey ||
+        item.provider_id,
+      phone: item.phone,
+      telegram_id: item.telegram_id,
+      calendar_id: item.calendar_id,
+      active: item.active
+    });
   }
+
+  addAuditLog(
+    'GET_PROVIDERS_RESULT',
+    JSON.stringify(result)
+  );
 
   return result;
 }
 
 function findProviderByName(providerName) {
-  const messageKey = getMessageKeyByText(providerName);
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Providers');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const idIndex = headers.indexOf('provider_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-  const activeIndex = headers.indexOf('active');
-
+  const providers = getProviders();
   const targetName = String(providerName).trim();
 
-  for (let i = 1; i < rows.length; i++) {
-    const name = String(rows[i][nameIndex]).trim();
-    const active = String(rows[i][activeIndex]).toUpperCase();
-
-    if (name === targetName && active === 'TRUE') {
-      return {
-        id: rows[i][idIndex],
-        name: name
-      };
+  for (let i = 0; i < providers.length; i++) {
+    if (String(providers[i].name).trim() === targetName) {
+      return providers[i];
     }
   }
 
   return null;
+}
+
+function getProvidersByLocation(locationId) {
+  const providers = getProviders();
+  const result = [];
+
+  providers.forEach(function(provider) {
+    if (String(provider.location_id) === String(locationId)) {
+      result.push(provider);
+    }
+  });
+
+  return result;
 }
 
 function generateId(prefix) {
@@ -424,22 +456,11 @@ function findLocationById(locationId) {
 }
 
 function findServiceById(serviceId) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
+  const services = getServices();
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Services');
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const idIndex = headers.indexOf('service_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][idIndex]) === String(serviceId)) {
-      return {
-        id: rows[i][idIndex],
-        name: rows[i][nameIndex]
-      };
+  for (let i = 0; i < services.length; i++) {
+    if (String(services[i].id) === String(serviceId)) {
+      return services[i];
     }
   }
 
@@ -447,25 +468,11 @@ function findServiceById(serviceId) {
 }
 
 function findProviderById(providerId) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
+  const providers = getProviders();
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Providers');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const idIndex = headers.indexOf('provider_id');
-  const nameIndex = headers.indexOf('name_' + lang);
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][idIndex]) === String(providerId)) {
-      return {
-        id: rows[i][idIndex],
-        name: rows[i][nameIndex]
-      };
+  for (let i = 0; i < providers.length; i++) {
+    if (String(providers[i].id) === String(providerId)) {
+      return providers[i];
     }
   }
 
@@ -792,37 +799,16 @@ function getServiceDurationMinutes(
   );
 }
 
-function getDefaultServiceDurationMinutes(
-  serviceId
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Services');
+function getDefaultServiceDurationMinutes(serviceId) {
+  const service = findServiceById(serviceId);
 
-  const rows =
-    sheet.getDataRange().getValues();
-
-  const headers = rows[0];
-
-  const serviceIdIndex =
-    headers.indexOf('service_id');
-
-  const durationIndex =
-    headers.indexOf('default_duration_minutes');
-
-  for (let i = 1; i < rows.length; i++) {
-
-    if (
-      String(rows[i][serviceIdIndex]) === String(serviceId)
-    ) {
-
-      return Number(
-        rows[i][durationIndex]
-      );
-    }
+  if (!service) {
+    return 60;
   }
 
-  return 60;
+  return Number(
+    service.default_duration_minutes || 60
+  );
 }
 
 function getProviderScheduleForDate(providerId, dateValue) {
@@ -1044,18 +1030,39 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
 
-  const providerIdIndex = headers.indexOf('provider_id');
-  const startAtIndex = headers.indexOf('start_at');
-  const endAtIndex = headers.indexOf('end_at');
-  const statusIndex = headers.indexOf('status');
+  const appointmentIdIndex =
+    headers.indexOf('appointment_id');
 
-  const targetDate = normalizeDateForStorage(dateValue);
+  const providerIdIndex =
+    headers.indexOf('provider_id');
+
+  const startAtIndex =
+    headers.indexOf('start_at');
+
+  const endAtIndex =
+    headers.indexOf('end_at');
+
+  const statusIndex =
+    headers.indexOf('status');
+
+  const calendarEventIdIndex =
+    headers.indexOf('calendar_event_id');
+
+  const targetDate =
+    normalizeDateForStorage(dateValue);
 
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const provider = rows[i][providerIdIndex];
-    const status = String(rows[i][statusIndex]).toLowerCase();
+    const appointmentId =
+      rows[i][appointmentIdIndex];
+
+    const provider =
+      rows[i][providerIdIndex];
+
+    const status =
+      String(rows[i][statusIndex])
+        .toLowerCase();
 
     if (String(provider) !== String(providerId)) {
       continue;
@@ -1065,16 +1072,49 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
       continue;
     }
 
-    const startAt = rows[i][startAtIndex];
-    const endAt = rows[i][endAtIndex];
+    const startAt =
+      rows[i][startAtIndex];
 
-    const appointmentDate = normalizeDateForStorage(startAt);
+    const endAt =
+      rows[i][endAtIndex];
+
+    const appointmentDate =
+      normalizeDateForStorage(startAt);
 
     if (appointmentDate !== targetDate) {
       continue;
     }
 
+    const calendarEventId =
+      calendarEventIdIndex >= 0
+        ? rows[i][calendarEventIdIndex]
+        : '';
+
+    if (calendarEventId) {
+      const calendarEvent =
+        getCalendarEventById(calendarEventId);
+
+      if (!calendarEvent) {
+        updateAppointmentStatus(
+          appointmentId,
+          'cancelled'
+        );
+
+        addAuditLog(
+          'APPOINTMENT_AUTO_CANCELLED_MISSING_CALENDAR_EVENT',
+          JSON.stringify({
+            appointment_id: appointmentId,
+            provider_id: providerId,
+            calendar_event_id: calendarEventId
+          })
+        );
+
+        continue;
+      }
+    }
+
     result.push({
+      appointment_id: appointmentId,
       startTime: extractTimeFromDateTime(startAt),
       endTime: extractTimeFromDateTime(endAt)
     });
@@ -1125,23 +1165,20 @@ function appointmentExistsForRequest(requestId) {
 }
 
 function getProviderCalendarId(providerId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Providers');
+  const provider =
+    findProviderById(providerId);
 
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const providerIdIndex = headers.indexOf('provider_id');
-  const calendarIdIndex = headers.indexOf('calendar_id');
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][providerIdIndex]) === String(providerId)) {
-      return String(rows[i][calendarIdIndex] || '').trim();
-    }
+  if (
+    provider &&
+    provider.calendar_id
+  ) {
+    return provider.calendar_id;
   }
 
-  return '';
+  const settings =
+    getSettings();
+
+  return settings.DefaultCalendarId || '';
 }
 
 function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
@@ -1734,6 +1771,154 @@ function getActiveRequestRecipients() {
       result.push(item);
     }
   }
+
+  return result;
+}
+
+function getLocalizedProviderName(provider) {
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
+  const key = 'name_' + lang;
+
+  return String(
+    provider[key] ||
+    provider.name_ru ||
+    provider.name_uk ||
+    provider.name_en ||
+    ''
+  ).trim();
+}
+
+function createProviderFromAdminSession(session) {
+  const providerName =
+    String(session.provider_name || '').trim();
+
+  const locationId =
+    String(session.provider_location_id || '').trim();
+
+  const phone =
+    String(session.provider_phone || '').trim();
+
+  const telegramId =
+    String(session.provider_telegram_id || '').trim();
+
+  return createProvider({
+    name: providerName,
+    location_id: locationId,
+    phone: phone,
+    telegram_id: telegramId,
+    calendar_id: ''
+  });
+}
+
+function createProvider(providerData) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Providers');
+
+  const providerId =
+    generateProviderId();
+
+  const nameKey =
+    generateProviderNameKey(providerId);
+
+  createOrUpdateMessageValues(
+    nameKey,
+    createMessageValuesForAllLanguages(
+      providerData.name
+    )
+  );
+
+  sheet.appendRow([
+    providerId,
+    providerData.location_id,
+    nameKey,
+    providerData.phone,
+    providerData.telegram_id,
+    providerData.calendar_id || '',
+    true
+  ]);
+
+  return providerId;
+}
+
+function generateProviderId() {
+  return 'prov_' + new Date().getTime();
+}
+
+function generateProviderNameKey(providerId) {
+  return (
+    'PROVIDER_NAME_' +
+    String(providerId).replace('prov_', '')
+  );
+}
+
+function createOrUpdateMessageValues(messageKey, valuesByLang) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Messages');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const keyIndex = headers.indexOf('key');
+
+  let rowIndex = -1;
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][keyIndex]) === String(messageKey)) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+
+  if (rowIndex === -1) {
+    const newRow = headers.map(function(header) {
+      if (header === 'key') {
+        return messageKey;
+      }
+
+      return valuesByLang[header] || '';
+    });
+
+    sheet.appendRow(newRow);
+    return;
+  }
+
+  headers.forEach(function(header, index) {
+    if (header === 'key') {
+      return;
+    }
+
+    if (valuesByLang[header] !== undefined) {
+      sheet
+        .getRange(rowIndex, index + 1)
+        .setValue(valuesByLang[header]);
+    }
+  });
+}
+
+function createMessageValuesForAllLanguages(value) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Messages');
+
+  const headers =
+    sheet.getDataRange().getValues()[0];
+
+  const result = {};
+
+  headers.forEach(function(header) {
+    const columnName =
+      String(header).trim();
+
+    if (columnName === 'key') {
+      return;
+    }
+
+    result[columnName] = value;
+  });
 
   return result;
 }

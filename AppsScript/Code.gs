@@ -1,6 +1,33 @@
 function doPost(e) {
+
   try {
-    const update = JSON.parse(e.postData.contents);
+    const update =
+      JSON.parse(e.postData.contents);
+
+    addAuditLog(
+    'DOPOST_ADMIN_DEBUG',
+    JSON.stringify({
+      parameters: e.parameter,
+      body: e.postData.contents
+    })
+  );      
+
+    const botType =
+      e.parameter && e.parameter.bot
+        ? e.parameter.bot
+        : 'client';
+
+    if (botType === 'admin') {
+      if (update.message) {
+        handleAdminMessage(update.message);
+      }
+
+      if (update.callback_query) {
+        handleAdminCallback(update.callback_query);
+      }
+
+      return HtmlService.createHtmlOutput('OK');
+    }
 
     if (update.message) {
       handleClientMessage(update.message);
@@ -13,8 +40,20 @@ function doPost(e) {
     return HtmlService.createHtmlOutput('OK');
 
   } catch (error) {
+    addAuditLog(
+      'DOPOST_ERROR',
+      String(error)
+    );
+
     return HtmlService.createHtmlOutput('ERROR');
   }
+}
+
+function handleAdminCallback(callbackQuery) {
+  addAuditLog(
+    'ADMIN_CALLBACK',
+    JSON.stringify(callbackQuery)
+  );
 }
 
 function testMessages() {
@@ -94,4 +133,27 @@ function testFindAppointmentsByPhone() {
   const appointments = getActiveAppointmentsByPhone(phone);
 
   Logger.log(JSON.stringify(appointments));
+}
+
+function testActiveRequestRecipients() {
+  Logger.log(
+    JSON.stringify(
+      getActiveRequestRecipients()
+    )
+  );
+}
+
+function testConflictAppointments() {
+  const customerIds =
+    getConflictingCustomerIds('cust_001');
+
+  const result =
+    getAppointmentsForCustomersOnDate(
+      customerIds,
+      new Date('2026-06-16')
+    );
+
+  Logger.log(
+    JSON.stringify(result)
+  );
 }
