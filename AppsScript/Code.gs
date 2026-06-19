@@ -1,21 +1,38 @@
 function doPost(e) {
-
   try {
     const update =
       JSON.parse(e.postData.contents);
 
     addAuditLog(
-    'DOPOST_ADMIN_DEBUG',
-    JSON.stringify({
-      parameters: e.parameter,
-      body: e.postData.contents
-    })
-  );      
+      'DOPOST_ADMIN_DEBUG',
+      JSON.stringify({
+        parameters: e.parameter,
+        body: e.postData.contents
+      })
+    );
 
     const botType =
       e.parameter && e.parameter.bot
         ? e.parameter.bot
         : 'client';
+
+    if (
+      update.update_id &&
+      isDuplicateTelegramUpdate(
+        update.update_id,
+        botType.toUpperCase()
+      )
+    ) {
+      addAuditLog(
+        'DUPLICATE_UPDATE_SKIPPED',
+        JSON.stringify({
+          botType: botType,
+          updateId: update.update_id
+        })
+      );
+
+      return HtmlService.createHtmlOutput('OK');
+    }
 
     if (botType === 'admin') {
       if (update.message) {

@@ -232,70 +232,10 @@ function getUserSession(telegramId) {
 }
 
 function getProviders() {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Providers');
-
-  const rows = sheet.getDataRange().getValues();
-
-  if (rows.length < 2) {
-    return [];
-  }
-
-  const headers = rows[0];
-  const result = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const item = {};
-
-    headers.forEach(function(header, index) {
-      item[String(header).trim()] = rows[i][index];
+  return getProvidersIncludingInactive()
+    .filter(function(provider) {
+      return provider.active === true;
     });
-
-    if (String(item.active).toUpperCase() !== 'TRUE') {
-      continue;
-    }
-
-    const nameKey =
-      String(item.name_key || '').trim();
-
-    const providerName =
-      nameKey
-        ? getMessage(nameKey)
-        : '';
-
-    addAuditLog(
-      'PROVIDER_NAME_DEBUG',
-      JSON.stringify({
-        provider_id: item.provider_id,
-        raw_name_key: item.name_key,
-        name_key: nameKey,
-        message: getMessage(nameKey)
-      })
-    );
-
-    result.push({
-      id: item.provider_id,
-      provider_id: item.provider_id,
-      location_id: item.location_id,
-      name_key: nameKey,
-      name:
-        providerName ||
-        nameKey ||
-        item.provider_id,
-      phone: item.phone,
-      telegram_id: item.telegram_id,
-      calendar_id: item.calendar_id,
-      active: item.active
-    });
-  }
-
-  addAuditLog(
-    'GET_PROVIDERS_RESULT',
-    JSON.stringify(result)
-  );
-
-  return result;
 }
 
 function findProviderByName(providerName) {
@@ -749,54 +689,6 @@ function isRequestAlreadyProcessed(requestId) {
   }
 
   return request.status !== 'pending';
-}
-
-function getServiceDurationMinutes(
-  customerId,
-  serviceId,
-  providerId
-) {
-  const settingsSheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
-
-  const settingsRows =
-    settingsSheet.getDataRange().getValues();
-
-  const settingsHeaders = settingsRows[0];
-
-  const customerIdIndex =
-    settingsHeaders.indexOf('customer_id');
-
-  const serviceIdIndex =
-    settingsHeaders.indexOf('service_id');
-
-  const providerIdIndex =
-    settingsHeaders.indexOf('provider_id');
-
-  const durationIndex =
-    settingsHeaders.indexOf('duration_minutes');
-
-  for (let i = 1; i < settingsRows.length; i++) {
-
-    if (
-      String(settingsRows[i][customerIdIndex]) === String(customerId) &&
-      String(settingsRows[i][serviceIdIndex]) === String(serviceId) &&
-      String(settingsRows[i][providerIdIndex]) === String(providerId)
-    ) {
-
-      const duration =
-        Number(settingsRows[i][durationIndex]);
-
-      if (duration > 0) {
-        return duration;
-      }
-    }
-  }
-
-  return getDefaultServiceDurationMinutes(
-    serviceId
-  );
 }
 
 function getDefaultServiceDurationMinutes(serviceId) {
@@ -1564,40 +1456,6 @@ function getCustomerByPhone(phone) {
   return null;
 }
 
-function getCustomerServiceDurationMinutes(
-  customerId,
-  serviceId,
-  providerId
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const customerIdIndex = headers.indexOf('customer_id');
-  const serviceIdIndex = headers.indexOf('service_id');
-  const providerIdIndex = headers.indexOf('provider_id');
-  const durationIndex = headers.indexOf('duration_minutes');
-
-  for (let i = 1; i < rows.length; i++) {
-    if (
-      String(rows[i][customerIdIndex]) === String(customerId) &&
-      String(rows[i][serviceIdIndex]) === String(serviceId) &&
-      String(rows[i][providerIdIndex]) === String(providerId)
-    ) {
-      const duration = Number(rows[i][durationIndex]);
-
-      if (duration > 0) {
-        return duration;
-      }
-    }
-  }
-
-  return null;
-}
-
 function getServiceDurationMinutesForSession(session) {
   if (
     session.customer_id &&
@@ -1840,6 +1698,8 @@ function createProvider(providerData) {
     true
   ]);
 
+  createDefaultProviderSchedule(providerId);
+
   return providerId;
 }
 
@@ -1923,3 +1783,169 @@ function createMessageValuesForAllLanguages(value) {
   return result;
 }
 
+function getWeekDays() {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('WeekDays');
+
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    if (String(item.active).toUpperCase() !== 'TRUE') {
+      continue;
+    }
+
+    result.push({
+      day_code: String(item.day_code).trim(),
+      sort_order: Number(item.sort_order || 0),
+      active: item.active,
+      message_key: String(item.message_key || '').trim()
+    });
+  }
+
+  result.sort(function(a, b) {
+    return a.sort_order - b.sort_order;
+  });
+
+  return result;
+}
+
+function createDefaultProviderSchedule(providerId) {
+  const settings = getSettings();
+
+  const startTime =
+    settings.DefaultWorkStartTime || '09:00';
+
+  const endTime =
+    settings.DefaultWorkEndTime || '20:00';
+
+  const days =
+    getWeekDays();
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderSchedule');
+
+  days.forEach(function(day) {
+    sheet.appendRow([
+      providerId,
+      day.day_code,
+      startTime,
+      endTime,
+      true
+    ]);
+  });
+}
+
+function getProviderSchedule(providerId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderSchedule');
+
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    if (String(item.provider_id) !== String(providerId)) {
+      continue;
+    }
+
+    result.push({
+      provider_id: item.provider_id,
+      day_of_week: item.day_of_week,
+      start_time: item.start_time,
+      end_time: item.end_time,
+      is_working: item.is_working
+    });
+  }
+
+  const weekDays = getWeekDays();
+
+  result.sort(function(a, b) {
+    const dayA = weekDays.find(function(day) {
+      return day.day_code === a.day_of_week;
+    });
+
+    const dayB = weekDays.find(function(day) {
+      return day.day_code === b.day_of_week;
+    });
+
+    return (
+      Number(dayA ? dayA.sort_order : 99) -
+      Number(dayB ? dayB.sort_order : 99)
+    );
+  });
+
+  return result;
+}
+
+function updateProviderScheduleField(
+  providerId,
+  dayCode,
+  fieldName,
+  value
+) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderSchedule');
+
+  const rows =
+    sheet.getDataRange().getValues();
+
+  const headers = rows[0];
+
+  const providerIndex =
+    headers.indexOf('provider_id');
+
+  const dayIndex =
+    headers.indexOf('day_of_week');
+
+  const fieldIndex =
+    headers.indexOf(fieldName);
+
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      String(rows[i][providerIndex]) === String(providerId) &&
+      String(rows[i][dayIndex]) === String(dayCode)
+    ) {
+      sheet
+        .getRange(i + 1, fieldIndex + 1)
+        .setValue(value);
+
+      return true;
+    }
+  }
+
+  return false;
+}

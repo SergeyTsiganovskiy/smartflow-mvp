@@ -1844,21 +1844,6 @@ function askCustomerNote(chatId, settings) {
   );
 }
 
-function buildKeyboardWithMainMenu(keyboardRows) {
-  const rows = keyboardRows || [];
-
-  rows.push([
-    {
-      text: getMessage(MESSAGE_KEYS.MAIN_MENU)
-    }
-  ]);
-
-  return {
-    keyboard: rows,
-    resize_keyboard: true
-  };
-}
-
 function showContacts(chatId, settings) {
   const locations = getLocations();
 

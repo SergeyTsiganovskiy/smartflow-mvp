@@ -650,36 +650,114 @@ function generateAppointmentId() {
   );
 }
 
-function createDefaultProviderSchedule(providerId) {
-  const settings = getSettings();
+function formatScheduleTime(value) {
+  if (!value) {
+    return '';
+  }
 
-  const startTime =
-    settings.DefaultWorkStartTime || '09:00';
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return Utilities.formatDate(
+      value,
+      Session.getScriptTimeZone(),
+      'HH:mm'
+    );
+  }
 
-  const endTime =
-    settings.DefaultWorkEndTime || '20:00';
+  return String(value).trim();
+}
 
-  const days = [
-    'MON',
-    'TUE',
-    'WED',
-    'THU',
-    'FRI',
-    'SAT',
-    'SUN'
-  ];
+function getWeekDayByCode(dayCode) {
+  const days = getWeekDays();
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('ProviderSchedule');
-
-  days.forEach(function(day) {
-    sheet.appendRow([
-      providerId,
-      day,
-      startTime,
-      endTime,
-      true
-    ]);
+  return days.find(function(day) {
+    return day.day_code === dayCode;
   });
 }
+
+function isValidTimeValue(value) {
+  const text = String(value || '').trim();
+
+  const match = text.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+
+  return !!match;
+}
+
+function timeValueToMinutes(value) {
+  const text = normalizeTimeValue(value);
+
+  const parts = text.split(':');
+
+  return Number(parts[0]) * 60 + Number(parts[1]);
+}
+
+function normalizeTimeValue(value) {
+  return String(value || '').trim();
+}
+
+function isValidDateValue(value) {
+  const text = String(value || '').trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return false;
+  }
+
+  const date = new Date(text + 'T00:00:00');
+
+  return !isNaN(date.getTime());
+}
+
+function buildKeyboardWithMainMenu(rows) {
+  const keyboardRows =
+    rows ? rows.slice() : [];
+
+  const footer = [
+    {
+      text: getMessage(MESSAGE_KEYS.BACK)
+    },
+    {
+      text: getMessage(MESSAGE_KEYS.MAIN_MENU)
+    }
+  ];
+
+  const hasFooter =
+    keyboardRows.some(function(row) {
+      if (!Array.isArray(row)) {
+        return false;
+      }
+
+      return row.some(function(button) {
+        return (
+          button &&
+          (
+            button.text === getMessage(MESSAGE_KEYS.BACK) ||
+            button.text === getMessage(MESSAGE_KEYS.MAIN_MENU)
+          )
+        );
+      });
+    });
+
+  if (!hasFooter) {
+    keyboardRows.push(footer);
+  }
+
+  return {
+    keyboard: keyboardRows,
+    resize_keyboard: true
+  };
+}
+
+function isDuplicateTelegramUpdate(updateId, prefix) {
+  const props = PropertiesService.getScriptProperties();
+
+  const key = prefix + '_LAST_UPDATE_ID';
+  const lastUpdateId = Number(props.getProperty(key) || 0);
+
+  if (Number(updateId) <= lastUpdateId) {
+    return true;
+  }
+
+  props.setProperty(key, String(updateId));
+
+  return false;
+}
+

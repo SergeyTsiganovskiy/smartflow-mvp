@@ -3,7 +3,6 @@ function sendAdminMainMenu(chatId, settings) {
     keyboard: [
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_SERVICES) }],
-      [{ text: getMessage(MESSAGE_KEYS.ADMIN_SCHEDULES) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_CUSTOMERS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_SETTINGS) }]
@@ -20,20 +19,23 @@ function sendAdminMainMenu(chatId, settings) {
 }
 
 function handleAdminMessage(message) {
-
-  addAuditLog(
-  'HANDLE_ADMIN_MESSAGE',
-  JSON.stringify({
-    chatId: message.chat.id,
-    text: message.text || ''
-  })
-);
-
   const settings = getSettings();
 
   const chatId = message.chat.id;
   const text = message.text || '';
   const state = String(getUserState(chatId) || '').trim();
+
+  addAuditLog(
+    'ADMIN_STATE_DEBUG',
+    JSON.stringify({
+      text: text,
+      state: state
+    })
+  );
+
+  // =========================
+  // ACCESS CHECK
+  // =========================
 
   if (!isAdminUser(chatId)) {
     sendTelegramMessage(
@@ -41,8 +43,13 @@ function handleAdminMessage(message) {
       chatId,
       getMessage(MESSAGE_KEYS.ADMIN_ACCESS_DENIED)
     );
+
     return;
   }
+
+  // =========================
+  // GLOBAL COMMANDS
+  // =========================
 
   if (text === '/start') {
     clearUserSession(chatId);
@@ -52,9 +59,7 @@ function handleAdminMessage(message) {
     return;
   }
 
-  if (
-    text === getMessage(MESSAGE_KEYS.MAIN_MENU)
-  ) {
+  if (text === getMessage(MESSAGE_KEYS.MAIN_MENU)) {
     clearUserSession(chatId);
     setUserState(chatId, '');
 
@@ -62,73 +67,51 @@ function handleAdminMessage(message) {
     return;
   }
 
-  if (
-    text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS)
-  ) {
+  if (text === getMessage(MESSAGE_KEYS.BACK)) {
+    processAdminBack(chatId, settings);
+    return;
+  }
+
+  // =========================
+  // MAIN MENU SECTIONS
+  // =========================
+
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS)) {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
     sendProvidersMenu(chatId, settings);
     return;
   }
 
-  if (
-    text === getMessage(MESSAGE_KEYS.ADMIN_ADD_PROVIDER)
-  ) {
+  // =========================
+  // PROVIDERS MENU COMMANDS
+  // =========================
+
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_ADD_PROVIDER)) {
     clearUserSession(chatId);
 
     startCreateProvider(chatId, settings);
     return;
   }
 
-  if (
-    text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_LIST)
-  ) {
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_LIST)) {
     showProvidersListAdmin(chatId, settings);
     return;
   }
 
-  if (
-    text === getMessage( MESSAGE_KEYS.ADMIN_PROVIDER_EDIT)
-  ) {
-    startEditProvider(
-      chatId,
-      settings
-    );
-
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_EDIT)) {
+    startEditProvider(chatId, settings);
     return;
   }
 
-  if (state === ADMIN_STATES.WAITING_PROVIDER_TO_EDIT) 
-  {
-    processProviderToEdit(
-      chatId,
-      text,
-      settings
-    );
-
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_SCHEDULE)) {
+    startProviderSchedule(chatId, settings);
     return;
   }
 
-  if (state ===  ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT ) {
-    processProviderFieldToEdit(
-      chatId,
-      text,
-      settings
-    );
-
-    return;
-  }
-
-  if (state === ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE) {
-    processProviderNewValue(
-      chatId,
-      text,
-      settings
-    );
-
-    return;
-  }
-
-  if (state === ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE) {
-    processProviderToDisable(chatId, text, settings);
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_OVERRIDES)) {
+    startProviderOverrides(chatId, settings);
     return;
   }
 
@@ -137,56 +120,139 @@ function handleAdminMessage(message) {
     return;
   }
 
-  if (
-    state === ADMIN_STATES.WAITING_PROVIDER_NAME
-  ) {
-    processProviderName(
-      chatId,
-      text,
-      settings
-    );
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_ENABLE)) {
+    startEnableProvider(chatId, settings);
     return;
   }
 
-  if (
-    state === ADMIN_STATES.WAITING_PROVIDER_LOCATION
-  ) {
-    processProviderLocation(
-      chatId,
-      text,
-      settings
-    );
+  // =========================
+  // CREATE PROVIDER STATES
+  // =========================
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_NAME) {
+    processProviderName(chatId, text, settings);
     return;
   }
 
-  if (
-    state === ADMIN_STATES.WAITING_PROVIDER_PHONE
-  ) {
-    processProviderPhone(
-      chatId,
-      text,
-      settings
-    );
+  if (state === ADMIN_STATES.WAITING_PROVIDER_LOCATION) {
+    processProviderLocation(chatId, text, settings);
     return;
   }
 
-  if (
-    state === ADMIN_STATES.WAITING_PROVIDER_TELEGRAM_ID
-  ) {
-    processProviderTelegramId(
-      chatId,
-      text,
-      settings
-    );
+  if (state === ADMIN_STATES.WAITING_PROVIDER_PHONE) {
+    processProviderPhone(chatId, text, settings);
     return;
   }
 
-  if (
-    text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_LIST)
-  ) {
-    showProvidersListAdmin(chatId, settings);
+  if (state === ADMIN_STATES.WAITING_PROVIDER_TELEGRAM_ID) {
+    processProviderTelegramId(chatId, text, settings);
     return;
   }
+
+  // =========================
+  // EDIT PROVIDER STATES
+  // =========================
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_TO_EDIT) {
+    processProviderToEdit(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT) {
+    processProviderFieldToEdit(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE) {
+    processProviderNewValue(chatId, text, settings);
+    return;
+  }
+
+  // =========================
+  // DISABLE PROVIDER STATES
+  // =========================
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE) {
+    processProviderToDisable(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_TO_ENABLE) {
+    processProviderToEnable(chatId, text, settings);
+    return;
+  }
+
+  // =========================
+  // PROVIDER SCHEDULE STATES
+  // =========================
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_FOR_SCHEDULE) {
+    processProviderForSchedule(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_SCHEDULE_DAY) {
+    processScheduleDay(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_SCHEDULE_ACTION) {
+    processScheduleAction(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_SCHEDULE_START_TIME) {
+    processScheduleStartTime(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_SCHEDULE_END_TIME) {
+    processScheduleEndTime(chatId, text, settings);
+    return;
+  }
+
+  // =========================
+  // PROVIDER OVERRIDES STATES
+  // =========================
+
+  if (state === ADMIN_STATES.WAITING_PROVIDER_FOR_OVERRIDE) {
+    processProviderForOverride(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_OVERRIDE_ACTION) {
+    processOverrideAction(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_OVERRIDE_REASON) {
+    processOverrideReason(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_OVERRIDE_DATE) {
+    processOverrideDate(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_OVERRIDE_START_TIME) {
+    processOverrideStartTime(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_OVERRIDE_END_TIME) {
+    processOverrideEndTime(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_OVERRIDE_TO_DELETE) {
+    processOverrideToDelete(chatId, text, settings);
+    return;
+  }
+
+  // =========================
+  // FALLBACK
+  // =========================
 
   sendAdminMainMenu(chatId, settings);
 }
@@ -217,6 +283,8 @@ function startCreateProvider(
   chatId,
   settings
 ) {
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+  
   setUserState(
     chatId,
     ADMIN_STATES.WAITING_PROVIDER_NAME
@@ -439,20 +507,25 @@ function processProviderTelegramId(chatId, text, settings) {
 }
 
 function showProvidersListAdmin(chatId, settings) {
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
   const providers = getProviders();
 
   if (providers.length === 0) {
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      'Мастеров пока нет.',
+      getMessage(MESSAGE_KEYS.NO_PROVIDERS_FOUND),
       buildKeyboardWithMainMenu([])
     );
 
     return;
   }
 
-  let text = '<b>👩‍💼 Мастера</b>\n\n';
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.PROVIDERS_LIST_TITLE) +
+    '</b>\n\n';
 
   providers.forEach(function(provider, index) {
     const location =
@@ -483,7 +556,7 @@ function showProvidersListAdmin(chatId, settings) {
     settings.AdminBotToken,
     chatId,
     text,
-    buildProvidersMenuKeyboard()
+    buildKeyboardWithMainMenu([])
   );
 }
 
@@ -491,6 +564,8 @@ function startEditProvider(
   chatId,
   settings
 ) {
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
   const providers =
     getProviders();
 
@@ -517,8 +592,8 @@ function startEditProvider(
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    'Выберите мастера',
-    keyboard
+    getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+    buildKeyboardWithMainMenu(keyboardRows)
   );
 }
 
@@ -534,57 +609,24 @@ function processProviderToEdit(
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      'Выберите мастера из списка'
+      getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+      buildKeyboardWithMainMenu([])
     );
 
     return;
   }
 
-  setUserSessionValue(
+  showProviderEditFields(
     chatId,
-    'edit_provider_id',
-    provider.id
-  );
-
-  const keyboard =
-    buildKeyboardWithMainMenu([
-      [
-        {
-          text: 'Имя'
-        }
-      ],
-      [
-        {
-          text: 'Филиал'
-        }
-      ],
-      [
-        {
-          text: 'Телефон'
-        }
-      ],
-      [
-        {
-          text: 'Telegram ID'
-        }
-      ]
-    ]);
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    'Что изменить?',
-    keyboard
+    provider.id,
+    settings
   );
 }
 
-function buildProvidersMenuKeyboard() {
-  return buildKeyboardWithMainMenu([
+function buildProvidersMenuKeyboard(additionalRows) {
+  const rows = additionalRows || [];
+
+  rows.push(
     [
       {
         text: getMessage(
@@ -612,19 +654,53 @@ function buildProvidersMenuKeyboard() {
           MESSAGE_KEYS.ADMIN_PROVIDER_DISABLE
         )
       }
+    ],
+    [
+      {
+        text: getMessage(
+          MESSAGE_KEYS.ADMIN_PROVIDER_ENABLE
+        )
+      }
+    ],
+    [
+      {
+        text: getMessage(
+          MESSAGE_KEYS.ADMIN_PROVIDER_SCHEDULE
+        )
+      }
+    ],
+    [
+      {
+        text: getMessage(
+          MESSAGE_KEYS.ADMIN_PROVIDER_OVERRIDES
+        )
+      }
     ]
-  ]);
+  );
+
+  return buildKeyboardWithMainMenu(rows);
 }
 
 function processProviderFieldToEdit(chatId, text, settings) {
   const fieldText = String(text || '').trim();
 
-  const allowedFields = {
-    'Имя': 'name',
-    'Филиал': 'location_id',
-    'Телефон': 'phone',
-    'Telegram ID': 'telegram_id'
-  };
+  const allowedFields = {};
+
+  allowedFields[
+    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_NAME)
+  ] = 'name';
+
+  allowedFields[
+    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_LOCATION)
+  ] = 'location_id';
+
+  allowedFields[
+    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_PHONE)
+  ] = 'phone';
+
+  allowedFields[
+    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_TELEGRAM_ID)
+  ] = 'telegram_id';
 
   const field = allowedFields[fieldText];
 
@@ -632,8 +708,8 @@ function processProviderFieldToEdit(chatId, text, settings) {
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      'Выберите поле из списка',
-      buildProvidersMenuKeyboard()
+      getMessage(MESSAGE_KEYS.SELECT_FIELD_FROM_LIST),
+      buildKeyboardWithMainMenu([])
     );
     return;
   }
@@ -657,13 +733,18 @@ function processProviderFieldToEdit(chatId, text, settings) {
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    'Введите новое значение',
+    getMessage(MESSAGE_KEYS.ENTER_NEW_VALUE),
     buildKeyboardWithMainMenu([])
   );
 }
 
-function showProviderEditLocations(chatId, settings) {
-  const locations = getLocations();
+function showProviderEditLocations(
+  chatId,
+  settings
+) {
+  const locations =
+    getLocations();
+
   const keyboardRows = [];
 
   locations.forEach(function(location) {
@@ -682,8 +763,12 @@ function showProviderEditLocations(chatId, settings) {
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    'Выберите новый филиал',
-    buildKeyboardWithMainMenu(keyboardRows)
+    getMessage(
+      MESSAGE_KEYS.SELECT_NEW_VALUE
+    ),
+    buildKeyboardWithMainMenu(
+      keyboardRows
+    )
   );
 }
 
@@ -705,12 +790,8 @@ function processProviderNewValue(
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      'Ошибка редактирования'
-    );
-
-    sendProvidersMenu(
-      chatId,
-      settings
+      getMessage(MESSAGE_KEYS.EDIT_ERROR),
+      buildKeyboardWithMainMenu([])
     );
 
     return;
@@ -726,7 +807,8 @@ function processProviderNewValue(
       sendTelegramMessage(
         settings.AdminBotToken,
         chatId,
-        'Выберите филиал из списка'
+        getMessage(MESSAGE_KEYS.SELECT_LOCATION_FROM_LIST),
+        buildKeyboardWithMainMenu([])
       );
 
       return;
@@ -741,18 +823,15 @@ function processProviderNewValue(
     value
   );
 
-  clearUserSession(chatId);
-
-  setUserState(chatId, '');
-
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    '✅ Изменения сохранены'
+    getMessage(MESSAGE_KEYS.CHANGES_SAVED)
   );
 
-  sendProvidersMenu(
+  showProviderEditFields(
     chatId,
+    providerId,
     settings
   );
 }
@@ -827,6 +906,7 @@ function updateProviderField(
 }
 
 function startDisableProvider(chatId, settings) {
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
   const providers = getProviders();
   const keyboardRows = [];
 
@@ -843,12 +923,12 @@ function startDisableProvider(chatId, settings) {
     ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE
   );
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    'Выберите мастера для отключения',
-    buildKeyboardWithMainMenu(keyboardRows)
-  );
+sendTelegramMessage(
+  settings.AdminBotToken,
+  chatId,
+  getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+  buildKeyboardWithMainMenu(keyboardRows)
+);
 }
 
 function processProviderToDisable(chatId, text, settings) {
@@ -858,7 +938,8 @@ function processProviderToDisable(chatId, text, settings) {
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      'Выберите мастера из списка'
+      getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+      buildKeyboardWithMainMenu([])
     );
     return;
   }
@@ -871,12 +952,1355 @@ function processProviderToDisable(chatId, text, settings) {
 
   clearUserSession(chatId);
   setUserState(chatId, '');
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    '✅ Мастер отключён'
+    getMessage(MESSAGE_KEYS.PROVIDER_DISABLED),
+    buildKeyboardWithMainMenu([])
+  );
+}
+
+function startProviderSchedule(chatId, settings) {
+
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
+  const providers = getProviders();
+  const keyboardRows = [];
+
+  providers.forEach(function(provider) {
+    keyboardRows.push([
+      {
+        text: provider.name
+      }
+    ]);
+  });
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_FOR_SCHEDULE
   );
 
-  sendProvidersMenu(chatId, settings);
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FOR_SCHEDULE),
+    buildKeyboardWithMainMenu(keyboardRows)
+  );
 }
+
+function processProviderForSchedule(chatId, text, settings) {
+  const provider = findProviderByName(text);
+
+  if (!provider) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+      buildProvidersMenuKeyboard()
+    );
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'schedule_provider_id',
+    provider.id
+  );
+
+  showProviderScheduleAdmin(
+    chatId,
+    provider.id,
+    settings
+  );
+}
+
+function showProviderScheduleAdmin(
+  chatId,
+  providerId,
+  settings
+) {
+
+  const provider =
+    findProviderById(providerId);
+
+  const schedule =
+    getProviderSchedule(providerId);
+
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_SCHEDULE) +
+    '</b>\n\n';
+
+  text +=
+    provider.name +
+    '\n\n';
+
+  schedule.forEach(function(item) {
+
+    const day =
+      getWeekDayByCode(
+        item.day_of_week
+      );
+
+    const dayName =
+      day
+        ? getMessage(day.message_key)
+        : item.day_of_week;
+
+    text +=
+      '<b>' +
+      dayName +
+      '</b> ';
+
+    if (String(item.is_working).toUpperCase() === 'TRUE') {
+      text +=
+        formatScheduleTime(item.start_time) +
+        '-' +
+        formatScheduleTime(item.end_time) +
+        '\n';
+    } else {
+      text +=
+        getMessage(MESSAGE_KEYS.DAY_OFF) +
+        '\n';
+    }
+  });
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_SCHEDULE_DAY
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    buildScheduleDaysKeyboard()
+  );
+}
+
+function buildScheduleDaysKeyboard() {
+  const weekDays = getWeekDays();
+  const keyboardRows = [];
+
+  weekDays.forEach(function(day) {
+    keyboardRows.push([
+      {
+        text: getMessage(day.message_key)
+      }
+    ]);
+  });
+
+  return buildKeyboardWithMainMenu(keyboardRows);
+}
+
+function processScheduleDay(
+  chatId,
+  text,
+  settings
+) {
+  const weekDays =
+    getWeekDays();
+
+  const selectedDay =
+    weekDays.find(function(day) {
+      const dayName =
+        String(getMessage(day.message_key) || '').trim();
+
+      return dayName === String(text || '').trim();
+    });
+
+  addAuditLog(
+    'PROCESS_SCHEDULE_DAY_SELECTED',
+    JSON.stringify({
+      text: String(text || '').trim(),
+      selectedDay: selectedDay || null
+    })
+  );
+
+  if (!selectedDay) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.SELECT_SCHEDULE_DAY
+      ),
+      buildScheduleDaysKeyboard()
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'schedule_day_code',
+    selectedDay.day_code
+  );
+
+  showScheduleDayActions(
+    chatId,
+    settings
+  );
+}
+
+function showScheduleDayActions(
+  chatId,
+  settings
+) {
+
+  addAuditLog(
+  'SHOW_SCHEDULE_DAY_ACTIONS_START',
+  JSON.stringify(getUserSession(chatId))
+);
+
+  const keyboard =
+    buildKeyboardWithMainMenu([
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.SCHEDULE_ACTION_START
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.SCHEDULE_ACTION_END
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.SCHEDULE_ACTION_DAY_OFF
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.SCHEDULE_ACTION_WORKING
+          )
+        }
+      ]
+    ]);
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_SCHEDULE_ACTION
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.SELECT_ACTION
+    ),
+    keyboard
+  );
+}
+
+function processScheduleAction(
+  chatId,
+  text,
+  settings
+) {
+  const session =
+    getUserSession(chatId);
+
+  const providerId =
+    session.schedule_provider_id;
+
+  const dayCode =
+    session.schedule_day_code;
+
+  if (!providerId || !dayCode) {
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_PROVIDER_FOR_SCHEDULE
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FOR_SCHEDULE),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  setPreviousMenu(
+    chatId,
+    'PROVIDERS_MENU'
+  );
+
+  if (
+    text === getMessage(MESSAGE_KEYS.SCHEDULE_ACTION_DAY_OFF)
+  ) {
+    updateProviderScheduleField(
+      providerId,
+      dayCode,
+      'is_working',
+      false
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.SCHEDULE_UPDATED)
+    );
+
+    showProviderScheduleAdmin(
+      chatId,
+      providerId,
+      settings
+    );
+
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.SCHEDULE_ACTION_WORKING)
+  ) {
+    const currentSchedule =
+      getProviderScheduleDay(
+        providerId,
+        dayCode
+      );
+
+    if (!currentSchedule) {
+      setUserState(
+        chatId,
+        ADMIN_STATES.WAITING_SCHEDULE_DAY
+      );
+
+      sendTelegramMessage(
+        settings.AdminBotToken,
+        chatId,
+        getMessage(MESSAGE_KEYS.EDIT_ERROR),
+        buildScheduleDaysKeyboard()
+      );
+
+      return;
+    }
+
+    const startTime =
+      formatScheduleTime(currentSchedule.start_time) ||
+      settings.DefaultWorkStartTime ||
+      '09:00';
+
+    const endTime =
+      formatScheduleTime(currentSchedule.end_time) ||
+      settings.DefaultWorkEndTime ||
+      '20:00';
+
+    updateProviderScheduleField(
+      providerId,
+      dayCode,
+      'start_time',
+      startTime
+    );
+
+    updateProviderScheduleField(
+      providerId,
+      dayCode,
+      'end_time',
+      endTime
+    );
+
+    updateProviderScheduleField(
+      providerId,
+      dayCode,
+      'is_working',
+      true
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.SCHEDULE_UPDATED)
+    );
+
+    showProviderScheduleAdmin(
+      chatId,
+      providerId,
+      settings
+    );
+
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.SCHEDULE_ACTION_START)
+  ) {
+    setPreviousMenu(chatId, 'SCHEDULE_DAYS');
+
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_SCHEDULE_START_TIME
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.ENTER_NEW_VALUE),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  if (
+    text === getMessage(MESSAGE_KEYS.SCHEDULE_ACTION_END)
+  ) {
+    setPreviousMenu(chatId, 'SCHEDULE_DAYS');
+
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_SCHEDULE_END_TIME
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.ENTER_NEW_VALUE),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_SCHEDULE_DAY
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SELECT_ACTION),
+    buildScheduleDaysKeyboard()
+  );
+}
+
+function processScheduleStartTime(
+  chatId,
+  text,
+  settings
+) {
+  updateScheduleTimeAndRefresh(
+    chatId,
+    text,
+    settings,
+    'start_time'
+  );
+}
+
+function processScheduleEndTime(
+  chatId,
+  text,
+  settings
+) {
+  updateScheduleTimeAndRefresh(
+    chatId,
+    text,
+    settings,
+    'end_time'
+  );
+}
+
+function updateScheduleTimeAndRefresh(
+  chatId,
+  text,
+  settings,
+  fieldName
+) {
+  const session =
+    getUserSession(chatId);
+
+  const providerId =
+    session.schedule_provider_id;
+
+  const dayCode =
+    session.schedule_day_code;
+
+  const value =
+    normalizeTimeValue(text);
+
+  if (!isValidTimeValue(value)) {
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_SCHEDULE_DAY
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.INVALID_TIME_FORMAT),
+      buildScheduleDaysKeyboard()
+    );
+
+    return;
+  }
+
+  const currentSchedule =
+    getProviderScheduleDay(
+      providerId,
+      dayCode
+    );
+
+  if (!currentSchedule) {
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_SCHEDULE_DAY
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.EDIT_ERROR),
+      buildScheduleDaysKeyboard()
+    );
+
+    return;
+  }
+
+  const currentStartTime =
+    formatScheduleTime(
+      currentSchedule.start_time
+    );
+
+  const currentEndTime =
+    formatScheduleTime(
+      currentSchedule.end_time
+    );
+
+  const nextStartTime =
+    fieldName === 'start_time'
+      ? value
+      : currentStartTime;
+
+  const nextEndTime =
+    fieldName === 'end_time'
+      ? value
+      : currentEndTime;
+
+  const startMinutes =
+    timeValueToMinutes(nextStartTime);
+
+  const endMinutes =
+    timeValueToMinutes(nextEndTime);
+
+  if (
+    startMinutes === null ||
+    endMinutes === null ||
+    startMinutes >= endMinutes
+  ) {
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_SCHEDULE_DAY
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.INVALID_TIME_RANGE),
+      buildScheduleDaysKeyboard()
+    );
+
+    return;
+  }
+
+  updateProviderScheduleField(
+    providerId,
+    dayCode,
+    fieldName,
+    value
+  );
+
+  updateProviderScheduleField(
+    providerId,
+    dayCode,
+    'is_working',
+    true
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SCHEDULE_UPDATED)
+  );
+
+  showProviderScheduleAdmin(
+    chatId,
+    providerId,
+    settings
+  );
+}
+
+function getProviderScheduleDay(
+  providerId,
+  dayCode
+) {
+  const schedule =
+    getProviderSchedule(providerId);
+
+  for (let i = 0; i < schedule.length; i++) {
+    if (
+      String(schedule[i].day_of_week) ===
+      String(dayCode)
+    ) {
+      return schedule[i];
+    }
+  }
+
+  return null;
+}
+
+function startProviderOverrides(
+  chatId,
+  settings
+) {
+
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
+  const providers =
+    getProviders();
+
+  const keyboardRows = [];
+
+  providers.forEach(function(provider) {
+    keyboardRows.push([
+      {
+        text: provider.name
+      }
+    ]);
+  });
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_FOR_OVERRIDE
+  );
+
+  addAuditLog(
+  'START_PROVIDER_OVERRIDES_SEND',
+  JSON.stringify({
+    text: getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FOR_OVERRIDE),
+    keyboardRows: keyboardRows
+  })
+);
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.SELECT_PROVIDER_FOR_OVERRIDE
+    ),
+    buildKeyboardWithMainMenu(
+      keyboardRows
+    )
+  );
+}
+
+function processProviderForOverride(
+  chatId,
+  text,
+  settings
+) {
+  const provider =
+    findProviderByName(text);
+
+  if (!provider) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST
+      ),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'override_provider_id',
+    provider.id
+  );
+
+  showOverrideActions(
+    chatId,
+    settings
+  );
+}
+
+function showOverrideActions(
+  chatId,
+  settings
+) {
+  setPreviousMenu(
+    chatId,
+    'OVERRIDE_PROVIDERS_LIST'
+  );
+
+  const session =
+    getUserSession(chatId);
+
+  const providerId =
+    session.override_provider_id;
+
+  const provider =
+    findProviderById(providerId);
+
+  const overrides =
+    getProviderOverrides(providerId);
+
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_OVERRIDES) +
+    '</b>\n\n';
+
+  if (provider) {
+    text += provider.name + '\n\n';
+  }
+
+  if (overrides.length === 0) {
+    text +=
+      getMessage(MESSAGE_KEYS.NO_OVERRIDES_FOUND) +
+      '\n\n';
+  } else {
+    overrides.forEach(function(item) {
+      text +=
+        formatDateForDisplay(item.date) +
+        ' — ' +
+        getMessage(item.reason_key);
+
+      if (String(item.is_working).toUpperCase() === 'TRUE') {
+        text +=
+          ' ' +
+          formatScheduleTime(item.start_time) +
+          '-' +
+          formatScheduleTime(item.end_time);
+      }
+
+      text += '\n';
+    });
+
+    text += '\n';
+  }
+
+  const keyboard =
+    buildKeyboardWithMainMenu([
+      [
+        {
+          text: getMessage(MESSAGE_KEYS.ADD_OVERRIDE)
+        }
+      ],
+      [
+        {
+          text: getMessage(MESSAGE_KEYS.DELETE_OVERRIDE)
+        }
+      ]
+    ]);
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_OVERRIDE_ACTION
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    keyboard
+  );
+}
+
+function processOverrideAction(
+  chatId,
+  text,
+  settings
+) {
+  if (
+    text ===
+    getMessage(
+      MESSAGE_KEYS.ADD_OVERRIDE
+    )
+  ) {
+    showOverrideReasons(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.DELETE_OVERRIDE)) {
+    startDeleteOverride(chatId, settings);
+    return;
+  }
+}
+
+function showOverrideReasons(
+  chatId,
+  settings
+) {
+  const keyboard =
+    buildKeyboardWithMainMenu([
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.REASON_VACATION
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.REASON_SICK_LEAVE
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.REASON_DAY_OFF
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.REASON_SHORT_DAY
+          )
+        }
+      ]
+    ]);
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_OVERRIDE_REASON
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.SELECT_REASON
+    ),
+    keyboard
+  );
+}
+
+function showOverridesList(
+  chatId,
+  settings
+) {
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    'TODO'
+  );
+}
+
+function processOverrideReason(
+  chatId,
+  text,
+  settings
+) {
+  const reasons = {};
+
+  reasons[
+    getMessage(
+      MESSAGE_KEYS.REASON_VACATION
+    )
+  ] = 'REASON_VACATION';
+
+  reasons[
+    getMessage(
+      MESSAGE_KEYS.REASON_SICK_LEAVE
+    )
+  ] = 'REASON_SICK_LEAVE';
+
+  reasons[
+    getMessage(
+      MESSAGE_KEYS.REASON_DAY_OFF
+    )
+  ] = 'REASON_DAY_OFF';
+
+  reasons[
+    getMessage(
+      MESSAGE_KEYS.REASON_SHORT_DAY
+    )
+  ] = 'REASON_SHORT_DAY';
+
+  const reasonKey =
+    reasons[text];
+
+  if (!reasonKey) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.SELECT_REASON
+      )
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'override_reason_key',
+    reasonKey
+  );
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_OVERRIDE_DATE
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.ENTER_OVERRIDE_DATE
+    ),
+    buildKeyboardWithMainMenu([])
+  );
+}
+
+function setPreviousMenu(chatId, menuName) {
+  setUserSessionValue(
+    chatId,
+    'previous_menu',
+    menuName
+  );
+}
+
+function processAdminBack(chatId, settings) {
+  const session = getUserSession(chatId);
+  const previousMenu = session.previous_menu || '';
+  const state = String(getUserState(chatId) || '').trim();
+
+  addAuditLog(
+    'ADMIN_BACK_DEBUG',
+    JSON.stringify({
+      previousMenu: previousMenu,
+      state: state,
+      schedule_provider_id: session.schedule_provider_id || '',
+      edit_provider_id: session.edit_provider_id || ''
+    })
+  );
+
+  if (
+    state === ADMIN_STATES.WAITING_SCHEDULE_START_TIME ||
+    state === ADMIN_STATES.WAITING_SCHEDULE_END_TIME
+  ) {
+    returnToScheduleDays(chatId, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_SCHEDULE_DAY) {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
+    sendProvidersMenu(chatId, settings);
+    return;
+  }
+
+  if (
+    previousMenu === 'PROVIDER_EDIT_FIELDS' ||
+    state === ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT
+  ) {
+    clearUserSession(chatId);
+    setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
+    startEditProvider(chatId, settings);
+    return;
+  }
+
+  if (
+    previousMenu === 'OVERRIDE_PROVIDERS_LIST' ||
+    state === ADMIN_STATES.WAITING_OVERRIDE_ACTION ||
+    state === ADMIN_STATES.WAITING_OVERRIDE_REASON ||
+    state === ADMIN_STATES.WAITING_OVERRIDE_DATE ||
+    state === ADMIN_STATES.WAITING_OVERRIDE_START_TIME ||
+    state === ADMIN_STATES.WAITING_OVERRIDE_END_TIME ||
+    state === ADMIN_STATES.WAITING_OVERRIDE_TO_DELETE
+  ) {
+    clearUserSession(chatId);
+
+    startProviderOverrides(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  if (previousMenu === 'PROVIDERS_MENU') {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
+    sendProvidersMenu(chatId, settings);
+    return;
+  }
+
+  clearUserSession(chatId);
+  setUserState(chatId, '');
+
+  sendAdminMainMenu(chatId, settings);
+}
+
+function processOverrideDate(chatId, text, settings) {
+  const dateValue = String(text || '').trim();
+
+  if (!isValidDateValue(dateValue)) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.INVALID_DATE_FORMAT),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'override_date',
+    dateValue
+  );
+
+  const session =
+    getUserSession(chatId);
+
+  if (session.override_reason_key === 'REASON_SHORT_DAY') {
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_OVERRIDE_START_TIME
+    );
+
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.SCHEDULE_ACTION_START),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  createProviderScheduleOverrideFromSession(
+    chatId
+  );
+
+  clearUserSession(chatId);
+  setUserState(chatId, '');
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.OVERRIDE_CREATED),
+    buildKeyboardWithMainMenu([])
+  );
+}
+
+function processOverrideStartTime(
+  chatId,
+  text,
+  settings
+) {
+  const value =
+    normalizeTimeValue(text);
+
+  if (!isValidTimeValue(value)) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.INVALID_TIME_FORMAT
+      ),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'override_start_time',
+    value
+  );
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_OVERRIDE_END_TIME
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.SCHEDULE_ACTION_END
+    ),
+    buildKeyboardWithMainMenu([])
+  );
+}
+
+function processOverrideEndTime(
+  chatId,
+  text,
+  settings
+) {
+  const value =
+    normalizeTimeValue(text);
+
+  if (!isValidTimeValue(value)) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.INVALID_TIME_FORMAT
+      ),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  const session =
+    getUserSession(chatId);
+
+  const startMinutes =
+    timeValueToMinutes(
+      session.override_start_time
+    );
+
+  const endMinutes =
+    timeValueToMinutes(value);
+
+  if (
+    startMinutes === null ||
+    endMinutes === null ||
+    startMinutes >= endMinutes
+  ) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.INVALID_TIME_RANGE
+      ),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'override_end_time',
+    value
+  );
+
+  createShortDayOverride(
+    chatId
+  );
+
+  clearUserSession(chatId);
+
+  setUserState(
+    chatId,
+    ''
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.OVERRIDE_CREATED
+    )
+  );
+}
+
+function startDeleteOverride(chatId, settings) {
+  const session = getUserSession(chatId);
+  const providerId = session.override_provider_id;
+
+  const overrides = getProviderOverrides(providerId);
+  const keyboardRows = [];
+
+  overrides.forEach(function(item, index) {
+    keyboardRows.push([
+      {
+        text: buildOverrideLabel(item, index)
+      }
+    ]);
+  });
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_OVERRIDE_TO_DELETE
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SELECT_OVERRIDE_TO_DELETE),
+    buildKeyboardWithMainMenu(keyboardRows)
+  );
+}
+
+function processOverrideToDelete(chatId, text, settings) {
+  const session = getUserSession(chatId);
+  const providerId = session.override_provider_id;
+
+  const overrides = getProviderOverrides(providerId);
+
+  const selectedOverride = overrides.find(function(item, index) {
+    return buildOverrideLabel(item, index) === String(text || '').trim();
+  });
+
+  if (!selectedOverride) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.SELECT_OVERRIDE_TO_DELETE),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  disableProviderOverride(selectedOverride.override_id);
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.OVERRIDE_DELETED)
+  );
+
+  showOverrideActions(chatId, settings);
+}
+
+function showProviderEditFields(
+  chatId,
+  providerId,
+  settings
+) {
+  setUserSessionValue(
+    chatId,
+    'edit_provider_id',
+    providerId
+  );
+
+  setPreviousMenu(
+    chatId,
+    'PROVIDER_EDIT_FIELDS'
+  );
+
+  const keyboard =
+    buildKeyboardWithMainMenu([
+      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_NAME) }],
+      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_LOCATION) }],
+      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_PHONE) }],
+      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_TELEGRAM_ID) }]
+    ]);
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SELECT_FIELD_FROM_LIST),
+    keyboard
+  );
+}
+
+function returnToScheduleDays(chatId, settings) {
+  const session = getUserSession(chatId);
+  const providerId = session.schedule_provider_id;
+
+  if (!providerId) {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
+    sendProvidersMenu(chatId, settings);
+    return;
+  }
+
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
+  showProviderScheduleAdmin(
+    chatId,
+    providerId,
+    settings
+  );
+}
+
+function startEnableProvider(chatId, settings) {
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
+  const providers = getInactiveProviders();
+  const keyboardRows = [];
+
+  providers.forEach(function(provider) {
+    keyboardRows.push([
+      {
+        text: provider.name
+      }
+    ]);
+  });
+
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_PROVIDER_TO_ENABLE
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+    buildKeyboardWithMainMenu(keyboardRows)
+  );
+}
+
+function processProviderToEnable(chatId, text, settings) {
+  const provider = findInactiveProviderByName(text);
+
+  if (!provider) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+      buildKeyboardWithMainMenu([])
+    );
+    return;
+  }
+
+  updateProviderField(
+    provider.id,
+    'active',
+    true
+  );
+
+  clearUserSession(chatId);
+  setUserState(chatId, '');
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.PROVIDER_ENABLED),
+    buildKeyboardWithMainMenu([])
+  );
+}
+
+
