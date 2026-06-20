@@ -32,46 +32,6 @@ function getUserState(telegramId) {
   return '';
 }
 
-function setUserSessionValue(telegramId, fieldName, value) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const telegramIndex = headers.indexOf('telegram_id');
-  const fieldIndex = headers.indexOf(fieldName);
-  const updatedAtIndex = headers.indexOf('updated_at');
-
-  if (fieldIndex === -1) {
-    throw new Error('Field not found in UserSessions: ' + fieldName);
-  }
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][telegramIndex]) === String(telegramId)) {
-      sheet.getRange(i + 1, fieldIndex + 1).setValue(String(value));
-
-      if (updatedAtIndex !== -1) {
-        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(new Date());
-      }
-
-      return;
-    }
-  }
-
-  const newRow = new Array(headers.length).fill('');
-
-  newRow[telegramIndex] = String(telegramId);
-  newRow[fieldIndex] = String(value);
-
-  if (updatedAtIndex !== -1) {
-    newRow[updatedAtIndex] = new Date();
-  }
-
-  sheet.appendRow(newRow);
-}
-
 function getLocations() {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
@@ -130,57 +90,6 @@ function findLocationByName(locationName) {
   return null;
 }
 
-function getServices() {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Services');
-
-  const rows = sheet.getDataRange().getValues();
-
-  if (rows.length < 2) {
-    return [];
-  }
-
-  const headers = rows[0];
-  const result = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const item = {};
-
-    headers.forEach(function(header, index) {
-      item[String(header).trim()] = rows[i][index];
-    });
-
-    if (String(item.active).toUpperCase() !== 'TRUE') {
-      continue;
-    }
-
-    const nameKey =
-      String(item.name_key || '').trim();
-
-    const serviceName =
-      nameKey
-        ? getMessage(nameKey)
-        : '';
-
-    result.push({
-      id: item.service_id,
-      service_id: item.service_id,
-      name_key: nameKey,
-      name:
-        serviceName ||
-        nameKey ||
-        item.service_id,
-      default_duration_minutes:
-        item.default_duration_minutes,
-      base_price: item.base_price,
-      active: item.active
-    });
-  }
-
-  return result;
-}
-
 function addAuditLog(action, details) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
@@ -191,44 +100,6 @@ function addAuditLog(action, details) {
     action,
     details
   ]);
-}
-
-function findServiceByName(serviceName) {
-  const services = getServices();
-  const targetName = String(serviceName).trim();
-
-  for (let i = 0; i < services.length; i++) {
-    if (String(services[i].name).trim() === targetName) {
-      return services[i];
-    }
-  }
-
-  return null;
-}
-
-function getUserSession(telegramId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const telegramIndex = headers.indexOf('telegram_id');
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][telegramIndex]) === String(telegramId)) {
-      const session = {};
-
-      headers.forEach((header, index) => {
-        session[header] = rows[i][index];
-      });
-
-      return session;
-    }
-  }
-
-  return null;
 }
 
 function getProviders() {
@@ -395,17 +266,7 @@ function findLocationById(locationId) {
   return null;
 }
 
-function findServiceById(serviceId) {
-  const services = getServices();
 
-  for (let i = 0; i < services.length; i++) {
-    if (String(services[i].id) === String(serviceId)) {
-      return services[i];
-    }
-  }
-
-  return null;
-}
 
 function findProviderById(providerId) {
   const providers = getProviders();
@@ -417,46 +278,6 @@ function findProviderById(providerId) {
   }
 
   return null;
-}
-
-function clearUserSessionOptions(telegramId) {
-  setUserSessionValue(telegramId, 'option_count', 0);
-
-  setUserSessionValue(telegramId, 'current_option_date', '');
-  setUserSessionValue(telegramId, 'current_option_time', '');
-
-  setUserSessionValue(telegramId, 'option1_date', '');
-  setUserSessionValue(telegramId, 'option1_time', '');
-
-  setUserSessionValue(telegramId, 'option2_date', '');
-  setUserSessionValue(telegramId, 'option2_time', '');
-
-  setUserSessionValue(telegramId, 'option3_date', '');
-  setUserSessionValue(telegramId, 'option3_time', '');
-}
-
-function clearUserSession(telegramId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const telegramIndex = headers.indexOf('telegram_id');
-
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][telegramIndex]) === String(telegramId)) {
-
-      for (let col = 0; col < headers.length; col++) {
-        if (col !== telegramIndex) {
-          sheet.getRange(i + 1, col + 1).setValue('');
-        }
-      }
-
-      return;
-    }
-  }
 }
 
 function getRequestById(requestId) {
@@ -691,17 +512,7 @@ function isRequestAlreadyProcessed(requestId) {
   return request.status !== 'pending';
 }
 
-function getDefaultServiceDurationMinutes(serviceId) {
-  const service = findServiceById(serviceId);
 
-  if (!service) {
-    return 60;
-  }
-
-  return Number(
-    service.default_duration_minutes || 60
-  );
-}
 
 function getProviderScheduleForDate(providerId, dateValue) {
   const normalizedDate = normalizeDateForStorage(dateValue);
@@ -1456,28 +1267,6 @@ function getCustomerByPhone(phone) {
   return null;
 }
 
-function getServiceDurationMinutesForSession(session) {
-  if (
-    session.customer_id &&
-    session.service_id &&
-    session.provider_id
-  ) {
-    const individualDuration =
-      getCustomerServiceDurationMinutes(
-        session.customer_id,
-        session.service_id,
-        session.provider_id
-      );
-
-    if (individualDuration) {
-      return individualDuration;
-    }
-  }
-
-  return getDefaultServiceDurationMinutes(
-    session.service_id
-  );
-}
 
 function getConflictingCustomerIds(customerId) {
   const sheet = SpreadsheetApp

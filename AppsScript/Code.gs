@@ -174,3 +174,11 @@ function testConflictAppointments() {
     JSON.stringify(result)
   );
 }
+
+function testGeneral() {
+  setUserSessionValue(
+    726107007,
+    'test_field',
+    'hello'
+  );
+}
