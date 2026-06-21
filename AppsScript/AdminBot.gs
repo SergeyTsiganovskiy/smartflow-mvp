@@ -3,8 +3,8 @@ function sendAdminMainMenu(chatId, settings) {
     keyboard: [
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_SERVICES) }],
-      [{ text: getMessage(MESSAGE_KEYS.ADMIN_CUSTOMERS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_CUSTOMERS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_SETTINGS) }]
     ],
     resize_keyboard: true
@@ -26,10 +26,14 @@ function handleAdminMessage(message) {
   const state = String(getUserState(chatId) || '').trim();
 
   addAuditLog(
-    'ADMIN_STATE_DEBUG',
+    'ADMIN_APPOINTMENTS_DEBUG',
     JSON.stringify({
       text: text,
-      state: state
+      appointmentsText:
+        getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS),
+      equal:
+        text ===
+        getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS)
     })
   );
 
@@ -89,6 +93,14 @@ function handleAdminMessage(message) {
     setUserState(chatId, '');
 
     sendServicesMenu(chatId, settings);
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS)) {
+    clearUserSession(chatId);
+    setUserState(chatId, '');
+
+    sendAppointmentsMenu(chatId, settings);
     return;
   }
 
@@ -171,6 +183,11 @@ function handleAdminMessage(message) {
 
   if (text === getMessage(MESSAGE_KEYS.EDIT_CUSTOMER_SERVICE)) {
     startEditCustomerService(chatId, settings);
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY)) {
+    showTodayAppointmentsAdmin(chatId, settings);
     return;
   }
 
@@ -3764,5 +3781,77 @@ function processCustomerServiceToDelete(chatId, text, settings) {
   );
 }
 
+function sendAppointmentsMenu(chatId, settings) {
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS),
+    buildAppointmentsMenuKeyboard()
+  );
+}
 
+function buildAppointmentsMenuKeyboard() {
+  return buildKeyboardWithMainMenu([
+    [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY) }],
+    [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_PROVIDER) }],
+    [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_CUSTOMER) }],
+    [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_UPCOMING) }]
+  ]);
+}
 
+function showTodayAppointmentsAdmin(chatId, settings) {
+  setPreviousMenu(chatId, 'APPOINTMENTS_MENU');
+
+  const appointments = getTodayAppointments();
+
+  if (appointments.length === 0) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.NO_APPOINTMENTS_FOUND),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.APPOINTMENTS_TODAY_TITLE) +
+    '</b>\n\n';
+
+  appointments.forEach(function(appointment) {
+    const customer = getCustomerById(appointment.customer_id);
+    const service = findServiceById(appointment.service_id);
+    const provider = findProviderById(appointment.provider_id);
+
+    text +=
+      '<b>' +
+      extractTimeFromDateTime(appointment.start_at) +
+      '-' +
+      extractTimeFromDateTime(appointment.end_at) +
+      '</b>\n';
+
+    text +=
+      '👤 ' +
+      (customer ? customer.name : appointment.customer_id) +
+      '\n';
+
+    text +=
+      '💅 ' +
+      (service ? service.name : appointment.service_id) +
+      '\n';
+
+    text +=
+      '👩‍💼 ' +
+      (provider ? provider.name : appointment.provider_id) +
+      '\n\n';
+  });
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    buildKeyboardWithMainMenu([])
+  );
+}

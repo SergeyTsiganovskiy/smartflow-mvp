@@ -156,9 +156,7 @@ function testConflictAppointments() {
 }
 
 function testGeneral() {
-  setUserSessionValue(
-    726107007,
-    'test_field',
-    'hello'
+  Logger.log(
+    JSON.stringify(getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY))
   );
 }

@@ -1,3 +1,7 @@
+// =========================
+// APPOINTMENTS: READ
+// =========================
+
 function getAppointmentById(appointmentId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
@@ -531,4 +535,72 @@ function updateAppointmentDateTime(
       return;
     }
   }
+}
+
+// =========================
+// APPOINTMENTS: ADMIN LISTS
+// =========================
+
+function getTodayAppointments() {
+  const settings = getSettings();
+  const timezone = settings.TimeZone || 'Europe/Kyiv';
+
+  const today = Utilities.formatDate(
+    new Date(),
+    timezone,
+    'yyyy-MM-dd'
+  );
+
+  return getAppointmentsByDate(today);
+}
+
+function getAppointmentsByDate(dateValue) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Appointments');
+
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
+
+  const startAtIndex = headers.indexOf('start_at');
+  const statusIndex = headers.indexOf('status');
+
+  const targetDate = normalizeDateForStorage(dateValue);
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const status = String(rows[i][statusIndex] || '').toLowerCase();
+
+    if (status !== 'confirmed') {
+      continue;
+    }
+
+    const appointmentDate =
+      normalizeDateForStorage(rows[i][startAtIndex]);
+
+    if (appointmentDate !== targetDate) {
+      continue;
+    }
+
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    result.push(item);
+  }
+
+  result.sort(function(a, b) {
+    return new Date(a.start_at) - new Date(b.start_at);
+  });
+
+  return result;
 }
