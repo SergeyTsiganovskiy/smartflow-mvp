@@ -457,8 +457,7 @@ function handleClientMessage(message) {
 
     const duration = getServiceDurationMinutes(
       appointment.customer_id,
-      appointment.service_id,
-      appointment.provider_id
+      appointment.service_id
     );
 
     const endAt = addMinutesToDateTime(
@@ -911,97 +910,58 @@ function notifyOwnerAboutRequestFromSession(session, requestId) {
 }
 
 function handleOwnerCallback(callbackQuery) {
-  addAuditLog(
-    'OWNER_CALLBACK',
-    JSON.stringify(callbackQuery)
-  );
-
   const settings = getSettings();
 
   const data = callbackQuery.data;
   const ownerChatId = callbackQuery.message.chat.id;
+  const messageId = callbackQuery.message.message_id;
 
   const parts = data.split('|');
   const action = parts[0];
   const requestId = parts[1] || '';
 
   addAuditLog(
-    'CALLBACK_ACTION_DEBUG',
-    action + ' | ' + requestId
+    'OWNER_CALLBACK',
+    JSON.stringify({
+      data: data,
+      action: action,
+      requestId: requestId,
+      ownerChatId: ownerChatId
+    })
   );
 
+  // =========================
+  // CALENDAR EVENT CANCEL
+  // =========================
+
   if (action === 'cancel_calendar_event') {
-    const calendarEventId = requestId;
-
     setUserSessionValue(
       ownerChatId,
       'pending_calendar_event_id',
-      calendarEventId
+      requestId
     );
-
-    const inlineKeyboard = [
-      [
-        {
-          text: '✅ Да',
-          callback_data: 'confirm_cancel_calendar_event'
-        }
-      ],
-      [
-        {
-          text: '↩️ Нет',
-          callback_data: 'back_to_calendar_event'
-        }
-      ]
-    ];
 
     editTelegramMessageWithInlineKeyboard(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
       getMessage(MESSAGE_KEYS.CONFIRM_APPOINTMENT_CANCEL),
-      inlineKeyboard
-    );
-
-    return;
-  }
-
-  if (action === 'reschedule_calendar_event') {
-    const calendarEventId = requestId;
-
-    setUserSessionValue(
-      ownerChatId,
-      'pending_calendar_event_id',
-      calendarEventId
-    );
-
-    const inlineKeyboard = [
       [
-        {
-          text: '✅ Да',
-          callback_data: 'confirm_reschedule_calendar_event'
-        }
-      ],
-      [
-        {
-          text: '↩️ Нет',
-          callback_data: 'back_to_calendar_event'
-        }
+        [
+          {
+            text: '✅ Да',
+            callback_data: 'confirm_cancel_calendar_event'
+          }
+        ],
+        [
+          {
+            text: '↩️ Нет',
+            callback_data: 'back_to_calendar_event'
+          }
+        ]
       ]
-    ];
-
-    editTelegramMessageWithInlineKeyboard(
-      settings.ClientBotToken,
-      ownerChatId,
-      callbackQuery.message.message_id,
-      getMessage(MESSAGE_KEYS.CONFIRM_APPOINTMENT_RESCHEDULE),
-      inlineKeyboard
     );
 
-    return;
-  }
-
-  if (action === 'confirm_reschedule_calendar_event') {
-    showRescheduleDateOptions(ownerChatId, settings);
     return;
   }
 
@@ -1020,7 +980,7 @@ function handleOwnerCallback(callbackQuery) {
     editTelegramMessage(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
       deleted
         ? getMessage(MESSAGE_KEYS.APPOINTMENT_CANCELLED)
         : getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
@@ -1039,37 +999,79 @@ function handleOwnerCallback(callbackQuery) {
     editTelegramMessage(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
       getMessage(MESSAGE_KEYS.APPOINTMENT_CANCEL_KEEP)
     );
 
     return;
   }
 
-  if (action === 'cancel_appointment') {
-    const appointmentId = requestId;
+  // =========================
+  // CALENDAR EVENT RESCHEDULE
+  // =========================
 
-    const inlineKeyboard = [
-      [
-        {
-          text: '✅ Да',
-          callback_data: 'confirm_cancel|' + appointmentId
-        }
-      ],
-      [
-        {
-          text: '↩️ Нет',
-          callback_data: 'back_to_appointment|' + appointmentId
-        }
-      ]
-    ];
+  if (action === 'reschedule_calendar_event') {
+    setUserSessionValue(
+      ownerChatId,
+      'pending_calendar_event_id',
+      requestId
+    );
 
     editTelegramMessageWithInlineKeyboard(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
+      getMessage(MESSAGE_KEYS.CONFIRM_APPOINTMENT_RESCHEDULE),
+      [
+        [
+          {
+            text: '✅ Да',
+            callback_data: 'confirm_reschedule_calendar_event'
+          }
+        ],
+        [
+          {
+            text: '↩️ Нет',
+            callback_data: 'back_to_calendar_event'
+          }
+        ]
+      ]
+    );
+
+    return;
+  }
+
+  if (action === 'confirm_reschedule_calendar_event') {
+    showRescheduleDateOptions(ownerChatId, settings);
+    return;
+  }
+
+  // =========================
+  // APPOINTMENT CANCEL
+  // =========================
+
+  if (action === 'cancel_appointment') {
+    const appointmentId = requestId;
+
+    editTelegramMessageWithInlineKeyboard(
+      settings.ClientBotToken,
+      ownerChatId,
+      messageId,
       getMessage(MESSAGE_KEYS.CONFIRM_APPOINTMENT_CANCEL),
-      inlineKeyboard
+      [
+        [
+          {
+            text: '✅ Да',
+            callback_data: 'confirm_cancel|' + appointmentId
+          }
+        ],
+        [
+          {
+            text: '↩️ Нет',
+            callback_data: 'back_to_appointment|' + appointmentId
+          }
+        ]
+      ]
     );
 
     return;
@@ -1086,12 +1088,16 @@ function handleOwnerCallback(callbackQuery) {
     editTelegramMessage(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
       getMessage(MESSAGE_KEYS.APPOINTMENT_CANCELLED)
     );
 
     return;
   }
+
+  // =========================
+  // APPOINTMENT BACK
+  // =========================
 
   if (action === 'back_to_appointment') {
     const appointmentId = requestId;
@@ -1101,9 +1107,10 @@ function handleOwnerCallback(callbackQuery) {
       editTelegramMessage(
         settings.ClientBotToken,
         ownerChatId,
-        callbackQuery.message.message_id,
+        messageId,
         getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
       );
+
       return;
     }
 
@@ -1118,56 +1125,56 @@ function handleOwnerCallback(callbackQuery) {
       '👩‍💼 ' + (provider ? provider.name : appointment.provider_id) + '\n' +
       '📍 ' + (location ? location.name : appointment.location_id);
 
-    const inlineKeyboard = [
-      [
-        {
-          text: '📅 Перенести',
-          callback_data: 'reschedule_appointment|' + appointment.appointment_id
-        }
-      ],
-      [
-        {
-          text: '❌ Отменить',
-          callback_data: 'cancel_appointment|' + appointment.appointment_id
-        }
-      ]
-    ];
-
     editTelegramMessageWithInlineKeyboard(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
       text,
-      inlineKeyboard
+      [
+        [
+          {
+            text: '📅 Перенести',
+            callback_data: 'reschedule_appointment|' + appointment.appointment_id
+          }
+        ],
+        [
+          {
+            text: '❌ Отменить',
+            callback_data: 'cancel_appointment|' + appointment.appointment_id
+          }
+        ]
+      ]
     );
 
     return;
   }
 
+  // =========================
+  // APPOINTMENT RESCHEDULE
+  // =========================
+
   if (action === 'reschedule_appointment') {
     const appointmentId = requestId;
-
-    const inlineKeyboard = [
-      [
-        {
-          text: '✅ Да',
-          callback_data: 'confirm_reschedule|' + appointmentId
-        }
-      ],
-      [
-        {
-          text: '↩️ Нет',
-          callback_data: 'back_to_appointment|' + appointmentId
-        }
-      ]
-    ];
 
     editTelegramMessageWithInlineKeyboard(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
       getMessage(MESSAGE_KEYS.CONFIRM_APPOINTMENT_RESCHEDULE),
-      inlineKeyboard
+      [
+        [
+          {
+            text: '✅ Да',
+            callback_data: 'confirm_reschedule|' + appointmentId
+          }
+        ],
+        [
+          {
+            text: '↩️ Нет',
+            callback_data: 'back_to_appointment|' + appointmentId
+          }
+        ]
+      ]
     );
 
     return;
@@ -1185,112 +1192,168 @@ function handleOwnerCallback(callbackQuery) {
     editTelegramMessage(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
+      messageId,
       getMessage(MESSAGE_KEYS.SELECT_RESCHEDULE_DATE)
     );
 
-    showRescheduleDateOptions(
-      ownerChatId,
-      settings
-    );
+    showRescheduleDateOptions(ownerChatId, settings);
 
     return;
   }
 
-if (action.indexOf('approve_option_') === 0) {
-  const priority = Number(action.replace('approve_option_', ''));
+  // =========================
+  // REQUEST APPROVE OPTION
+  // =========================
 
-  const request = getRequestById(requestId);
-  const option = getRequestOptionByPriority(requestId, priority);
+  if (action.indexOf('approve_option_') === 0) {
+    const priority =
+      Number(action.replace('approve_option_', ''));
 
-  if (!request || !option) {
-    sendTelegramMessage(
-      settings.ClientBotToken,
-      ownerChatId,
-      getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
+    const request =
+      getRequestById(requestId);
+
+    const option =
+      getRequestOptionByPriority(
+        requestId,
+        priority
+      );
+
+    addAuditLog(
+      'APPROVE_OPTION_DEBUG',
+      JSON.stringify({
+        requestId: requestId,
+        priority: priority,
+        request: request,
+        option: option,
+        appointmentExists: appointmentExistsForRequest(requestId)
+      })
     );
-    return;
-  }
 
-  if (appointmentExistsForRequest(requestId)) {
-    sendTelegramMessage(
-      settings.ClientBotToken,
-      ownerChatId,
-      getMessage(MESSAGE_KEYS.REQUEST_ALREADY_PROCESSED)
+    if (!request || !option) {
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        ownerChatId,
+        getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
+      );
+
+      return;
+    }
+
+    if (appointmentExistsForRequest(requestId)) {
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        ownerChatId,
+        getMessage(MESSAGE_KEYS.REQUEST_ALREADY_PROCESSED)
+      );
+
+      return;
+    }
+
+    const appointmentId =
+      createAppointmentFromRequest(
+        request,
+        option
+      );
+
+    createCalendarEventForAppointment(
+      appointmentId
     );
-    return;
-  }
 
-  const appointmentId = createAppointmentFromRequest(request, option);
-  createCalendarEventForAppointment(appointmentId);
+    updateCustomerStatus(
+      request.customer_id,
+      'confirmed'
+    );
 
-  updateCustomerStatus(request.customer_id, 'confirmed');
-  updateRequestStatus(requestId, 'confirmed');
-  updateRequestOptionsAfterApproval(requestId, priority);
+    updateRequestStatus(
+      requestId,
+      'confirmed'
+    );
 
-  const customer = getCustomerById(request.customer_id);
-  const service = findServiceById(request.service_id);
-  const provider = findProviderById(request.provider_id);
-  const location = findLocationById(request.location_id);
-
-  const requestOptions =
-    getRequestOptionsByRequestId(requestId);
-
-  const ownerText =
-    buildOwnerRequestConfirmedText(
-      request,
-      requestOptions,
+    updateRequestOptionsAfterApproval(
+      requestId,
       priority
     );
 
-  editTelegramMessage(
-    settings.ClientBotToken,
-    ownerChatId,
-    callbackQuery.message.message_id,
-    ownerText
-  );
+    const customer =
+      getCustomerById(request.customer_id);
 
-  if (customer && customer.telegram_id) {
-    const clientText =
-      getMessage(MESSAGE_KEYS.REQUEST_APPROVED_CLIENT) +
-      '\n\n' +
-      '📅 ' +
-      formatDateForDisplay(option.preferred_date) +
-      ' ' +
-      formatTimeForDisplay(option.preferred_time) +
-      '\n' +
-      '💅 ' +
-      (service ? service.name : request.service_id) +
-      '\n' +
-      '👩‍💼 ' +
-      (provider ? provider.name : request.provider_id) +
-      '\n' +
-      '📍 ' +
-      (location ? location.name : request.location_id);
+    const service =
+      findServiceById(request.service_id);
 
-    sendTelegramMessage(
+    const provider =
+      findProviderById(request.provider_id);
+
+    const location =
+      findLocationById(request.location_id);
+
+    const requestOptions =
+      getRequestOptionsByRequestId(requestId);
+
+    const ownerText =
+      buildOwnerRequestConfirmedText(
+        request,
+        requestOptions,
+        priority
+      );
+
+    editTelegramMessage(
       settings.ClientBotToken,
-      customer.telegram_id,
-      clientText
+      ownerChatId,
+      messageId,
+      ownerText
     );
+
+    if (customer && customer.telegram_id) {
+      const clientText =
+        getMessage(MESSAGE_KEYS.REQUEST_APPROVED_CLIENT) +
+        '\n\n' +
+        '📅 ' +
+        formatDateForDisplay(option.preferred_date) +
+        ' ' +
+        formatTimeForDisplay(option.preferred_time) +
+        '\n' +
+        '💅 ' +
+        (service ? service.name : request.service_id) +
+        '\n' +
+        '👩‍💼 ' +
+        (provider ? provider.name : request.provider_id) +
+        '\n' +
+        '📍 ' +
+        (location ? location.name : request.location_id);
+
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        customer.telegram_id,
+        clientText
+      );
+    }
+
+    return;
   }
 
-  return;
-}
+  // =========================
+  // REQUEST REJECT
+  // =========================
 
   if (action === 'reject_request') {
     updateRequestStatus(requestId, 'rejected');
     updateRequestOptionsAfterApproval(requestId, 0);
 
     const request = getRequestById(requestId);
-    const customer = request ? getCustomerById(request.customer_id) : null;
-    const originalText = callbackQuery.message.text || '';
+    const customer = request
+      ? getCustomerById(request.customer_id)
+      : null;
+
+    const originalText =
+      callbackQuery.message.text || '';
 
     editTelegramMessage(
       settings.ClientBotToken,
       ownerChatId,
-      callbackQuery.message.message_id,
-      originalText + '\n\n' + getMessage(MESSAGE_KEYS.OWNER_REQUEST_REJECTED_STATUS)
+      messageId,
+      originalText +
+        '\n\n' +
+        getMessage(MESSAGE_KEYS.OWNER_REQUEST_REJECTED_STATUS)
     );
 
     if (customer && customer.telegram_id) {
@@ -1624,8 +1687,7 @@ function showRescheduleTimeOptions(chatId, settings) {
 
     durationMinutes = getServiceDurationMinutes(
       appointment.customer_id,
-      appointment.service_id,
-      appointment.provider_id
+      appointment.service_id
     );
   }
 

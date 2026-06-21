@@ -113,26 +113,6 @@ function testAvailableSlotsWithSchedule() {
   Logger.log(slots);
 }
 
-function testAvailabilityExact() {
-  const providerId = 'prov_001';
-  const date = '2026-06-22';
-  const durationMinutes = getDefaultServiceDurationMinutes('serv_002');
-
-  Logger.log('duration=' + durationMinutes);
-
-  const dayCode = getDayOfWeekCode(date);
-  Logger.log('dayCode=' + dayCode);
-
-  const schedule = getProviderScheduleForDate(providerId, date);
-  Logger.log('schedule=' + JSON.stringify(schedule));
-
-  const appointments = getProviderAppointmentsForDate(providerId, date);
-  Logger.log('appointments=' + JSON.stringify(appointments));
-
-  const slots = getAvailableTimeSlots(providerId, date, durationMinutes);
-  Logger.log('slots=' + JSON.stringify(slots));
-}
-
 function testCalendarBusy() {
   const busy = getCalendarBusyIntervals(
     'prov_003',
