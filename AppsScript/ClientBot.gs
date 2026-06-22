@@ -170,6 +170,11 @@ function handleClientMessage(message) {
 
     setUserSessionValue(chatId, 'current_option_date', selectedDate);
 
+    setUserState(
+      chatId,
+      STATES.WAITING_OPTION_TIME
+    );
+
     showTimeOptions(chatId, settings);
     return;
   }
@@ -1133,13 +1138,13 @@ function handleOwnerCallback(callbackQuery) {
       [
         [
           {
-            text: '📅 Перенести',
+            text: getMessage(MESSAGE_KEYS.RESCHEDULE_APPOINTMENT_BUTTON),
             callback_data: 'reschedule_appointment|' + appointment.appointment_id
           }
         ],
         [
           {
-            text: '❌ Отменить',
+            text: getMessage(MESSAGE_KEYS.CANCEL_APPOINTMENT_BUTTON),
             callback_data: 'cancel_appointment|' + appointment.appointment_id
           }
         ]
@@ -1409,10 +1414,41 @@ function askPhoneForAppointments(chatId, settings) {
 }
 
 function showMyAppointmentsByPhone(chatId, settings, phone) {
-  const appointments = getActiveAppointmentsByPhone(phone);
-  const calendarAppointments = getCalendarAppointmentsByPhone(phone);
+  const appointments =
+    getActiveAppointmentsByPhone(phone);
 
-  if (appointments.length === 0 && calendarAppointments.length === 0) {
+  const calendarAppointments =
+    getCalendarAppointmentsByPhone(phone);
+
+  const visibleAppointments = [];
+
+  appointments.forEach(function(appointment) {
+    const syncedAppointment =
+      syncAppointmentWithCalendar(
+        appointment,
+        false
+      );
+
+    if (!syncedAppointment) {
+      return;
+    }
+
+    if (
+      String(syncedAppointment.status || '').toLowerCase() !==
+      'confirmed'
+    ) {
+      return;
+    }
+
+    visibleAppointments.push(
+      syncedAppointment
+    );
+  });
+
+  if (
+    visibleAppointments.length === 0 &&
+    calendarAppointments.length === 0
+  ) {
     setUserState(
       chatId,
       STATES.WAITING_MY_APPOINTMENTS_PHONE
@@ -1430,20 +1466,22 @@ function showMyAppointmentsByPhone(chatId, settings, phone) {
   sendTelegramMessage(
     settings.ClientBotToken,
     chatId,
-    '<b>' + getMessage(MESSAGE_KEYS.YOUR_APPOINTMENTS) + '</b>'
+    '<b>' +
+      getMessage(MESSAGE_KEYS.YOUR_APPOINTMENTS) +
+      '</b>'
   );
 
-  appointments.forEach(function(appointment) {
-    appointment = syncAppointmentWithCalendar(
-      appointment,
-      false
-    );
+  visibleAppointments.forEach(function(appointment) {
+    const service =
+      findServiceById(appointment.service_id);
 
-    const service = findServiceById(appointment.service_id);
-    const provider = findProviderById(appointment.provider_id);
-    const location = findLocationById(appointment.location_id);
+    const provider =
+      findProviderById(appointment.provider_id);
 
-      sendAppointmentCard(
+    const location =
+      findLocationById(appointment.location_id);
+
+    sendAppointmentCard(
       chatId,
       settings,
       appointment,
@@ -1453,7 +1491,28 @@ function showMyAppointmentsByPhone(chatId, settings, phone) {
     );
   });
 
+  addAuditLog(
+  'MY_CALENDAR_APPOINTMENTS_BEFORE_SEND',
+  JSON.stringify({
+    count: calendarAppointments.length,
+    appointments: calendarAppointments
+  })
+);
+
   calendarAppointments.forEach(function(appointment) {
+
+    addAuditLog(
+  'MY_CALENDAR_APPOINTMENT_SEND_ITEM',
+  JSON.stringify({
+    title: appointment.title,
+    start_at: appointment.start_at,
+    calendar_event_id: appointment.calendar_event_id,
+    phone: appointment.phone,
+    service_name: appointment.service_name,
+    provider_name: appointment.provider_name
+  })
+);
+
     sendCalendarAppointmentCard(
       chatId,
       settings,
@@ -1488,7 +1547,7 @@ function sendAppointmentCard(
   const inlineKeyboard = [
     [
       {
-        text: '📅 Перенести',
+        text: getMessage(MESSAGE_KEYS.RESCHEDULE_APPOINTMENT_BUTTON),
         callback_data:
           'reschedule_appointment|' +
           appointment.appointment_id
@@ -1496,7 +1555,7 @@ function sendAppointmentCard(
     ],
     [
       {
-        text: '❌ Отменить',
+        text: getMessage(MESSAGE_KEYS.CANCEL_APPOINTMENT_BUTTON),
         callback_data:
           'cancel_appointment|' +
           appointment.appointment_id
@@ -1802,8 +1861,7 @@ function notifyOwnerAboutReschedule(appointment, oldStartAt, oldEndAt) {
 }
 
 function sendCalendarAppointmentCard(chatId, settings, appointment) {
-  const description =
-    appointment.description || '';
+  const description = appointment.description || '';
 
   const appointmentId =
     extractCalendarTechValue(
@@ -1811,10 +1869,38 @@ function sendCalendarAppointmentCard(chatId, settings, appointment) {
       'appointment_id'
     );
 
-  if (!appointmentId) {
-    return;
+  if (appointmentId) {
+    const linkedAppointment =
+      getAppointmentById(appointmentId);
+
+    if (
+      linkedAppointment &&
+      String(linkedAppointment.status || '').toLowerCase() === 'confirmed'
+    ) {
+      sendLinkedCalendarAppointmentCard(
+        chatId,
+        settings,
+        appointment,
+        appointmentId
+      );
+
+      return;
+    }
   }
 
+  sendManualCalendarAppointmentCard(
+    chatId,
+    settings,
+    appointment
+  );
+}
+
+function sendLinkedCalendarAppointmentCard(
+  chatId,
+  settings,
+  appointment,
+  appointmentId
+) {
   const linkedAppointment =
     getAppointmentById(appointmentId);
 
@@ -1856,13 +1942,15 @@ function sendCalendarAppointmentCard(chatId, settings, appointment) {
     '📍 ' +
     (location ? location.name : linkedAppointment.location_id) +
     '\n' +
-    '📝 Комментарий: ' +
-    customerNote;
+    '📝 ' +
+      getMessage(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT) +
+      ': ' +
+      customerNote;
 
   const inlineKeyboard = [
     [
       {
-        text: '📅 Перенести',
+        text: getMessage(MESSAGE_KEYS.RESCHEDULE_APPOINTMENT_BUTTON),
         callback_data:
           'reschedule_calendar_event|' +
           appointment.calendar_event_id
@@ -1870,7 +1958,7 @@ function sendCalendarAppointmentCard(chatId, settings, appointment) {
     ],
     [
       {
-        text: '❌ Отменить',
+        text: getMessage(MESSAGE_KEYS.CANCEL_APPOINTMENT_BUTTON),
         callback_data:
           'cancel_calendar_event|' +
           appointment.calendar_event_id
@@ -1883,6 +1971,41 @@ function sendCalendarAppointmentCard(chatId, settings, appointment) {
     chatId,
     text,
     inlineKeyboard
+  );
+}
+
+function sendManualCalendarAppointmentCard(
+  chatId,
+  settings,
+  appointment
+) {
+  
+const text =
+  formatDateTimeForDisplay(
+    appointment.start_at
+  ) +
+  '\n\n' +
+  '💅 ' +
+  (appointment.service_name || appointment.title || '-') +
+  '\n' +
+  '👩‍💼 ' +
+  (appointment.provider_name || '-') +
+  '\n' +
+  '📍 ' +
+  (appointment.location_name || '-') +
+  '\n' +
+  '📝 ' +
+  (appointment.customer_note || '-') +
+  '\n' +
+  '📌 ' +
+  getMessage(
+    MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL
+  );
+
+  sendTelegramMessage(
+    settings.ClientBotToken,
+    chatId,
+    text
   );
 }
 

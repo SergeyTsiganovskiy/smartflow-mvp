@@ -116,25 +116,21 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
     .getSheetByName('Appointments');
 
   const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
 
-  const appointmentIdIndex =
-    headers.indexOf('appointment_id');
+  if (rows.length < 2) {
+    return getManualCalendarBusySlotsForProvider(
+      providerId,
+      dateValue
+    );
+  }
 
-  const providerIdIndex =
-    headers.indexOf('provider_id');
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
 
-  const startAtIndex =
-    headers.indexOf('start_at');
-
-  const endAtIndex =
-    headers.indexOf('end_at');
-
-  const statusIndex =
-    headers.indexOf('status');
-
-  const calendarEventIdIndex =
-    headers.indexOf('calendar_event_id');
+  const providerIdIndex = headers.indexOf('provider_id');
+  const startAtIndex = headers.indexOf('start_at');
+  const statusIndex = headers.indexOf('status');
 
   const targetDate =
     normalizeDateForStorage(dateValue);
@@ -142,15 +138,11 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const appointmentId =
-      rows[i][appointmentIdIndex];
-
     const provider =
       rows[i][providerIdIndex];
 
     const status =
-      String(rows[i][statusIndex])
-        .toLowerCase();
+      String(rows[i][statusIndex] || '').toLowerCase();
 
     if (String(provider) !== String(providerId)) {
       continue;
@@ -163,9 +155,6 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
     const startAt =
       rows[i][startAtIndex];
 
-    const endAt =
-      rows[i][endAtIndex];
-
     const appointmentDate =
       normalizeDateForStorage(startAt);
 
@@ -173,40 +162,32 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
       continue;
     }
 
-    const calendarEventId =
-      calendarEventIdIndex >= 0
-        ? rows[i][calendarEventIdIndex]
-        : '';
+    const appointment = {};
 
-    if (calendarEventId) {
-      const calendarEvent =
-        getCalendarEventById(calendarEventId);
+    headers.forEach(function(header, index) {
+      appointment[header] = rows[i][index];
+    });
 
-      if (!calendarEvent) {
-        updateAppointmentStatus(
-          appointmentId,
-          'cancelled'
-        );
-
-        addAuditLog(
-          'APPOINTMENT_AUTO_CANCELLED_MISSING_CALENDAR_EVENT',
-          JSON.stringify({
-            appointment_id: appointmentId,
-            provider_id: providerId,
-            calendar_event_id: calendarEventId
-          })
-        );
-
-        continue;
-      }
+    if (!isAppointmentStillValid(appointment)) {
+      continue;
     }
 
     result.push({
-      appointment_id: appointmentId,
-      startTime: extractTimeFromDateTime(startAt),
-      endTime: extractTimeFromDateTime(endAt)
+      appointment_id: appointment.appointment_id,
+      startTime: extractTimeFromDateTime(appointment.start_at),
+      endTime: extractTimeFromDateTime(appointment.end_at)
     });
   }
+
+  const manualCalendarSlots =
+    getManualCalendarBusySlotsForProvider(
+      providerId,
+      dateValue
+    );
+
+  manualCalendarSlots.forEach(function(slot) {
+    result.push(slot);
+  });
 
   return result;
 }
@@ -560,46 +541,160 @@ function getAppointmentsByDate(dateValue) {
     .getSheetByName('Appointments');
 
   const rows = sheet.getDataRange().getValues();
-
-  if (rows.length < 2) {
-    return [];
-  }
-
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
-
-  const startAtIndex = headers.indexOf('start_at');
-  const statusIndex = headers.indexOf('status');
-
-  const targetDate = normalizeDateForStorage(dateValue);
   const result = [];
 
-  for (let i = 1; i < rows.length; i++) {
-    const status = String(rows[i][statusIndex] || '').toLowerCase();
+  const targetDate =
+    normalizeDateForStorage(dateValue);
 
-    if (status !== 'confirmed') {
-      continue;
-    }
+  // =========================
+  // Appointments sheet records
+  // =========================
 
-    const appointmentDate =
-      normalizeDateForStorage(rows[i][startAtIndex]);
-
-    if (appointmentDate !== targetDate) {
-      continue;
-    }
-
-    const item = {};
-
-    headers.forEach(function(header, index) {
-      item[header] = rows[i][index];
+  if (rows.length >= 2) {
+    const headers = rows[0].map(function(header) {
+      return String(header).trim();
     });
 
-    result.push(item);
+    const startAtIndex = headers.indexOf('start_at');
+    const statusIndex = headers.indexOf('status');
+
+    for (let i = 1; i < rows.length; i++) {
+      const status =
+        String(rows[i][statusIndex] || '').toLowerCase();
+
+      if (status !== 'confirmed') {
+        continue;
+      }
+
+      const appointmentDate =
+        normalizeDateForStorage(rows[i][startAtIndex]);
+
+      if (appointmentDate !== targetDate) {
+        continue;
+      }
+
+      const appointment = {};
+
+      headers.forEach(function(header, index) {
+        appointment[header] = rows[i][index];
+      });
+
+      if (!isAppointmentStillValid(appointment)) {
+        continue;
+      }
+
+      result.push(appointment);
+    }
   }
+
+  // =========================
+  // Manual Google Calendar records
+  // =========================
+
+  const manualAppointments =
+    getManualCalendarAppointmentsByDate(dateValue);
+
+  manualAppointments.forEach(function(appointment) {
+    result.push(appointment);
+  });
+
+  // =========================
+  // Sort and return
+  // =========================
 
   result.sort(function(a, b) {
     return new Date(a.start_at) - new Date(b.start_at);
+  });
+
+  return result;
+}
+
+// =========================
+// APPOINTMENTS: CALENDAR SYNC
+// =========================
+
+function isAppointmentStillValid(appointment) {
+  const calendarEventId =
+    String(appointment.calendar_event_id || '').trim();
+
+  if (!calendarEventId) {
+    return true;
+  }
+
+  const calendarEvent =
+    getCalendarEventByAppointment(appointment);
+
+  if (calendarEvent) {
+    return true;
+  }
+
+  updateAppointmentStatus(
+    appointment.appointment_id,
+    'cancelled'
+  );
+
+  addAuditLog(
+    'APPOINTMENT_AUTO_CANCELLED_MISSING_CALENDAR_EVENT',
+    JSON.stringify({
+      appointment_id: appointment.appointment_id,
+      provider_id: appointment.provider_id,
+      calendar_event_id: calendarEventId
+    })
+  );
+
+  return false;
+}
+
+function getManualCalendarAppointmentsByDate(dateValue) {
+  const providers = getProviders();
+  const result = [];
+
+  providers.forEach(function(provider) {
+    const providerId =
+      provider.id ||
+      provider.provider_id;
+
+    if (!providerId) {
+      return;
+    }
+
+    const manualSlots =
+      getManualCalendarBusySlotsForProvider(
+        providerId,
+        dateValue
+      );
+
+    manualSlots.forEach(function(slot) {
+      result.push({
+        source: slot.source || 'calendar_manual',
+
+        appointment_id: slot.appointment_id || '',
+        request_id: slot.request_id || '',
+
+        customer_id: slot.customer_id || '',
+        customer_name: slot.customer_name || '',
+        phone: slot.phone || '',
+
+        service_id: slot.service_id || '',
+        service_name: slot.service_name || '',
+
+        provider_id: slot.provider_id || providerId,
+        provider_name: slot.provider_name || provider.name || '',
+
+        location_id: slot.location_id || provider.location_id || '',
+
+        start_at: slot.start_at,
+        end_at: slot.end_at,
+        startTime: slot.startTime || '',
+        endTime: slot.endTime || '',
+
+        status: slot.status || 'confirmed',
+        calendar_event_id: slot.calendar_event_id || '',
+
+        title: slot.title || '',
+        description: slot.description || ''
+      });
+    });
   });
 
   return result;

@@ -187,6 +187,7 @@ function handleAdminMessage(message) {
   }
 
   if (text === getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY)) {
+    addAuditLog('TODAY_HANDLER_REACHED', text);
     showTodayAppointmentsAdmin(chatId, settings);
     return;
   }
@@ -3802,7 +3803,8 @@ function buildAppointmentsMenuKeyboard() {
 function showTodayAppointmentsAdmin(chatId, settings) {
   setPreviousMenu(chatId, 'APPOINTMENTS_MENU');
 
-  const appointments = getTodayAppointments();
+  const appointments =
+    getTodayAppointments();
 
   if (appointments.length === 0) {
     sendTelegramMessage(
@@ -3821,9 +3823,35 @@ function showTodayAppointmentsAdmin(chatId, settings) {
     '</b>\n\n';
 
   appointments.forEach(function(appointment) {
-    const customer = getCustomerById(appointment.customer_id);
-    const service = findServiceById(appointment.service_id);
-    const provider = findProviderById(appointment.provider_id);
+    const customer =
+      appointment.customer_id
+        ? getCustomerById(appointment.customer_id)
+        : null;
+
+    const service =
+      appointment.service_id
+        ? findServiceById(appointment.service_id)
+        : null;
+
+    const provider =
+      appointment.provider_id
+        ? findProviderById(appointment.provider_id)
+        : null;
+
+    const customerText =
+      customer
+        ? customer.name + ' ' + customer.phone
+        : appointment.phone || '';
+
+    const serviceText =
+      service
+        ? service.name
+        : appointment.service_name || '';
+
+    const providerText =
+      provider
+        ? provider.name
+        : appointment.provider_name || appointment.provider_id || '';
 
     text +=
       '<b>' +
@@ -3834,18 +3862,25 @@ function showTodayAppointmentsAdmin(chatId, settings) {
 
     text +=
       '👤 ' +
-      (customer ? customer.name : appointment.customer_id) +
+      customerText +
       '\n';
 
     text +=
       '💅 ' +
-      (service ? service.name : appointment.service_id) +
+      serviceText +
       '\n';
 
     text +=
       '👩‍💼 ' +
-      (provider ? provider.name : appointment.provider_id) +
-      '\n\n';
+      providerText +
+      '\n';
+
+    if (appointment.source === 'calendar_manual') {
+      text += '📌 ' +  getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL);
+
+    }
+
+    text += '\n';
   });
 
   sendTelegramMessage(

@@ -761,3 +761,49 @@ function isDuplicateTelegramUpdate(updateId, prefix) {
   return false;
 }
 
+function normalizeTextForSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeTextForSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractValueByLabel(text, labels) {
+  const lines = String(text || '').split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = String(lines[i] || '').trim();
+
+    for (let j = 0; j < labels.length; j++) {
+      const label = labels[j];
+
+      const normalizedLine =
+        normalizeTextForSearch(line);
+
+      const normalizedLabel =
+        normalizeTextForSearch(label);
+
+      if (normalizedLine.indexOf(normalizedLabel + ':') === 0) {
+        return line.substring(line.indexOf(':') + 1).trim();
+      }
+    }
+  }
+
+  return '';
+}
+
+function extractAppointmentIdFromText(text) {
+  const match =
+    String(text || '').match(/appointment_id\s*=\s*([a-zA-Z0-9_\-]+)/i);
+
+  return match ? match[1] : '';
+}
