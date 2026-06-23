@@ -1980,6 +1980,7 @@ function sendManualCalendarAppointmentCard(
   appointment
 ) {
   
+  
 const text =
   formatDateTimeForDisplay(
     appointment.start_at

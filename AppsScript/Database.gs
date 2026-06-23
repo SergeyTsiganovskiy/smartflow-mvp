@@ -32,7 +32,12 @@ function getUserState(telegramId) {
   return '';
 }
 
+let LOCATIONS_CACHE = null;
+
 function getLocations() {
+  if (LOCATIONS_CACHE) {
+    return LOCATIONS_CACHE;
+  }
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Locations');
@@ -74,6 +79,7 @@ function getLocations() {
     });
   }
 
+  LOCATIONS_CACHE = result;
   return result;
 }
 
@@ -975,7 +981,12 @@ function createMessageValuesForAllLanguages(value) {
   return result;
 }
 
+
+let WEEK_DAYS_CACHE = null;
 function getWeekDays() {
+  if (WEEK_DAYS_CACHE) {
+    return WEEK_DAYS_CACHE;
+  }
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('WeekDays');
@@ -1015,6 +1026,7 @@ function getWeekDays() {
     return a.sort_order - b.sort_order;
   });
 
+  WEEK_DAYS_CACHE = result;
   return result;
 }
 

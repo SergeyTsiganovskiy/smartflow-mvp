@@ -7,7 +7,13 @@ const SHEET_NAMES = {
   APPOINTMENTS: 'Appointments'
 };
 
+let SETTINGS_CACHE = null;
+
 function getSettings() {
+  if (SETTINGS_CACHE) {
+    return SETTINGS_CACHE;
+  }
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName(SHEET_NAMES.SETTINGS);
@@ -25,5 +31,7 @@ function getSettings() {
     }
   }
 
-  return settings;
+  SETTINGS_CACHE = settings;
+
+  return SETTINGS_CACHE;
 }

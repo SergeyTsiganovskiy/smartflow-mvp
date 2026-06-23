@@ -25,18 +25,6 @@ function handleAdminMessage(message) {
   const text = message.text || '';
   const state = String(getUserState(chatId) || '').trim();
 
-  addAuditLog(
-    'ADMIN_APPOINTMENTS_DEBUG',
-    JSON.stringify({
-      text: text,
-      appointmentsText:
-        getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS),
-      equal:
-        text ===
-        getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS)
-    })
-  );
-
   // =========================
   // ACCESS CHECK
   // =========================
@@ -62,6 +50,8 @@ function handleAdminMessage(message) {
     sendAdminMainMenu(chatId, settings);
     return;
   }
+
+
 
   if (text === getMessage(MESSAGE_KEYS.MAIN_MENU)) {
     clearUserSession(chatId);
@@ -187,7 +177,6 @@ function handleAdminMessage(message) {
   }
 
   if (text === getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY)) {
-    addAuditLog('TODAY_HANDLER_REACHED', text);
     showTodayAppointmentsAdmin(chatId, settings);
     return;
   }
@@ -1297,14 +1286,6 @@ function processScheduleDay(
       return dayName === String(text || '').trim();
     });
 
-  addAuditLog(
-    'PROCESS_SCHEDULE_DAY_SELECTED',
-    JSON.stringify({
-      text: String(text || '').trim(),
-      selectedDay: selectedDay || null
-    })
-  );
-
   if (!selectedDay) {
     sendTelegramMessage(
       settings.AdminBotToken,
@@ -1334,11 +1315,6 @@ function showScheduleDayActions(
   chatId,
   settings
 ) {
-
-  addAuditLog(
-  'SHOW_SCHEDULE_DAY_ACTIONS_START',
-  JSON.stringify(getUserSession(chatId))
-);
 
   const keyboard =
     buildKeyboardWithMainMenu([
@@ -1770,14 +1746,6 @@ function startProviderOverrides(
     ADMIN_STATES.WAITING_PROVIDER_FOR_OVERRIDE
   );
 
-  addAuditLog(
-  'START_PROVIDER_OVERRIDES_SEND',
-  JSON.stringify({
-    text: getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FOR_OVERRIDE),
-    keyboardRows: keyboardRows
-  })
-);
-
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
@@ -2071,16 +2039,6 @@ function processAdminBack(chatId, settings) {
   const session = getUserSession(chatId);
   const previousMenu = session.previous_menu || '';
   const state = String(getUserState(chatId) || '').trim();
-
-  addAuditLog(
-    'ADMIN_BACK_DEBUG',
-    JSON.stringify({
-      previousMenu: previousMenu,
-      state: state,
-      schedule_provider_id: session.schedule_provider_id || '',
-      edit_provider_id: session.edit_provider_id || ''
-    })
-  );
 
   if (
     state === ADMIN_STATES.WAITING_SCHEDULE_START_TIME ||
@@ -3803,8 +3761,15 @@ function buildAppointmentsMenuKeyboard() {
 function showTodayAppointmentsAdmin(chatId, settings) {
   setPreviousMenu(chatId, 'APPOINTMENTS_MENU');
 
+  const today =
+    Utilities.formatDate(
+      new Date(),
+      settings.TimeZone || 'Europe/Kyiv',
+      'yyyy-MM-dd'
+    );
+
   const appointments =
-    getTodayAppointments();
+    getCachedAppointmentsByDate(today);
 
   if (appointments.length === 0) {
     sendTelegramMessage(
@@ -3823,35 +3788,21 @@ function showTodayAppointmentsAdmin(chatId, settings) {
     '</b>\n\n';
 
   appointments.forEach(function(appointment) {
-    const customer =
-      appointment.customer_id
-        ? getCustomerById(appointment.customer_id)
-        : null;
-
-    const service =
-      appointment.service_id
-        ? findServiceById(appointment.service_id)
-        : null;
-
-    const provider =
-      appointment.provider_id
-        ? findProviderById(appointment.provider_id)
-        : null;
-
     const customerText =
-      customer
-        ? customer.name + ' ' + customer.phone
-        : appointment.phone || '';
+      String(appointment.customer_name || '').trim()
+        ? String(appointment.customer_name || '').trim() +
+          ' ' +
+          String(appointment.phone || '').trim()
+        : String(appointment.phone || '').trim();
 
     const serviceText =
-      service
-        ? service.name
-        : appointment.service_name || '';
+      String(appointment.service_name || '').trim();
 
     const providerText =
-      provider
-        ? provider.name
-        : appointment.provider_name || appointment.provider_id || '';
+      String(appointment.provider_name || '').trim();
+
+    const locationText =
+      String(appointment.location_name || '').trim();
 
     text +=
       '<b>' +
@@ -3862,22 +3813,31 @@ function showTodayAppointmentsAdmin(chatId, settings) {
 
     text +=
       '👤 ' +
-      customerText +
+      (customerText || '-') +
       '\n';
 
     text +=
       '💅 ' +
-      serviceText +
+      (serviceText || '-') +
       '\n';
 
     text +=
       '👩‍💼 ' +
-      providerText +
+      (providerText || '-') +
+      '\n';
+
+    text +=
+      '📍 ' +
+      (locationText || '-') +
       '\n';
 
     if (appointment.source === 'calendar_manual') {
-      text += '📌 ' +  getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL);
-
+      text +=
+        '📌 ' +
+        getMessage(
+          MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL
+        ) +
+        '\n';
     }
 
     text += '\n';
@@ -3889,4 +3849,8 @@ function showTodayAppointmentsAdmin(chatId, settings) {
     text,
     buildKeyboardWithMainMenu([])
   );
+
 }
+
+
+

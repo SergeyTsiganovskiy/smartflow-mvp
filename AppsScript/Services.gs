@@ -1,8 +1,16 @@
+let SERVICES_CACHE = null;
+let SERVICES_INCLUDING_INACTIVE_CACHE = null;
+
 // =========================
 // SERVICES: READ
 // =========================
 
 function getServices() {
+
+  if (SERVICES_CACHE) {
+    return SERVICES_CACHE;
+  }
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Services');
@@ -48,6 +56,7 @@ function getServices() {
     });
   }
 
+  SERVICES_CACHE = result;
   return result;
 }
 
@@ -307,6 +316,11 @@ function setServiceActive(
 }
 
 function getServicesIncludingInactive() {
+
+  if (SERVICES_INCLUDING_INACTIVE_CACHE) {
+    return SERVICES_INCLUDING_INACTIVE_CACHE;
+  }
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Services');
@@ -348,6 +362,7 @@ function getServicesIncludingInactive() {
     });
   }
 
+  SERVICES_INCLUDING_INACTIVE_CACHE = result;
   return result;
 }
 

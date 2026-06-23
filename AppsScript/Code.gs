@@ -156,7 +156,6 @@ function testConflictAppointments() {
 }
 
 function testGeneral() {
-  Logger.log(
-    JSON.stringify(getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY))
-  );
+  clearCalendarCacheForDate('2026-06-23');
+  syncCalendarCacheForDate('2026-06-23')
 }

@@ -758,3 +758,157 @@ function getManualCalendarBusySlotsForProvider(providerId, dateValue) {
 
   return result;
 }
+
+function getManualCalendarAppointmentsByDateOptimized(dateValue) {
+  const providers = getProviders();
+  const calendars = {};
+  const result = [];
+
+  const dateString =
+    normalizeDateForStorage(dateValue);
+
+  const dayStart =
+    new Date(dateString + 'T00:00:00');
+
+  const dayEnd =
+    new Date(dateString + 'T23:59:59');
+
+  providers.forEach(function(provider) {
+    const providerId =
+      provider.id ||
+      provider.provider_id;
+
+    if (!providerId) {
+      return;
+    }
+
+    const calendarId =
+      getProviderCalendarId(providerId);
+
+    if (!calendarId) {
+      return;
+    }
+
+    if (!calendars[calendarId]) {
+      calendars[calendarId] = [];
+    }
+
+    calendars[calendarId].push({
+      provider_id: providerId,
+      provider_name: provider.name,
+      location_id: provider.location_id
+    });
+  });
+
+  const knownEventIds =
+    getAllAppointmentCalendarEventIds();
+
+  Object.keys(calendars).forEach(function(calendarId) {
+    const calendar =
+      CalendarApp.getCalendarById(calendarId);
+
+    if (!calendar) {
+      return;
+    }
+
+    const events =
+      calendar.getEvents(dayStart, dayEnd);
+
+    events.forEach(function(event) {
+      const eventId =
+        event.getId();
+
+      if (knownEventIds.indexOf(eventId) !== -1) {
+        return;
+      }
+
+      const title =
+        event.getTitle() || '';
+
+      const description =
+        event.getDescription() || '';
+
+      const fullText =
+        title + '\n' + description;
+
+      const providerNameFromEvent =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER
+          )
+        );
+
+      const matchedProvider =
+        calendars[calendarId].find(function(provider) {
+          return (
+            normalizeTextForSearch(provider.provider_name) ===
+            normalizeTextForSearch(providerNameFromEvent)
+          );
+        });
+
+      if (!matchedProvider) {
+        return;
+      }
+
+      const phone =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_PHONE
+          )
+        ) ||
+        extractPhoneFromText(fullText);
+
+      const serviceName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_SERVICE
+          )
+        );
+
+      const locationName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_LOCATION
+          )
+        );
+
+      const commentText =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_COMMENT
+          )
+        );
+
+      result.push({
+        source: 'calendar_manual',
+        appointment_id: '',
+        request_id: '',
+        customer_id: '',
+        customer_name: '',
+        phone: phone,
+        service_id: '',
+        service_name: serviceName || title,
+        provider_id: matchedProvider.provider_id,
+        provider_name: matchedProvider.provider_name,
+        location_id: matchedProvider.location_id || '',
+        location_name: locationName,
+        start_at: event.getStartTime(),
+        end_at: event.getEndTime(),
+        startTime: extractTimeFromDateTime(event.getStartTime()),
+        endTime: extractTimeFromDateTime(event.getEndTime()),
+        status: 'confirmed',
+        calendar_event_id: eventId,
+        title: title,
+        description: description,
+        customer_note: commentText
+      });
+    });
+  });
+
+  return result;
+}

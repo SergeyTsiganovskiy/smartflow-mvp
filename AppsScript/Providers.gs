@@ -1,3 +1,23 @@
+let PROVIDERS_CACHE = null;
+let PROVIDERS_INCLUDING_INACTIVE_CACHE = null;
+
+function getProviders() {
+  if (PROVIDERS_CACHE) {
+    return PROVIDERS_CACHE;
+  }
+
+  const providers =
+    getProvidersIncludingInactive()
+      .filter(function(provider) {
+        return String(provider.active).toUpperCase() === 'TRUE' ||
+          provider.active === true;
+      });
+
+  PROVIDERS_CACHE = providers;
+
+  return PROVIDERS_CACHE;
+}
+
 function getInactiveProviders() {
   return getProvidersIncludingInactive()
     .filter(function(provider) {
@@ -14,6 +34,11 @@ function findInactiveProviderByName(name) {
 }
 
 function getProvidersIncludingInactive() {
+
+  if (PROVIDERS_INCLUDING_INACTIVE_CACHE) {
+    return PROVIDERS_INCLUDING_INACTIVE_CACHE;
+  }
+
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('Providers');
@@ -52,5 +77,6 @@ function getProvidersIncludingInactive() {
     });
   }
 
+  PROVIDERS_INCLUDING_INACTIVE_CACHE = result;
   return result;
 }

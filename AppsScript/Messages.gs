@@ -1,47 +1,78 @@
+let MESSAGES_CACHE = null;
+
 function getMessage(messageKey) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
+  if (!MESSAGES_CACHE) {
+    MESSAGES_CACHE = loadMessagesCache();
+  }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.MESSAGES);
+  const lang = getSettings().Language || 'ru';
 
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const keyIndex = headers.indexOf('key');
-  const langIndex = headers.indexOf(lang);
-
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][keyIndex] === messageKey) {
-      return rows[i][langIndex] || messageKey;
-    }
+  if (
+    MESSAGES_CACHE[messageKey] &&
+    MESSAGES_CACHE[messageKey][lang]
+  ) {
+    return MESSAGES_CACHE[messageKey][lang];
   }
 
   return messageKey;
 }
 
-function getMessageKeyByText(text) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
+function loadMessagesCache() {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName(SHEET_NAMES.MESSAGES);
 
   const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
+
+  const cache = {};
+
+  if (rows.length < 2) {
+    return cache;
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
 
   const keyIndex = headers.indexOf('key');
-  const langIndex = headers.indexOf(lang);
-
-  const targetText = String(text).trim();
 
   for (let i = 1; i < rows.length; i++) {
-    const messageText = String(rows[i][langIndex]).trim();
+    const key = String(rows[i][keyIndex] || '').trim();
+
+    if (!key) {
+      continue;
+    }
+
+    cache[key] = {};
+
+    headers.forEach(function(header, index) {
+      if (header === 'key') {
+        return;
+      }
+
+      cache[key][header] =
+        rows[i][index] || '';
+    });
+  }
+
+  return cache;
+}
+
+function getMessageKeyByText(text) {
+  if (!MESSAGES_CACHE) {
+    MESSAGES_CACHE = loadMessagesCache();
+  }
+
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+  const targetText = String(text || '').trim();
+
+  for (const key in MESSAGES_CACHE) {
+    const messageText =
+      String(MESSAGES_CACHE[key][lang] || '').trim();
 
     if (messageText === targetText) {
-      return rows[i][keyIndex];
+      return key;
     }
   }
 

@@ -592,7 +592,7 @@ function getAppointmentsByDate(dateValue) {
   // =========================
 
   const manualAppointments =
-    getManualCalendarAppointmentsByDate(dateValue);
+    getManualCalendarAppointmentsByDateOptimized(dateValue);
 
   manualAppointments.forEach(function(appointment) {
     result.push(appointment);
