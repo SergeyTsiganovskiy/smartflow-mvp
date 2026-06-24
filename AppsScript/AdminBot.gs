@@ -4347,6 +4347,3 @@ function showNextWorkingDayAppointmentsAdmin(
     buildKeyboardWithMainMenu([])
   );
 }
-
-
-
