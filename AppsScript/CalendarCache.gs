@@ -430,11 +430,7 @@ function getCachedAppointmentsByDate(dateValue) {
     .getActiveSpreadsheet()
     .getSheetByName('CalendarCache');
 
-  const t1 = new Date().getTime();
-
   const rows = sheet.getDataRange().getValues();
-
-  const t2 = new Date().getTime();
 
   if (rows.length < 2) {
     return [];
@@ -585,4 +581,130 @@ function initializeCalendarCache() {
   syncCalendarCacheLongRangeTrigger();
 }
 
+function getCachedAppointmentsByProvider(providerId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('CalendarCache');
 
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
+
+  const providerIdIndex = headers.indexOf('provider_id');
+  const statusIndex = headers.indexOf('status');
+  const startAtIndex = headers.indexOf('start_at');
+
+  const now = new Date();
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][providerIdIndex]) !== String(providerId)) {
+      continue;
+    }
+
+    if (String(rows[i][statusIndex] || '').toLowerCase() !== 'confirmed') {
+      continue;
+    }
+
+    if (new Date(rows[i][startAtIndex]) < now) {
+      continue;
+    }
+
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    result.push(item);
+  }
+
+  result.sort(function(a, b) {
+    return new Date(a.start_at) - new Date(b.start_at);
+  });
+
+  return result;
+}
+
+function getCachedAppointmentsByProvider(providerId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('CalendarCache');
+
+  const rows = sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return [];
+    }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+    });
+
+  const providerIdIndex =
+  headers.indexOf('provider_id');
+
+  const statusIndex =
+  headers.indexOf('status');
+
+  const startAtIndex =
+  headers.indexOf('start_at');
+
+  const now = new Date();
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const rowProviderId =
+    String(
+    rows[i][providerIdIndex] || ''
+  );
+
+  if (
+    rowProviderId !==
+    String(providerId)
+  ) {
+    continue;
+  }
+
+  const status =
+    String(
+      rows[i][statusIndex] || ''
+    ).toLowerCase();
+
+  if (status !== 'confirmed') {
+    continue;
+  }
+
+  const startAt =
+    rows[i][startAtIndex];
+
+  if (new Date(startAt) < now) {
+    continue;
+  }
+
+  const item = {};
+
+  headers.forEach(function(header, index) {
+    item[header] = rows[i][index];
+  });
+
+  result.push(item);
+
+  }
+
+  result.sort(function(a, b) {
+  return (
+  new Date(a.start_at) -
+  new Date(b.start_at)
+  );
+});
+
+return result;
+}

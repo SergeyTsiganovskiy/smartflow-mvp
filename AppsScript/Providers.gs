@@ -80,3 +80,143 @@ function getProvidersIncludingInactive() {
   PROVIDERS_INCLUDING_INACTIVE_CACHE = result;
   return result;
 }
+
+function getNextWorkingDateForProvider(providerId) {
+  const settings = getSettings();
+  const timezone = settings.TimeZone || 'Europe/Kyiv';
+
+  const today = new Date();
+
+  for (let i = 1; i <= 60; i++) {
+    const date = new Date(today);
+
+    date.setDate(
+      date.getDate() + i
+    );
+
+    const dateString =
+      Utilities.formatDate(
+        date,
+        timezone,
+        'yyyy-MM-dd'
+      );
+
+    if (
+      isProviderWorkingOnDate(
+        providerId,
+        dateString
+      )
+    ) {
+      return dateString;
+    }
+  }
+
+  return '';
+}
+
+function isProviderWorkingOnDate(
+  providerId,
+  dateValue
+) {
+  const override =
+    getProviderOverrideForDate(
+      providerId,
+      dateValue
+    );
+
+  if (override) {
+    return (
+      String(override.is_working).toUpperCase() === 'TRUE' ||
+      override.is_working === true
+    );
+  }
+
+  const schedule =
+    getProviderScheduleForDate(
+      providerId,
+      dateValue
+    );
+
+  if (!schedule) {
+    return false;
+  }
+
+  return (
+    String(schedule.is_working).toUpperCase() === 'TRUE' ||
+    schedule.is_working === true
+  );
+}
+
+function getProviderScheduleForDate(
+  providerId,
+  dateValue
+) {
+  const schedules =
+    getProviderSchedules();
+
+  const date =
+    new Date(
+      dateValue + 'T12:00:00'
+    );
+
+  const dayCode =
+    getWeekDayCode(date);
+
+  for (let i = 0; i < schedules.length; i++) {
+    const schedule =
+      schedules[i];
+
+    if (
+      String(schedule.provider_id) !==
+      String(providerId)
+    ) {
+      continue;
+    }
+
+    if (
+      String(schedule.day_of_week) !==
+      String(dayCode)
+    ) {
+      continue;
+    }
+
+    return schedule;
+  }
+
+  return null;
+}
+
+function getProviderSchedules() {
+  if (PROVIDER_SCHEDULES_CACHE) {
+    return PROVIDER_SCHEDULES_CACHE;
+  }
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderSchedule');
+
+  const rows = sheet.getDataRange().getValues();
+  const result = [];
+
+  if (rows.length < 2) {
+    PROVIDER_SCHEDULES_CACHE = result;
+    return result;
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    result.push(item);
+  }
+
+  PROVIDER_SCHEDULES_CACHE = result;
+  return result;
+}

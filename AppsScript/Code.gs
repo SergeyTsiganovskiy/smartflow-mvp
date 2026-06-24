@@ -159,3 +159,114 @@ function testGeneral() {
   clearCalendarCacheForDate('2026-06-23');
   syncCalendarCacheForDate('2026-06-23')
 }
+
+function testAppointmentsMenuMessages() {
+  const keys = [
+    'ADMIN_APPOINTMENTS',
+    'ADMIN_APPOINTMENTS_TODAY',
+    'ADMIN_APPOINTMENTS_BY_PROVIDER',
+    'ADMIN_APPOINTMENTS_BY_DATE',
+    'SELECT_PROVIDER_FOR_APPOINTMENTS',
+    'APPOINTMENTS_BY_PROVIDER_TITLE',
+    'SELECT_APPOINTMENT_DATE',
+    'APPOINTMENTS_BY_DATE_TITLE'
+  ];
+
+  keys.forEach(key => {
+    const value = getMessage(MESSAGE_KEYS[key]);
+
+    Logger.log(
+      key + ' = ' + (value || '❌ NOT FOUND')
+    );
+  });
+}
+
+function testAppointmentsMenuKeyboard() {
+  const keyboard =
+    buildAppointmentsMenuKeyboard();
+
+  Logger.log(
+    JSON.stringify(
+      keyboard,
+      null,
+      2
+    )
+  );
+}
+
+function testAppointmentsMenuKeyboard1() {
+  const keyboard =
+    buildAppointmentsMenuKeyboard();
+
+  Logger.log('=== APPOINTMENTS MENU ===');
+
+  keyboard.keyboard.forEach((row, rowIndex) => {
+    row.forEach((button, buttonIndex) => {
+      Logger.log(
+        'Row ' +
+          rowIndex +
+          ', Button ' +
+          buttonIndex +
+          ': ' +
+          (button.text || '❌ EMPTY')
+      );
+    });
+  });
+
+  Logger.log(
+    JSON.stringify(
+      keyboard,
+      null,
+      2
+    )
+  );
+}
+
+function buildAppointmentsMenuKeyboard() {
+  return {
+    keyboard: [
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_PROVIDER
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_DATE
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.BACK
+          )
+        },
+        {
+          text: getMessage(
+            MESSAGE_KEYS.MAIN_MENU
+          )
+        }
+      ]
+    ],
+    resize_keyboard: true
+  };
+}
+
+function testNextWorkingDate() {
+  Logger.log(
+    getNextWorkingDateForProvider(
+      'prov_001'
+    )
+  );
+}

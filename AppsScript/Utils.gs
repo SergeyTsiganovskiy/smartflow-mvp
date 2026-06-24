@@ -269,42 +269,30 @@ function formatDateButton(value) {
   return Utilities.formatDate(
     value,
     timezone,
-    'dd.MM'
+    'dd.MM.yyy'
   );
 }
 
 function parseCustomDateButton(text) {
-  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
-  const value = String(text).trim();
+  const value = String(text || '').trim();
 
-  const match = value.match(/^(\d{2})\.(\d{2})$/);
+  const match = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
 
   if (!match) {
     return '';
   }
 
-  const today = new Date();
-  const currentYear = Number(
-    Utilities.formatDate(today, timezone, 'yyyy')
-  );
-
   const day = match[1];
   const month = match[2];
+  const year = match[3];
 
-  let dateString = currentYear + '-' + month + '-' + day;
+  const dateString =
+    year + '-' + month + '-' + day;
 
-  let parsed = new Date(dateString + 'T12:00:00');
+  const parsed =
+    new Date(dateString + 'T12:00:00');
 
-  const todayStorage = normalizeDateForStorage(today);
-  let parsedStorage = normalizeDateForStorage(parsed);
-
-  if (parsedStorage < todayStorage) {
-    dateString = (currentYear + 1) + '-' + month + '-' + day;
-    parsed = new Date(dateString + 'T12:00:00');
-    parsedStorage = normalizeDateForStorage(parsed);
-  }
-
-  return parsedStorage;
+  return normalizeDateForStorage(parsed);
 }
 
 function extractTimeFromDateTime(value) {
@@ -806,4 +794,37 @@ function extractAppointmentIdFromText(text) {
     String(text || '').match(/appointment_id\s*=\s*([a-zA-Z0-9_\-]+)/i);
 
   return match ? match[1] : '';
+}
+
+function parseDateFromDisplayText(text, settings) {
+  const value = String(text || '').trim();
+
+  const match = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+
+  if (!match) {
+    return '';
+  }
+
+  const day = match[1];
+  const month = match[2];
+  const year = match[3];
+
+  return year + '-' + month + '-' + day;
+}
+
+function getWeekDayCode(date) {
+  const day =
+    date.getDay();
+
+  const codes = [
+    'SUN',
+    'MON',
+    'TUE',
+    'WED',
+    'THU',
+    'FRI',
+    'SAT'
+  ];
+
+  return codes[day];
 }

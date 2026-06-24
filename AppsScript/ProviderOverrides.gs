@@ -1,3 +1,43 @@
+let PROVIDER_SCHEDULE_OVERRIDES_CACHE = null;
+let PROVIDER_SCHEDULES_CACHE = null;
+
+function getProviderScheduleOverrides() {
+  if (PROVIDER_SCHEDULE_OVERRIDES_CACHE) {
+    return PROVIDER_SCHEDULE_OVERRIDES_CACHE;
+  }
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('ProviderScheduleOverrides');
+
+  const rows = sheet.getDataRange().getValues();
+  const result = [];
+
+  if (rows.length < 2) {
+    PROVIDER_SCHEDULE_OVERRIDES_CACHE = result;
+    return result;
+  }
+
+  const headers = rows[0].map(function(header) {
+    return String(header).trim();
+  });
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    result.push(item);
+  }
+
+  PROVIDER_SCHEDULE_OVERRIDES_CACHE = result;
+  return result;
+}
+
+
+
 function generateOverrideId() {
   return generateNextEntityId(
     'ProviderScheduleOverrides',
@@ -164,4 +204,44 @@ function disableProviderOverride(overrideId) {
   return false;
 }
 
+function getProviderOverrideForDate(
+  providerId,
+  dateValue
+) {
+  const overrides =
+    getProviderScheduleOverrides();
 
+  for (let i = 0; i < overrides.length; i++) {
+    const override =
+      overrides[i];
+
+    if (
+      String(override.provider_id) !==
+      String(providerId)
+    ) {
+      continue;
+    }
+
+    if (
+      normalizeDateForStorage(
+        override.date
+      ) !== dateValue
+    ) {
+      continue;
+    }
+
+    if (
+      String(
+        override.active
+      ).toUpperCase() !== 'TRUE'
+      &&
+      override.active !== true
+    ) {
+      continue;
+    }
+
+    return override;
+  }
+
+  return null;
+}
