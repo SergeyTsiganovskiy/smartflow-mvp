@@ -263,10 +263,31 @@ function buildAppointmentsMenuKeyboard() {
   };
 }
 
-function testNextWorkingDate() {
+function testCustomerProfiles() {
+  const profile =
+    createCustomerProfile({
+      phone: '+380501112233',
+      name: 'Тест',
+      active: true
+    });
+
+  Logger.log(profile);
+
+  updateCustomerProfile(
+    profile.profile_id,
+    {
+      sales_hint:
+        'Хочу заказать уход'
+    }
+  );
+
   Logger.log(
-    getNextWorkingDateForProvider(
-      'prov_001'
+    findCustomerProfileByPhone(
+      '+380501112233'
     )
   );
+}
+
+function testSyncCustomerProfiles() {
+  syncCustomerProfiles();
 }

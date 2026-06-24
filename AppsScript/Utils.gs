@@ -828,3 +828,21 @@ function getWeekDayCode(date) {
 
   return codes[day];
 }
+
+function formatPhoneForDisplay(phone) {
+  const value =
+    String(phone || '').trim();
+
+  if (!value) {
+    return '-';
+  }
+
+  if (
+    value.length === 9 &&
+    value[0] !== '0'
+  ) {
+    return '0' + value;
+  }
+
+  return value;
+}

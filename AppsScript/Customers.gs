@@ -1,3 +1,5 @@
+let CUSTOMERS_CACHE = null;
+
 function findCustomerByPhone(phone) {
   const targetPhone =
     normalizePhone(phone);
@@ -79,4 +81,46 @@ function getCustomerByPhone(phone) {
   }
 
   return null;
+}
+
+function getCustomers() {
+  if (CUSTOMERS_CACHE) {
+    return CUSTOMERS_CACHE;
+  }
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('Customers');
+
+  const rows =
+    sheet.getDataRange().getValues();
+
+  const result = [];
+
+  if (rows.length < 2) {
+    CUSTOMERS_CACHE = result;
+    return result;
+  }
+
+  const headers =
+    rows[0].map(function(header) {
+      return String(header).trim();
+    });
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    result.push(item);
+  }
+
+  CUSTOMERS_CACHE = result;
+  return result;
+}
+
+function resetCustomersCache() {
+  CUSTOMERS_CACHE = null;
 }
