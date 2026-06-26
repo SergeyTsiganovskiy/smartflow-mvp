@@ -291,3 +291,39 @@ function testCustomerProfiles() {
 function testSyncCustomerProfiles() {
   syncCustomerProfiles();
 }
+
+function testSyncYesterdayVisitHistory() {
+  const settings =
+    getSettings();
+
+  const timezone =
+    settings.TimeZone || 'Europe/Kyiv';
+
+  const yesterday =
+    new Date();
+
+  yesterday.setDate(
+    yesterday.getDate() - 1
+  );
+
+  const dateString =
+    Utilities.formatDate(
+      yesterday,
+      timezone,
+      'yyyy-MM-dd'
+    );
+
+  syncCalendarCacheForDate(
+    dateString
+  );
+
+  syncCustomerVisitHistoryFromCalendarCache();
+
+  syncCustomerProfiles();
+
+  Logger.log(
+    'DONE: ' + dateString
+  );
+}
+
+

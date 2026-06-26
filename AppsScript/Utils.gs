@@ -237,13 +237,25 @@ function getDayOfWeekCode(dateValue) {
   return codes[dayIndex];
 }
 
-function timeToMinutes(timeString) {
-  const parts = String(timeString).split(':');
+function timeToMinutes(value) {
+  if (value instanceof Date) {
+    return (
+      value.getHours() * 60 +
+      value.getMinutes()
+    );
+  }
 
-  const hours = Number(parts[0]);
-  const minutes = Number(parts[1]);
+  const parts =
+    String(value || '').split(':');
 
-  return hours * 60 + minutes;
+  if (parts.length < 2) {
+    return 0;
+  }
+
+  return (
+    Number(parts[0]) * 60 +
+    Number(parts[1])
+  );
 }
 
 function minutesToTime(totalMinutes) {

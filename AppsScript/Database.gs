@@ -536,18 +536,40 @@ function getAvailableTimeSlots(
   durationMinutes,
   customerId
 ) {
-  const schedule = getProviderScheduleForDate(providerId, dateValue);
+  const schedule =
+    getProviderScheduleForDate(
+      providerId,
+      dateValue
+    );
 
-  if (!schedule || !schedule.isWorking) {
+  addAuditLog(
+    'AVAILABLE_SLOTS_SCHEDULE_DEBUG',
+    JSON.stringify({
+      providerId: providerId,
+      dateValue: dateValue,
+      schedule: schedule
+    })
+  );
+
+  if (
+    !schedule ||
+    (
+      String(schedule.is_working).toUpperCase() !== 'TRUE' &&
+      schedule.is_working !== true
+    )
+  ) {
     return [];
   }
 
-  if (!schedule.startTime || !schedule.endTime) {
+  if (!schedule.start_time || !schedule.end_time) {
     return [];
   }
 
-  let startMinutes = timeToMinutes(schedule.startTime);
-  const endMinutes = timeToMinutes(schedule.endTime);
+  let startMinutes =
+    timeToMinutes(schedule.start_time);
+
+  const endMinutes =
+    timeToMinutes(schedule.end_time);
 
   if (isSameDate(dateValue, new Date())) {
     const bufferMinutes = 30;
@@ -603,20 +625,6 @@ function getAvailableTimeSlots(
   const stepMinutes = 30;
   const result = [];
 
-  addAuditLog(
-    'SLOTS_DEBUG_FULL',
-    JSON.stringify({
-      providerId: providerId,
-      customerId: customerId || '',
-      dateValue: dateValue,
-      durationMinutes: durationMinutes,
-      schedule: schedule,
-      startMinutes: startMinutes,
-      endMinutes: endMinutes,
-      busyIntervals: busyIntervals
-    })
-  );
-
   for (
     let current = startMinutes;
     current + Number(durationMinutes) <= endMinutes;
@@ -640,6 +648,20 @@ function getAvailableTimeSlots(
       );
     }
   }
+
+  addAuditLog(
+    'AVAILABLE_SLOTS_DEBUG',
+    JSON.stringify({
+      providerId: providerId,
+      dateValue: dateValue,
+      durationMinutes: durationMinutes,
+      schedule: schedule,
+      providerAppointments: providerAppointments,
+      conflictAppointments: conflictAppointments,
+      busyIntervals: busyIntervals,
+      result: result
+    })
+  );
 
   return result;
 }

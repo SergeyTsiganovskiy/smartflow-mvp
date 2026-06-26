@@ -189,6 +189,14 @@ function handleClientMessage(message) {
 
     setUserSessionValue(chatId, 'current_option_date', selectedDate);
 
+    addAuditLog(
+      'CLIENT_SELECTED_DATE_DEBUG',
+      JSON.stringify({
+        text: text,
+        selectedDate: selectedDate
+      })
+    );
+
     showTimeOptions(chatId, settings);
     return;
   }
@@ -659,10 +667,7 @@ function showDateOptions(chatId, settings) {
 }
 
 function showTimeOptions(chatId, settings) {
-  addAuditLog(
-    'SHOW_TIME_OPTIONS',
-    JSON.stringify(getUserSession(chatId))
-  );
+
 
   setUserState(chatId, STATES.WAITING_OPTION_TIME);
 

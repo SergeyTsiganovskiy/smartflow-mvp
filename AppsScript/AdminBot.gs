@@ -225,6 +225,82 @@ function handleAdminMessage(message) {
     return;
   }
 
+    if (text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_NEXT)) {
+    const session =
+      getUserSession(chatId) || {};
+
+    const page =
+      Number(
+        session.customer_list_page || 1
+      );
+
+    const nextPage =
+      page + 1;
+
+    setUserSessionValue(
+      chatId,
+      'customer_list_page',
+      nextPage
+    );
+
+    showCustomerProfilesList(
+      chatId,
+      settings,
+      nextPage
+    );
+
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_PREVIOUS)) {
+    const session =
+      getUserSession(chatId) || {};
+
+    const page =
+      Number(
+        session.customer_list_page || 1
+      );
+
+    const previousPage =
+      Math.max(
+        1,
+        page - 1
+      );
+
+    setUserSessionValue(
+      chatId,
+      'customer_list_page',
+      previousPage
+    );
+
+    showCustomerProfilesList(
+      chatId,
+      settings,
+      previousPage
+    );
+
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_VISIT_HISTORY)) {
+    startCustomerVisitHistory(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_CREATE)) {
+    startCreateCustomerProfile(chatId, settings);
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_DELETE)) {
+    startDeleteCustomerProfile(chatId, settings);
+    return;
+  }
+
   // =========================
   // CREATE SERVICE STATES
   // =========================
@@ -379,62 +455,31 @@ function handleAdminMessage(message) {
     return;
   }
 
-  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_NEXT)) {
-    const session =
-      getUserSession(chatId) || {};
-
-    const page =
-      Number(
-        session.customer_list_page || 1
-      );
-
-    const nextPage =
-      page + 1;
-
-    setUserSessionValue(
+  if (state === ADMIN_STATES.WAITING_CUSTOMER_VISIT_HISTORY_PHONE) {
+    processCustomerVisitHistoryPhone(
       chatId,
-      'customer_list_page',
-      nextPage
-    );
-
-    showCustomerProfilesList(
-      chatId,
-      settings,
-      nextPage
+      text,
+      settings
     );
 
     return;
   }
 
-  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_PREVIOUS)) {
-    const session =
-      getUserSession(chatId) || {};
-
-    const page =
-      Number(
-        session.customer_list_page || 1
-      );
-
-    const previousPage =
-      Math.max(
-        1,
-        page - 1
-      );
-
-    setUserSessionValue(
-      chatId,
-      'customer_list_page',
-      previousPage
-    );
-
-    showCustomerProfilesList(
-      chatId,
-      settings,
-      previousPage
-    );
-
+  if (state === ADMIN_STATES.WAITING_CUSTOMER_PROFILE_CREATE_PHONE) {
+    processCreateCustomerProfilePhone(chatId, text, settings);
     return;
   }
+
+  if (state === ADMIN_STATES.WAITING_CUSTOMER_PROFILE_CREATE_NAME) {
+    processCreateCustomerProfileName(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_CUSTOMER_PROFILE_DELETE_PHONE) {
+    processDeleteCustomerProfilePhone(chatId, text, settings);
+    return;
+  }
+
 
   // =========================
   // CREATE PROVIDER STATES
@@ -4482,7 +4527,22 @@ function buildCustomersMenuKeyboard() {
       {
         text: getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT)
       }
-    ]
+    ],
+    [
+      {
+        text: getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_CREATE)
+      }
+    ],
+    [
+      {
+        text: getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_DELETE)
+      }
+    ],
+    [
+      {
+        text: getMessage(MESSAGE_KEYS.CUSTOMER_VISIT_HISTORY)
+      }
+    ],
   ]);
 }
 
@@ -4541,6 +4601,11 @@ function showCustomerProfile(
   settings,
   profile
 ) {
+  const nextAppointment =
+    getNextCustomerAppointment(
+      profile.phone
+    );
+
   let text =
     '<b>' +
     getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_TITLE) +
@@ -4562,21 +4627,53 @@ function showCustomerProfile(
     '\n\n';
 
   text +=
-    '<b>Визиты</b>\n';
+    '<b>Записи и визиты</b>\n';
 
   text +=
-    '📅 Последняя запись: ' +
+    '📅 Последний визит: ' +
     (
       profile.last_visit_at
-        ? formatDateTimeForDisplay(profile.last_visit_at)
+        ? formatDateTimeForDisplay(
+            profile.last_visit_at
+          )
         : '-'
     ) +
     '\n';
 
   text +=
-    '🔢 Всего записей: ' +
+    '🔢 Всего визитов: ' +
     (profile.visit_count || 0) +
     '\n\n';
+
+  text +=
+    '<b>Следующая запись</b>\n';
+
+  if (nextAppointment) {
+    text +=
+      '🕒 ' +
+      formatDateTimeForDisplay(
+        nextAppointment.start_at
+      ) +
+      '\n';
+
+    text +=
+      '💇 ' +
+      (nextAppointment.service_name || '-') +
+      '\n';
+
+    text +=
+      '👩 ' +
+      (nextAppointment.provider_name || '-') +
+      '\n';
+
+    text +=
+      '🏢 ' +
+      (nextAppointment.location_name || '-') +
+      '\n\n';
+  } else {
+    text +=
+      'Записей нет\n\n';
+  }
 
   text +=
     '<b>Информация для мастера</b>\n';
@@ -5111,4 +5208,156 @@ function buildCustomerListKeyboard(
   }
 
   return buildKeyboardWithMainMenu(rows);
+}
+
+function startCustomerVisitHistory(
+  chatId,
+  settings
+) {
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_CUSTOMER_VISIT_HISTORY_PHONE
+  );
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.ENTER_CUSTOMER_PHONE
+    ),
+    buildKeyboardWithMainMenu([])
+  );
+}
+
+function processCustomerVisitHistoryPhone(
+  chatId,
+  text,
+  settings
+) {
+  const profile =
+    findCustomerProfileByPhone(text);
+
+  if (!profile) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.CUSTOMER_NOT_FOUND
+      ),
+      buildKeyboardWithMainMenu([])
+    );
+
+    startCustomerVisitHistory(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  showCustomerVisitHistory(
+    chatId,
+    profile,
+    settings
+  );
+}
+
+function showCustomerVisitHistory(
+  chatId,
+  profile,
+  settings
+) {
+
+  const visits =
+    getCustomerVisitHistoryByPhone(
+      profile.phone
+    );
+
+  setUserState(
+    chatId,
+    ''
+  );
+
+  if (visits.length === 0) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(
+        MESSAGE_KEYS.NO_CUSTOMER_VISITS_FOUND
+      ),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  let text =
+    '<b>' +
+    getMessage(
+      MESSAGE_KEYS.CUSTOMER_VISIT_HISTORY_TITLE
+    ) +
+    '</b>\n\n';
+
+  text +=
+    '👤 ' +
+    (profile.name || '-') +
+    '\n';
+
+  text +=
+    '📞 ' +
+    formatPhoneForDisplay(
+      profile.phone
+    ) +
+    '\n';
+
+  text +=
+    '📊 Всего посещений: ' +
+    visits.length +
+    '\n\n';
+
+  visits.forEach(function(
+    visit,
+    index
+  ) {
+    text +=
+      '#' + (index + 1) +
+      '.\n';
+
+    text +=
+      '📅 ' +
+      formatDateTimeForDisplay(
+        visit.start_at
+      ) +
+      '\n';
+
+    text +=
+      '💇 ' +
+      (visit.service_name || '-') +
+      '\n';
+
+    text +=
+      '👩 ' +
+      (visit.provider_name || '-') +
+      '\n';
+
+    text +=
+      '🏢 ' +
+      (visit.location_name || '-') +
+      '\n';
+
+    text +=
+      (
+        visit.source === 'calendar_manual'
+          ? '✍️ Ручная запись'
+          : '🤖 Через бот'
+      ) +
+      '\n\n';
+  });
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    buildKeyboardWithMainMenu([])
+  );
 }

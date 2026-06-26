@@ -2,536 +2,498 @@
 // CALENDAR CACHE
 // =========================
 
-function clearCalendarCacheForDate(dateValue) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
+let CALENDAR_CACHE = null;
 
-  const rows = sheet.getDataRange().getValues();
+function resetCalendarCache() {
+    CALENDAR_CACHE = null;
+}
 
-  if (rows.length < 2) {
-    return;
-  }
-
-  const headers = rows[0];
-
-  const cacheDateIndex =
-    headers.indexOf('cache_date');
-
-  const targetDate =
-    normalizeDateForStorage(dateValue);
-
-  for (let i = rows.length - 1; i >= 1; i--) {
-    const rowDate =
-      normalizeDateForStorage(
-        rows[i][cacheDateIndex]
-      );
-
-    if (rowDate === targetDate) {
-      sheet.deleteRow(i + 1);
+function getCalendarCache() {
+    if (CALENDAR_CACHE) {
+        return CALENDAR_CACHE;
     }
-  }
+
+    const sheet = SpreadsheetApp
+        .getActiveSpreadsheet()
+        .getSheetByName('CalendarCache');
+
+    const rows =
+        sheet.getDataRange().getValues();
+
+    const result = [];
+
+    if (rows.length < 2) {
+        CALENDAR_CACHE = result;
+        return result;
+    }
+
+    const headers =
+        rows[0].map(function(header) {
+            return String(header).trim();
+        });
+
+    for (let i = 1; i < rows.length; i++) {
+        const item = {};
+
+
+        headers.forEach(function(header, index) {
+            item[header] = rows[i][index];
+        });
+
+        result.push(item);
+
+
+    }
+
+    CALENDAR_CACHE = result;
+
+    return result;
 }
 
-function saveCalendarCacheRecord(record) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
+function clearCalendarCacheForDate(dateValue) {
+    const sheet = SpreadsheetApp
+        .getActiveSpreadsheet()
+        .getSheetByName('CalendarCache');
 
-  const now = new Date();
+    const rows =
+        sheet.getDataRange().getValues();
 
-  sheet.appendRow([
-    record.cache_id || '',
-    record.cache_date || '',
+    if (rows.length < 2) {
+        return;
+    }
 
-    record.source || '',
+    const headers =
+        rows[0].map(function(header) {
+            return String(header).trim();
+        });
 
-    record.appointment_id || '',
-    record.calendar_event_id || '',
+    const cacheDateIndex =
+        headers.indexOf('cache_date');
 
-    record.customer_id || '',
-    record.customer_name || '',
-    record.phone || '',
+    const targetDate =
+        normalizeDateForStorage(dateValue);
 
-    record.service_id || '',
-    record.service_name || '',
+    for (let i = rows.length - 1; i >= 1; i--) {
+        const rowDate =
+            normalizeDateForStorage(
+                rows[i][cacheDateIndex]
+            );
 
-    record.provider_id || '',
-    record.provider_name || '',
 
-    record.location_id || '',
-    record.location_name || '',
+        if (rowDate === targetDate) {
+            sheet.deleteRow(i + 1);
+        }
 
-    record.start_at || '',
-    record.end_at || '',
 
-    record.status || '',
+    }
 
-    record.title || '',
-    record.description || '',
-    record.customer_note || '',
-
-    record.synced_at || now,
-    record.created_at || now,
-    record.updated_at || now
-  ]);
-}
-
-function syncCalendarCacheForDate(dateValue) {
-  const targetDate =
-    normalizeDateForStorage(dateValue);
-
-  clearCalendarCacheForDate(targetDate);
-
-  const rowsToInsert = [];
-
-  const appointmentRows =
-    buildAppointmentCacheRows(targetDate);
-
-  appointmentRows.forEach(function(row) {
-    rowsToInsert.push(row);
-  });
-
-  const manualRows =
-    buildManualCalendarCacheRows(targetDate);
-
-  manualRows.forEach(function(row) {
-    rowsToInsert.push(row);
-  });
-
-  appendCalendarCacheRows(rowsToInsert);
+    resetCalendarCache();
 }
 
 function appendCalendarCacheRows(rows) {
-  if (!rows || rows.length === 0) {
-    return;
-  }
+    if (!rows || rows.length === 0) {
+        return;
+    }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
+    const sheet = SpreadsheetApp
+        .getActiveSpreadsheet()
+        .getSheetByName('CalendarCache');
 
-  sheet
-    .getRange(
-      sheet.getLastRow() + 1,
-      1,
-      rows.length,
-      rows[0].length
-    )
-    .setValues(rows);
+    sheet
+        .getRange(
+            sheet.getLastRow() + 1,
+            1,
+            rows.length,
+            rows[0].length
+        )
+        .setValues(rows);
+
+    resetCalendarCache();
 }
 
 function buildCalendarCacheRow(record) {
-  const now = new Date();
+    const now =
+        new Date();
 
-  return [
-    record.cache_id || '',
-    record.cache_date || '',
+    return [
+        record.cache_id || '',
+        record.cache_date || '',
 
-    record.source || '',
 
-    record.appointment_id || '',
-    record.calendar_event_id || '',
+        record.source || '',
 
-    record.customer_id || '',
-    record.customer_name || '',
-    record.phone || '',
+        record.appointment_id || '',
+        record.calendar_event_id || '',
 
-    record.service_id || '',
-    record.service_name || '',
+        record.customer_id || '',
+        record.customer_name || '',
+        record.phone || '',
 
-    record.provider_id || '',
-    record.provider_name || '',
+        record.service_id || '',
+        record.service_name || '',
 
-    record.location_id || '',
-    record.location_name || '',
+        record.provider_id || '',
+        record.provider_name || '',
 
-    record.start_at || '',
-    record.end_at || '',
+        record.location_id || '',
+        record.location_name || '',
 
-    record.status || 'confirmed',
+        record.start_at || '',
+        record.end_at || '',
 
-    record.title || '',
-    record.description || '',
-    record.customer_note || '',
+        record.status || 'confirmed',
 
-    record.synced_at || now,
-    record.created_at || now,
-    record.updated_at || now
-  ];
+        record.title || '',
+        record.description || '',
+        record.customer_note || '',
+
+        record.synced_at || now,
+        record.created_at || now,
+        record.updated_at || now
+
+
+    ];
+}
+
+function syncCalendarCacheForDate(dateValue) {
+    const targetDate =
+        normalizeDateForStorage(dateValue);
+
+    clearCalendarCacheForDate(targetDate);
+
+    const rowsToInsert = [];
+
+    const appointmentRows =
+        buildAppointmentCacheRows(targetDate);
+
+    appointmentRows.forEach(function(row) {
+        rowsToInsert.push(row);
+    });
+
+    const manualRows =
+        buildManualCalendarCacheRows(targetDate);
+
+    manualRows.forEach(function(row) {
+        rowsToInsert.push(row);
+    });
+
+    appendCalendarCacheRows(rowsToInsert);
 }
 
 function buildAppointmentCacheRows(dateValue) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    const sheet = SpreadsheetApp
+        .getActiveSpreadsheet()
+        .getSheetByName('Appointments');
 
-  const rows =
-    sheet.getDataRange().getValues();
+    const rows =
+        sheet.getDataRange().getValues();
 
-  const result = [];
+    const result = [];
 
-  if (rows.length < 2) {
+    if (rows.length < 2) {
+        return result;
+    }
+
+    const headers =
+        rows[0].map(function(header) {
+            return String(header).trim();
+        });
+
+    const targetDate =
+        normalizeDateForStorage(dateValue);
+
+    for (let i = 1; i < rows.length; i++) {
+        const item = {};
+
+
+        headers.forEach(function(header, index) {
+            item[header] = rows[i][index];
+        });
+
+        if (normalizeDateForStorage(item.start_at) !== targetDate) {
+            continue;
+        }
+
+        if (String(item.status || '').toLowerCase() !== 'confirmed') {
+            continue;
+        }
+
+        if (!isAppointmentStillValid(item)) {
+            continue;
+        }
+
+        const customer =
+            getCustomerById(item.customer_id);
+
+        const provider =
+            findProviderById(item.provider_id);
+
+        const service =
+            findServiceById(item.service_id);
+
+        const location =
+            findLocationById(item.location_id);
+
+        result.push(
+            buildCalendarCacheRow({
+                cache_id: 'cache_' + new Date().getTime() + '_' + i,
+
+                cache_date: targetDate,
+
+                source: 'appointment',
+
+                appointment_id: item.appointment_id,
+
+                calendar_event_id: item.calendar_event_id,
+
+                customer_id: item.customer_id,
+
+                customer_name: customer ? customer.name : '',
+
+                phone: customer ? customer.phone : '',
+
+                service_id: item.service_id,
+
+                service_name: service ? service.name : '',
+
+                provider_id: item.provider_id,
+
+                provider_name: provider ? provider.name : '',
+
+                location_id: item.location_id,
+
+                location_name: location ? location.name : '',
+
+                start_at: item.start_at,
+
+                end_at: item.end_at,
+
+                status: item.status,
+
+                title: '',
+
+                description: '',
+
+                customer_note: item.customer_note,
+
+                synced_at: new Date()
+            })
+        );
+
+
+    }
+
     return result;
-  }
-
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
-
-  const targetDate =
-    normalizeDateForStorage(dateValue);
-
-  for (let i = 1; i < rows.length; i++) {
-    const item = {};
-
-    headers.forEach(function(header, index) {
-      item[header] = rows[i][index];
-    });
-
-    if (
-      normalizeDateForStorage(item.start_at) !==
-      targetDate
-    ) {
-      continue;
-    }
-
-    if (
-      String(item.status || '').toLowerCase() !==
-      'confirmed'
-    ) {
-      continue;
-    }
-
-    if (!isAppointmentStillValid(item)) {
-      continue;
-    }
-
-    const customer =
-      getCustomerById(item.customer_id);
-
-    const provider =
-      findProviderById(item.provider_id);
-
-    const service =
-      findServiceById(item.service_id);
-
-    const location =
-      findLocationById(item.location_id);
-
-    result.push(
-      buildCalendarCacheRow({
-        cache_id:
-          'cache_' + new Date().getTime() + '_' + i,
-
-        cache_date: targetDate,
-        source: 'appointment',
-
-        appointment_id:
-          item.appointment_id,
-
-        calendar_event_id:
-          item.calendar_event_id,
-
-        customer_id:
-          item.customer_id,
-
-        customer_name:
-          customer ? customer.name : '',
-
-        phone:
-          customer ? customer.phone : '',
-
-        service_id:
-          item.service_id,
-
-        service_name:
-          service ? service.name : '',
-
-        provider_id:
-          item.provider_id,
-
-        provider_name:
-          provider ? provider.name : '',
-
-        location_id:
-          item.location_id,
-
-        location_name:
-          location ? location.name : '',
-
-        start_at:
-          item.start_at,
-
-        end_at:
-          item.end_at,
-
-        status:
-          item.status,
-
-        title: '',
-        description: '',
-        customer_note:
-          item.customer_note,
-
-        synced_at:
-          new Date()
-      })
-    );
-  }
-
-  return result;
 }
 
 function buildManualCalendarCacheRows(dateValue) {
-  const appointments =
-    getManualCalendarAppointmentsByDateOptimized(
-      dateValue
-    );
+    const appointments =
+        getManualCalendarAppointmentsByDateOptimized(
+            dateValue
+        );
 
-  const targetDate =
-    normalizeDateForStorage(dateValue);
+    const targetDate =
+        normalizeDateForStorage(dateValue);
 
-  const result = [];
+    const result = [];
 
-  appointments.forEach(function(item, index) {
-    result.push(
-      buildCalendarCacheRow({
-        cache_id:
-          'cache_manual_' +
-          new Date().getTime() +
-          '_' +
-          index,
+    appointments.forEach(function(item, index) {
+        result.push(
+            buildCalendarCacheRow({
+                cache_id: 'cache_manual_' +
+                    new Date().getTime() +
+                    '_' +
+                    index,
 
-        cache_date:
-          targetDate,
 
-        source:
-          'calendar_manual',
+                cache_date: targetDate,
 
-        appointment_id:
-          '',
+                source: 'calendar_manual',
 
-        calendar_event_id:
-          item.calendar_event_id || '',
+                appointment_id: '',
 
-        customer_id:
-          item.customer_id || '',
+                calendar_event_id: item.calendar_event_id || '',
 
-        customer_name:
-          item.customer_name || '',
+                customer_id: item.customer_id || '',
 
-        phone:
-          item.phone || '',
+                customer_name: item.customer_name || '',
 
-        service_id:
-          item.service_id || '',
+                phone: item.phone || '',
 
-        service_name:
-          item.service_name || '',
+                service_id: item.service_id || '',
 
-        provider_id:
-          item.provider_id || '',
+                service_name: item.service_name || '',
 
-        provider_name:
-          item.provider_name || '',
+                provider_id: item.provider_id || '',
 
-        location_id:
-          item.location_id || '',
+                provider_name: item.provider_name || '',
 
-        location_name:
-          item.location_name || '',
+                location_id: item.location_id || '',
 
-        start_at:
-          item.start_at,
+                location_name: item.location_name || '',
 
-        end_at:
-          item.end_at,
+                start_at: item.start_at,
 
-        status:
-          'confirmed',
+                end_at: item.end_at,
 
-        title:
-          item.title || '',
+                status: 'confirmed',
 
-        description:
-          item.description || '',
+                title: item.title || '',
 
-        customer_note:
-          item.customer_note || '',
+                description: item.description || '',
 
-        synced_at:
-          new Date()
-      })
-    );
-  });
+                customer_note: item.customer_note || '',
 
-  return result;
-}
+                synced_at: new Date()
+            })
+        );
 
-function getCachedAppointmentsByDate111(dateValue) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
 
-  const rows = sheet.getDataRange().getValues();
-
-  if (rows.length < 2) {
-    return [];
-  }
-
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
-
-  const cacheDateIndex = headers.indexOf('cache_date');
-  const statusIndex = headers.indexOf('status');
-
-  const targetDate =
-    normalizeDateForStorage(dateValue);
-
-  const result = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const cacheDate =
-      normalizeDateForStorage(rows[i][cacheDateIndex]);
-
-    if (cacheDate !== targetDate) {
-      continue;
-    }
-
-    const status =
-      String(rows[i][statusIndex] || '').toLowerCase();
-
-    if (status !== 'confirmed') {
-      continue;
-    }
-
-    const item = {};
-
-    headers.forEach(function(header, index) {
-      item[header] = rows[i][index];
     });
 
-    result.push(item);
-  }
-
-  result.sort(function(a, b) {
-    return new Date(a.start_at) - new Date(b.start_at);
-  });
-
-  return result;
+    return result;
 }
 
 function getCachedAppointmentsByDate(dateValue) {
-  const t0 = new Date().getTime();
+    const targetDate =
+        normalizeDateForStorage(dateValue);
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
+    const result =
+        getCalendarCache().filter(function(item) {
+            const cacheDate =
+                normalizeDateForStorage(item.cache_date);
 
-  const rows = sheet.getDataRange().getValues();
 
-  if (rows.length < 2) {
-    return [];
-  }
+            const status =
+                String(item.status || '').toLowerCase();
 
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
+            return cacheDate === targetDate &&
+                status === 'confirmed';
+        });
 
-  const cacheDateIndex = headers.indexOf('cache_date');
-  const statusIndex = headers.indexOf('status');
 
-  const targetDate =
-    normalizeDateForStorage(dateValue);
-
-  const result = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const cacheDate =
-      normalizeDateForStorage(rows[i][cacheDateIndex]);
-
-    if (cacheDate !== targetDate) {
-      continue;
-    }
-
-    const status =
-      String(rows[i][statusIndex] || '').toLowerCase();
-
-    if (status !== 'confirmed') {
-      continue;
-    }
-
-    const item = {};
-
-    headers.forEach(function(header, index) {
-      item[header] = rows[i][index];
+    result.sort(function(a, b) {
+        return new Date(a.start_at) - new Date(b.start_at);
     });
 
-    result.push(item);
-  }
+    return result;
+}
 
-  result.sort(function(a, b) {
-    return new Date(a.start_at) - new Date(b.start_at);
-  });
+function getCachedAppointmentsByProvider(providerId) {
+    const now =
+        new Date();
 
-  return result;
+    const result =
+        getCalendarCache().filter(function(item) {
+            const status =
+                String(item.status || '').toLowerCase();
+
+
+            return String(item.provider_id) === String(providerId) &&
+                status === 'confirmed' &&
+                new Date(item.start_at) >= now;
+        });
+
+
+    result.sort(function(a, b) {
+        return new Date(a.start_at) - new Date(b.start_at);
+    });
+
+    return result;
+}
+
+function getCustomerVisitHistory(phone) {
+    const phoneKey =
+        getPhoneSearchKey(phone);
+
+    const result =
+        getCalendarCache().filter(function(item) {
+            const status =
+                String(item.status || '').toLowerCase();
+
+
+            return getPhoneSearchKey(item.phone) === phoneKey &&
+                status === 'confirmed';
+        });
+
+
+    result.sort(function(a, b) {
+        return new Date(b.start_at) - new Date(a.start_at);
+    });
+
+    return result;
 }
 
 function syncCalendarCacheNearDatesTrigger() {
-  const settings = getSettings();
-  const timezone = settings.TimeZone || 'Europe/Kyiv';
+    const settings =
+        getSettings();
 
-  for (let i = 0; i <= 2; i++) {
-    const date = new Date();
+    const timezone =
+        settings.TimeZone || 'Europe/Kyiv';
 
-    date.setDate(
-      date.getDate() + i
-    );
+    for (let i = -1; i <= 2; i++) {
+        const date =
+            new Date();
 
-    const dateString =
-      Utilities.formatDate(
-        date,
-        timezone,
-        'yyyy-MM-dd'
-      );
 
-    syncCalendarCacheForDate(
-      dateString
-    );
-  }
+        date.setDate(
+            date.getDate() + i
+        );
+
+        const dateString =
+            Utilities.formatDate(
+                date,
+                timezone,
+                'yyyy-MM-dd'
+            );
+
+        syncCalendarCacheForDate(
+            dateString
+        );
+
+
+    }
+
+    syncCustomerVisitHistoryFromCalendarCache();
+    syncCustomerProfiles();
 }
 
 function syncCalendarCacheLongRangeTrigger() {
-  const settings = getSettings();
-  const timezone = settings.TimeZone || 'Europe/Kyiv';
+    const settings =
+        getSettings();
 
-  // temp 
-  //clearOldCalendarCache();
+    const timezone =
+        settings.TimeZone || 'Europe/Kyiv';
 
-  const startDate = new Date();
+    const startDate =
+        new Date();
 
-  for (let i = 3; i <= 60; i++) {
-    const date = new Date(
-      startDate
-    );
+    for (let i = 3; i <= 60; i++) {
+        const date =
+            new Date(startDate);
 
-    date.setDate(
-      date.getDate() + i
-    );
 
-    const dateString =
-      Utilities.formatDate(
-        date,
-        timezone,
-        'yyyy-MM-dd'
-      );
+        date.setDate(
+            date.getDate() + i
+        );
 
-    syncCalendarCacheForDate(
-      dateString
-    );
-  }
+        const dateString =
+            Utilities.formatDate(
+                date,
+                timezone,
+                'yyyy-MM-dd'
+            );
+
+        syncCalendarCacheForDate(
+            dateString
+        );
+
+
+    }
+
+    syncCustomerVisitHistoryFromCalendarCache();
+    clearOldCalendarCache();
+    syncCustomerProfiles();
 }
 
 function clearOldCalendarCache() {
@@ -539,27 +501,37 @@ function clearOldCalendarCache() {
     .getActiveSpreadsheet()
     .getSheetByName('CalendarCache');
 
-  const rows = sheet.getDataRange().getValues();
+  const rows =
+    sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return;
   }
 
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
+  const headers =
+    rows[0].map(function(header) {
+      return String(header).trim();
+    });
 
   const cacheDateIndex =
     headers.indexOf('cache_date');
 
-  const settings = getSettings();
+  const settings =
+    getSettings();
 
   const timezone =
     settings.TimeZone || 'Europe/Kyiv';
 
-  const today =
+  const yesterday =
+    new Date();
+
+  yesterday.setDate(
+    yesterday.getDate() - 1
+  );
+
+  const minDate =
     Utilities.formatDate(
-      new Date(),
+      yesterday,
       timezone,
       'yyyy-MM-dd'
     );
@@ -570,141 +542,52 @@ function clearOldCalendarCache() {
         rows[i][cacheDateIndex]
       );
 
-    if (cacheDate < today) {
+    if (cacheDate < minDate) {
       sheet.deleteRow(i + 1);
     }
   }
+
+  resetCalendarCache();
 }
 
-function initializeCalendarCache() {
-  syncCalendarCacheNearDatesTrigger();
-  syncCalendarCacheLongRangeTrigger();
-}
+function getNextCustomerAppointment(phone) {
+  const phoneKey =
+    getPhoneSearchKey(phone);
 
-function getCachedAppointmentsByProvider(providerId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
+  const now =
+    new Date();
 
-  const rows = sheet.getDataRange().getValues();
+  const result =
+    getCalendarCache().filter(function(item) {
+      const itemPhoneKey =
+        getPhoneSearchKey(item.phone);
 
-  if (rows.length < 2) {
-    return [];
-  }
+      const status =
+        String(item.status || '').toLowerCase();
 
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
+      if (itemPhoneKey !== phoneKey) {
+        return false;
+      }
 
-  const providerIdIndex = headers.indexOf('provider_id');
-  const statusIndex = headers.indexOf('status');
-  const startAtIndex = headers.indexOf('start_at');
+      if (status !== 'confirmed') {
+        return false;
+      }
 
-  const now = new Date();
-  const result = [];
+      if (new Date(item.start_at) < now) {
+        return false;
+      }
 
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][providerIdIndex]) !== String(providerId)) {
-      continue;
-    }
-
-    if (String(rows[i][statusIndex] || '').toLowerCase() !== 'confirmed') {
-      continue;
-    }
-
-    if (new Date(rows[i][startAtIndex]) < now) {
-      continue;
-    }
-
-    const item = {};
-
-    headers.forEach(function(header, index) {
-      item[header] = rows[i][index];
+      return true;
     });
-
-    result.push(item);
-  }
 
   result.sort(function(a, b) {
     return new Date(a.start_at) - new Date(b.start_at);
   });
 
-  return result;
+  return result[0] || null;
 }
 
-function getCachedAppointmentsByProvider(providerId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
-
-  const rows = sheet.getDataRange().getValues();
-
-  if (rows.length < 2) {
-    return [];
-    }
-
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-    });
-
-  const providerIdIndex =
-  headers.indexOf('provider_id');
-
-  const statusIndex =
-  headers.indexOf('status');
-
-  const startAtIndex =
-  headers.indexOf('start_at');
-
-  const now = new Date();
-
-  const result = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const rowProviderId =
-    String(
-    rows[i][providerIdIndex] || ''
-  );
-
-  if (
-    rowProviderId !==
-    String(providerId)
-  ) {
-    continue;
-  }
-
-  const status =
-    String(
-      rows[i][statusIndex] || ''
-    ).toLowerCase();
-
-  if (status !== 'confirmed') {
-    continue;
-  }
-
-  const startAt =
-    rows[i][startAtIndex];
-
-  if (new Date(startAt) < now) {
-    continue;
-  }
-
-  const item = {};
-
-  headers.forEach(function(header, index) {
-    item[header] = rows[i][index];
-  });
-
-  result.push(item);
-
-  }
-
-  result.sort(function(a, b) {
-  return (
-  new Date(a.start_at) -
-  new Date(b.start_at)
-  );
-});
-
-return result;
+function initializeCalendarCache() {
+    syncCalendarCacheNearDatesTrigger();
+    syncCalendarCacheLongRangeTrigger();
 }
