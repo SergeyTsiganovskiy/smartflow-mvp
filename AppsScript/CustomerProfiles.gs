@@ -232,9 +232,6 @@ function deactivateCustomerProfile(
 }
 
 function syncCustomerProfiles() {
-  const customers =
-    getCustomers();
-
   const profiles =
     getCustomerProfiles();
 
@@ -252,27 +249,34 @@ function syncCustomerProfiles() {
       profile;
   });
 
-  const visitStatsByPhoneKey =
-    buildCustomerVisitStatsFromVisitHistory();
+  const customers =
+    getCustomers();
+
+  const customerByPhoneKey = {};
 
   customers.forEach(function(customer) {
-    const phone =
-      normalizePhone(
-        customer.phone || ''
+    const phoneKey =
+      getPhoneSearchKey(
+        customer.phone
       );
 
-    if (!phone) {
+    if (!phoneKey) {
       return;
     }
 
-    const phoneKey =
-      getPhoneSearchKey(phone);
+    customerByPhoneKey[phoneKey] =
+      customer;
+  });
 
-    const visitStats =
-      visitStatsByPhoneKey[phoneKey] || {
-        visit_count: 0,
-        last_visit_at: ''
-      };
+  const statsByPhoneKey =
+    buildCustomerVisitStatsFromVisitHistory();
+
+  Object.keys(statsByPhoneKey).forEach(function(phoneKey) {
+    const stats =
+      statsByPhoneKey[phoneKey];
+
+    const customer =
+      customerByPhoneKey[phoneKey] || {};
 
     const existingProfile =
       profileByPhoneKey[phoneKey];
@@ -280,14 +284,29 @@ function syncCustomerProfiles() {
     if (!existingProfile) {
       const createdProfile =
         createCustomerProfile({
-          phone: phone,
-          name: customer.name || '',
-          telegram_id: customer.telegram_id || '',
-          language: customer.language || '',
-          last_visit_at: visitStats.last_visit_at,
-          visit_count: visitStats.visit_count,
-          active: true,
-          synced_at: new Date()
+          phone:
+            stats.phone || customer.phone || '',
+
+          name:
+            stats.customer_name || customer.name || '',
+
+          telegram_id:
+            customer.telegram_id || '',
+
+          language:
+            customer.language || '',
+
+          last_visit_at:
+            stats.last_visit_at || '',
+
+          visit_count:
+            stats.visit_count || 0,
+
+          active:
+            true,
+
+          synced_at:
+            new Date()
         });
 
       if (createdProfile) {
@@ -301,11 +320,20 @@ function syncCustomerProfiles() {
     updateCustomerProfile(
       existingProfile.profile_id,
       {
-        telegram_id: customer.telegram_id || '',
-        language: customer.language || '',
-        last_visit_at: visitStats.last_visit_at,
-        visit_count: visitStats.visit_count,
-        synced_at: new Date()
+        telegram_id:
+          customer.telegram_id || existingProfile.telegram_id || '',
+
+        language:
+          customer.language || existingProfile.language || '',
+
+        last_visit_at:
+          stats.last_visit_at || '',
+
+        visit_count:
+          stats.visit_count || 0,
+
+        synced_at:
+          new Date()
       }
     );
   });
@@ -327,8 +355,17 @@ function buildCustomerVisitStatsFromVisitHistory() {
 
     if (!result[phoneKey]) {
       result[phoneKey] = {
-        visit_count: 0,
-        last_visit_at: ''
+        phone:
+          visit.phone || '',
+
+        customer_name:
+          visit.customer_name || '',
+
+        visit_count:
+          0,
+
+        last_visit_at:
+          ''
       };
     }
 
@@ -341,6 +378,9 @@ function buildCustomerVisitStatsFromVisitHistory() {
     ) {
       result[phoneKey].last_visit_at =
         visit.start_at;
+
+      result[phoneKey].customer_name =
+        visit.customer_name || result[phoneKey].customer_name;
     }
   });
 

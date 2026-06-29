@@ -459,41 +459,43 @@ function syncCalendarCacheNearDatesTrigger() {
 }
 
 function syncCalendarCacheLongRangeTrigger() {
-    const settings =
-        getSettings();
+  const settings =
+    getSettings();
 
-    const timezone =
-        settings.TimeZone || 'Europe/Kyiv';
+  const timezone =
+    settings.TimeZone || 'Europe/Kyiv';
 
-    const startDate =
-        new Date();
+  const cacheDays =
+    Number(
+      settings.CalendarCacheDays || 30
+    );
 
-    for (let i = 3; i <= 60; i++) {
-        const date =
-            new Date(startDate);
+  const startDate =
+    new Date();
 
+  for (let i = 3; i <= cacheDays; i++) {
+    const date =
+      new Date(startDate);
 
-        date.setDate(
-            date.getDate() + i
-        );
+    date.setDate(
+      date.getDate() + i
+    );
 
-        const dateString =
-            Utilities.formatDate(
-                date,
-                timezone,
-                'yyyy-MM-dd'
-            );
+    const dateString =
+      Utilities.formatDate(
+        date,
+        timezone,
+        'yyyy-MM-dd'
+      );
 
-        syncCalendarCacheForDate(
-            dateString
-        );
+    syncCalendarCacheForDate(
+      dateString
+    );
+  }
 
-
-    }
-
-    syncCustomerVisitHistoryFromCalendarCache();
-    clearOldCalendarCache();
-    syncCustomerProfiles();
+  syncCustomerVisitHistoryFromCalendarCache();
+  clearOldCalendarCache();
+  syncCustomerProfiles();
 }
 
 function clearOldCalendarCache() {

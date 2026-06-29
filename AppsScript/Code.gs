@@ -326,4 +326,79 @@ function testSyncYesterdayVisitHistory() {
   );
 }
 
+function testSyncCalendarCache() {
+  //syncCalendarCacheLongRangeTrigger();
+  syncCalendarCacheNearDatesTrigger
+}
 
+function testDeletedAppointmentEvent() {
+  const appointment =
+    getAppointmentById(
+      'appt_1782736987763'
+    );
+
+  const event =
+    getCalendarEventByAppointment(
+      appointment
+    );
+
+  if (!event) {
+    Logger.log('EVENT NOT FOUND');
+    return;
+  }
+
+  Logger.log(
+    JSON.stringify({
+      id: event.getId(),
+      title: event.getTitle(),
+      start: event.getStartTime(),
+      end: event.getEndTime(),
+      description: event.getDescription()
+    })
+  );
+}
+
+function testProviderCalendarId() {
+  const calendarId =
+    getProviderCalendarId('prov_001');
+
+  const calendar =
+    CalendarApp.getCalendarById(calendarId);
+
+  Logger.log(
+    JSON.stringify({
+      provider_id: 'prov_001',
+      calendar_id: calendarId,
+      calendar_name: calendar ? calendar.getName() : ''
+    })
+  );
+}
+
+function testProviderEventsForDate() {
+  const calendarId =
+    getProviderCalendarId('prov_001');
+
+  const calendar =
+    CalendarApp.getCalendarById(calendarId);
+
+  const start =
+    new Date('2026-06-30T00:00:00');
+
+  const end =
+    new Date('2026-06-30T23:59:59');
+
+  const events =
+    calendar.getEvents(start, end);
+
+  events.forEach(function(event) {
+    Logger.log(
+      JSON.stringify({
+        id: event.getId(),
+        title: event.getTitle(),
+        start: event.getStartTime(),
+        end: event.getEndTime(),
+        description: event.getDescription()
+      })
+    );
+  });
+}

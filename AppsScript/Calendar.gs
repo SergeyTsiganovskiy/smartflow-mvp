@@ -187,19 +187,19 @@ function getCalendarAppointmentsByPhone(phone) {
   const checkedCalendarIds = {};
   const result = [];
 
-  addAuditLog(
-    'MY_CALENDAR_APPOINTMENTS_START',
-    JSON.stringify({
-      phone: phone,
-      phoneKey: phoneKey,
-      providersCount: providers.length
-    })
-  );
-
   const now = new Date();
   const future = new Date();
 
-  future.setDate(future.getDate() + 60);
+  const settings = getSettings();
+
+  const cacheDays =
+    Number(
+      settings.CalendarCacheDays || 30
+    );
+
+  future.setDate(
+    future.getDate() + cacheDays
+  );
 
   providers.forEach(function(provider) {
     const providerId =
@@ -217,15 +217,6 @@ function getCalendarAppointmentsByPhone(phone) {
 
     const calendarId =
       getProviderCalendarId(providerId);
-
-    addAuditLog(
-      'MY_CALENDAR_PROVIDER_CHECK',
-      JSON.stringify({
-        providerId: providerId,
-        providerName: provider.name,
-        calendarId: calendarId
-      })
-    );
 
     if (!calendarId) {
       return;
@@ -261,14 +252,6 @@ function getCalendarAppointmentsByPhone(phone) {
 
     const events =
       calendar.getEvents(now, future);
-
-    addAuditLog(
-      'MY_CALENDAR_EVENTS_FOUND',
-      JSON.stringify({
-        calendarId: calendarId,
-        count: events.length
-      })
-    );
 
     events.forEach(function(event) {
       const eventId =
@@ -314,6 +297,12 @@ function getCalendarAppointmentsByPhone(phone) {
           getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER)
         );
 
+      const customerName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER)
+        );
+
       const locationName =
         extractValueByLabel(
           fullText,
@@ -325,19 +314,6 @@ function getCalendarAppointmentsByPhone(phone) {
           fullText,
           getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT)
         );
-
-      addAuditLog(
-        'MY_CALENDAR_EVENT_PARSE',
-        JSON.stringify({
-          title: title,
-          description: description,
-          eventPhone: eventPhone,
-          eventPhoneKey: getPhoneSearchKey(eventPhone),
-          targetPhoneKey: phoneKey,
-          serviceName: serviceName,
-          providerName: providerName
-        })
-      );
 
       if (!eventPhone) {
         return;
@@ -357,6 +333,7 @@ function getCalendarAppointmentsByPhone(phone) {
         phone: eventPhone,
         service_name: serviceName,
         provider_name: providerName,
+        customer_name: customerName,
         location_name: locationName,
         customer_note: commentText,
       });
@@ -567,7 +544,36 @@ function getCalendarEventByAppointment(appointment) {
   }
 
   try {
-    return calendar.getEventById(calendarEventId);
+    const start =
+      new Date(
+        parseDateTimeForCalendar(
+          appointment.start_at
+        ).getTime() - 60000
+      );
+
+    const end =
+      new Date(
+        parseDateTimeForCalendar(
+          appointment.end_at
+        ).getTime() + 60000
+      );
+
+    const events =
+      calendar.getEvents(
+        start,
+        end
+      );
+
+    for (let i = 0; i < events.length; i++) {
+      if (
+        String(events[i].getId()) ===
+        String(calendarEventId)
+      ) {
+        return events[i];
+      }
+    }
+
+    return null;
   } catch (error) {
     addAuditLog(
       'GET_CALENDAR_EVENT_BY_APPOINTMENT_ERROR',
@@ -860,6 +866,14 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
         ) ||
         extractPhoneFromText(fullText);
 
+      const customerName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER
+          )
+        );
+
       const serviceName =
         extractValueByLabel(
           fullText,
@@ -889,7 +903,7 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
         appointment_id: '',
         request_id: '',
         customer_id: '',
-        customer_name: '',
+        customer_name: customerName,
         phone: phone,
         service_id: '',
         service_name: serviceName || title,

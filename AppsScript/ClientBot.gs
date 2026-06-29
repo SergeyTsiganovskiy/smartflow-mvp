@@ -210,14 +210,27 @@ function handleClientMessage(message) {
         chatId,
         getMessage(MESSAGE_KEYS.TIME_SELECT_FROM_LIST)
       );
+
       return;
     }
 
-    const session = getUserSession(chatId);
-    const optionCount = Number(session.option_count || 0) + 1;
+    const session =
+      getUserSession(chatId);
 
-    setUserSessionValue(chatId, 'current_option_time', selectedTime);
-    setUserSessionValue(chatId, 'option_count', optionCount);
+    const optionCount =
+      Number(session.option_count || 0) + 1;
+
+    setUserSessionValue(
+      chatId,
+      'current_option_time',
+      selectedTime
+    );
+
+    setUserSessionValue(
+      chatId,
+      'option_count',
+      optionCount
+    );
 
     setUserSessionValue(
       chatId,
@@ -231,7 +244,20 @@ function handleClientMessage(message) {
       selectedTime
     );
 
-    showAddAnotherOption(chatId, settings);
+    if (optionCount >= 3) {
+      askCustomerNote(
+        chatId,
+        settings
+      );
+
+      return;
+    }
+
+    showAddAnotherOption(
+      chatId,
+      settings
+    );
+
     return;
   }
 
@@ -674,8 +700,8 @@ function showTimeOptions(chatId, settings) {
   const session = getUserSession(chatId);
 
   addAuditLog(
-    'TIME_OPTIONS_PROVIDER',
-    session.provider_id
+    'SESSION_BEFORE_DURATION',
+    JSON.stringify(session)
   );
 
   const durationMinutes =
@@ -1806,7 +1832,10 @@ function showRescheduleTimeOptions(chatId, settings) {
   );
 }
 
-function showRescheduleCustomDateOptions(chatId, settings) {
+function showRescheduleCustomDateOptions(
+  chatId,
+  settings
+) {
   setUserState(
     chatId,
     'WAITING_RESCHEDULE_CUSTOM_DATE'
@@ -1815,8 +1844,14 @@ function showRescheduleCustomDateOptions(chatId, settings) {
   const keyboardRows = [];
   const today = new Date();
 
-  for (let i = 0; i < 60; i++) {
-    const date = addDaysToDate(today, i);
+  const cacheDays =
+    Number(
+      settings.CalendarCacheDays || 30
+    );
+
+  for (let i = 0; i < cacheDays; i++) {
+    const date =
+      addDaysToDate(today, i);
 
     keyboardRows.push([
       {
@@ -1825,15 +1860,11 @@ function showRescheduleCustomDateOptions(chatId, settings) {
     ]);
   }
 
-  const keyboard = buildKeyboardWithMainMenu(
-    keyboardRows
-  );
-
   sendTelegramMessage(
     settings.ClientBotToken,
     chatId,
-    getMessage(MESSAGE_KEYS.SELECT_CUSTOM_DATE),
-    keyboard
+    getMessage(MESSAGE_KEYS.SELECT_DATE),
+    buildKeyboardWithMainMenu(keyboardRows)
   );
 }
 

@@ -3582,9 +3582,13 @@ function processCustomerServicePhone(chatId, text, settings) {
   const phone =
     normalizePhone(text);
 
-  const customer = getCustomerByPhone(phone);
+  const customer =
+    getCustomerByPhone(phone);
 
-  if (!customer) {
+  const profile =
+    findCustomerProfileByPhone(phone);
+
+  if (!profile || profile.active === false) {
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
@@ -3598,14 +3602,17 @@ function processCustomerServicePhone(chatId, text, settings) {
   setUserSessionValues(
     chatId,
     {
-      customer_service_customer_id: customer.customer_id,
-      customer_service_phone: phone
+      customer_service_customer_id:
+        customer ? customer.customer_id : '',
+
+      customer_service_phone:
+        profile.phone
     }
   );
 
   showCustomerServices(
     chatId,
-    customer,
+    profile,
     settings
   );
 }
@@ -3615,9 +3622,9 @@ function showCustomerServices(chatId, customer, settings) {
   setPreviousMenu(chatId, 'SERVICES_MENU');
 
   const customerSettings =
-    getCustomerServiceSettings(
-      customer.customer_id
-    );
+    getCustomerServiceSettingsByPhone(
+      customer.phone
+  );
 
   let text =
     '<b>' +
@@ -3687,17 +3694,24 @@ function showCustomerServices(chatId, customer, settings) {
 }
 
 function startEditCustomerService(chatId, settings) {
-  const session = getUserSession(chatId);
+  const session =
+    getUserSession(chatId);
 
-  const customerId =
-    session.customer_service_customer_id;
+  const phone =
+    session.customer_service_phone;
 
-  if (!customerId) {
-    startCustomerServices(chatId, settings);
+  if (!phone) {
+    startCustomerServices(
+      chatId,
+      settings
+    );
+
     return;
   }
 
-  const services = getServices();
+  const services =
+    getServices();
+
   const keyboardRows = [];
 
   services.forEach(function(service) {
@@ -3803,22 +3817,48 @@ function processCustomerServiceDuration(chatId, text, settings) {
     return;
   }
 
-  const session = getUserSession(chatId);
+  const session =
+    getUserSession(chatId);
 
-  const customer =
-    getCustomerById(session.customer_service_customer_id);
+  const phone =
+    session.customer_service_phone;
+
+  if (!phone) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  const profile =
+    findCustomerProfileByPhone(phone);
+
+  if (!profile || profile.active === false) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
 
   const service =
-    findServiceById(session.customer_service_service_id);
+    findServiceById(
+      session.customer_service_service_id
+    );
 
   upsertCustomerServiceSetting({
-    customer_id: customer.customer_id,
-    customer_name: customer.name,
-    phone: customer.phone,
+    profile_id: profile.profile_id,
+    phone: profile.phone,
+    customer_name: profile.name,
     service_id: service.service_id,
     service_name: service.name,
-    provider_id: '',
-    provider_name: '',
     duration_minutes: duration,
     price: session.customer_service_price,
     notes: ''
@@ -3832,7 +3872,7 @@ function processCustomerServiceDuration(chatId, text, settings) {
 
   showCustomerServices(
     chatId,
-    customer,
+    profile,
     settings
   );
 }
@@ -3848,8 +3888,11 @@ function startDeleteCustomerService(chatId, settings) {
     return;
   }
 
+  const phone =
+    session.customer_service_phone;
+
   const settingsList =
-    getCustomerServiceSettings(customerId);
+    getCustomerServiceSettingsByPhone(phone);
 
   const keyboardRows = [];
 
@@ -3875,13 +3918,14 @@ function startDeleteCustomerService(chatId, settings) {
 }
 
 function processCustomerServiceToDelete(chatId, text, settings) {
-  const session = getUserSession(chatId);
+  const session =
+    getUserSession(chatId);
 
-  const customerId =
-    session.customer_service_customer_id;
+  const phone =
+    session.customer_service_phone;
 
   const settingsList =
-    getCustomerServiceSettings(customerId);
+    getCustomerServiceSettingsByPhone(phone);
 
   const selected =
     settingsList.find(function(item) {
@@ -3900,13 +3944,13 @@ function processCustomerServiceToDelete(chatId, text, settings) {
     return;
   }
 
-  deleteCustomerServiceSetting(
-    customerId,
+  deleteCustomerServiceSettingByPhone(
+    phone,
     selected.service_id
   );
 
-  const customer =
-    getCustomerById(customerId);
+  const profile =
+    findCustomerProfileByPhone(phone);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -3916,7 +3960,7 @@ function processCustomerServiceToDelete(chatId, text, settings) {
 
   showCustomerServices(
     chatId,
-    customer,
+    profile,
     settings
   );
 }
@@ -4194,23 +4238,25 @@ function buildAppointmentDateKeyboardRows(settings) {
 
   const rows = [];
 
-  for (let i = 0; i <= 60; i++) {
+  const cacheDays =
+    Number(
+      settings.CalendarCacheDays || 30
+    );
+
+  for (let i = 0; i <= cacheDays; i++) {
     const date = new Date();
 
     date.setDate(
       date.getDate() + i
     );
 
-    const text =
-      Utilities.formatDate(
-        date,
-        timezone,
-        'dd.MM.yyyy'
-      );
-
     rows.push([
       {
-        text: text
+        text: Utilities.formatDate(
+          date,
+          timezone,
+          'dd.MM.yyyy'
+        )
       }
     ]);
   }

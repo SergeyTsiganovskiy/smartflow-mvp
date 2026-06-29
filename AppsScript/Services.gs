@@ -187,17 +187,24 @@ function getServiceDurationMinutes(
 
 function getServiceDurationMinutesForSession(session) {
   if (
-    session.customer_id &&
+    session.customer_phone &&
     session.service_id
   ) {
-    const individualDuration =
-      getCustomerServiceDurationMinutes(
-        session.customer_id,
+    const setting =
+      getCustomerServiceSettingByPhoneAndService(
+        session.customer_phone,
         session.service_id
       );
 
-    if (individualDuration) {
-      return individualDuration;
+    if (setting) {
+      const customDuration =
+        Number(
+          setting.duration_minutes
+        );
+
+      if (customDuration > 0) {
+        return customDuration;
+      }
     }
   }
 
@@ -420,26 +427,33 @@ function getCustomerServiceSettingForService(
   return null;
 }
 
-function getCustomerServiceSettings(customerId) {
+function getCustomerServiceSettingsByPhone(phone) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName('CustomerServiceSettings');
 
-  const rows = sheet.getDataRange().getValues();
+  const rows =
+    sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
+  const headers =
+    rows[0].map(function(header) {
+      return String(header).trim();
+    });
 
-  const customerIdIndex = headers.indexOf('customer_id');
+  const phoneKeyIndex =
+    headers.indexOf('phone_key');
+
+  const targetPhoneKey =
+    getPhoneSearchKey(phone);
+
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][customerIdIndex]) !== String(customerId)) {
+    if (String(rows[i][phoneKeyIndex]) !== String(targetPhoneKey)) {
       continue;
     }
 
@@ -460,43 +474,88 @@ function upsertCustomerServiceSetting(data) {
     .getActiveSpreadsheet()
     .getSheetByName('CustomerServiceSettings');
 
-  const rows = sheet.getDataRange().getValues();
+  const rows =
+    sheet.getDataRange().getValues();
 
-  const headers = rows[0].map(function(header) {
-    return String(header).trim();
-  });
+  if (rows.length < 1) {
+    return false;
+  }
 
-  const customerIdIndex = headers.indexOf('customer_id');
-  const serviceIdIndex = headers.indexOf('service_id');
-  const providerIdIndex = headers.indexOf('provider_id');
+  const headers =
+    rows[0].map(function(header) {
+      return String(header).trim();
+    });
+
+  const phoneKeyIndex =
+    headers.indexOf('phone_key');
+
+  const serviceIdIndex =
+    headers.indexOf('service_id');
+
+  const targetPhoneKey =
+    getPhoneSearchKey(
+      data.phone || ''
+    );
+
+  const targetServiceId =
+    String(data.service_id || '').trim();
 
   for (let i = 1; i < rows.length; i++) {
+    const rowPhoneKey =
+      String(rows[i][phoneKeyIndex] || '').trim();
+
+    const rowServiceId =
+      String(rows[i][serviceIdIndex] || '').trim();
+
     if (
-      String(rows[i][customerIdIndex]) === String(data.customer_id) &&
-      String(rows[i][serviceIdIndex]) === String(data.service_id) &&
-      String(rows[i][providerIdIndex]) === String(data.provider_id || '')
+      rowPhoneKey === targetPhoneKey &&
+      rowServiceId === targetServiceId
     ) {
+      setRowValueByHeader(sheet, headers, i + 1, 'profile_id', data.profile_id || '');
+      setRowValueByHeader(sheet, headers, i + 1, 'phone', data.phone || '');
+      setRowValueByHeader(sheet, headers, i + 1, 'customer_name', data.customer_name || '');
+      setRowValueByHeader(sheet, headers, i + 1, 'service_name', data.service_name || '');
       setRowValueByHeader(sheet, headers, i + 1, 'duration_minutes', data.duration_minutes);
       setRowValueByHeader(sheet, headers, i + 1, 'price', data.price);
       setRowValueByHeader(sheet, headers, i + 1, 'updated_at', new Date());
+      setRowValueByHeader(sheet, headers, i + 1, 'notes', data.notes || '');
 
       return true;
     }
   }
 
-  const newRow = new Array(headers.length).fill('');
+  const newRow =
+    new Array(headers.length).fill('');
 
-  newRow[customerIdIndex] = data.customer_id;
-  newRow[headers.indexOf('customer_name')] = data.customer_name || '';
-  newRow[headers.indexOf('phone')] = data.phone || '';
-  newRow[serviceIdIndex] = data.service_id;
-  newRow[headers.indexOf('service_name')] = data.service_name || '';
-  newRow[providerIdIndex] = data.provider_id || '';
-  newRow[headers.indexOf('provider_name')] = data.provider_name || '';
-  newRow[headers.indexOf('duration_minutes')] = data.duration_minutes;
-  newRow[headers.indexOf('price')] = data.price;
-  newRow[headers.indexOf('updated_at')] = new Date();
-  newRow[headers.indexOf('notes')] = data.notes || '';
+  newRow[headers.indexOf('profile_id')] =
+    data.profile_id || '';
+
+  newRow[headers.indexOf('phone')] =
+    data.phone || '';
+
+  newRow[phoneKeyIndex] =
+    targetPhoneKey;
+
+  newRow[headers.indexOf('customer_name')] =
+    data.customer_name || '';
+
+  newRow[serviceIdIndex] =
+    targetServiceId;
+
+  newRow[headers.indexOf('service_name')] =
+    data.service_name || '';
+
+  newRow[headers.indexOf('duration_minutes')] =
+    data.duration_minutes;
+
+  newRow[headers.indexOf('price')] =
+    data.price;
+
+  newRow[headers.indexOf('updated_at')] =
+    new Date();
+
+  newRow[headers.indexOf('notes')] =
+    data.notes || '';
 
   sheet.appendRow(newRow);
 
@@ -547,4 +606,62 @@ function deleteCustomerServiceSetting(
   }
 
   return false;
+}
+
+function deleteCustomerServiceSettingByPhone(
+  phone,
+  serviceId
+) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('CustomerServiceSettings');
+
+  const rows =
+    sheet.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return false;
+  }
+
+  const headers =
+    rows[0].map(function(header) {
+      return String(header).trim();
+    });
+
+  const phoneKeyIndex =
+    headers.indexOf('phone_key');
+
+  const serviceIdIndex =
+    headers.indexOf('service_id');
+
+  const targetPhoneKey =
+    getPhoneSearchKey(phone);
+
+  for (let i = rows.length - 1; i >= 1; i--) {
+    if (
+      String(rows[i][phoneKeyIndex]) === String(targetPhoneKey) &&
+      String(rows[i][serviceIdIndex]) === String(serviceId)
+    ) {
+      sheet.deleteRow(i + 1);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getCustomerServiceSettingByPhoneAndService(
+  phone,
+  serviceId
+) {
+  const settings =
+    getCustomerServiceSettingsByPhone(phone);
+
+  for (let i = 0; i < settings.length; i++) {
+    if (String(settings[i].service_id) === String(serviceId)) {
+      return settings[i];
+    }
+  }
+
+  return null;
 }

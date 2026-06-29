@@ -87,7 +87,12 @@ function getNextWorkingDateForProvider(providerId) {
 
   const today = new Date();
 
-  for (let i = 1; i <= 60; i++) {
+  const cacheDays =
+    Number(
+      settings.CalendarCacheDays || 30
+    );
+
+  for (let i = 1; i <= cacheDays; i++) {
     const date = new Date(today);
 
     date.setDate(
@@ -101,12 +106,7 @@ function getNextWorkingDateForProvider(providerId) {
         'yyyy-MM-dd'
       );
 
-    if (
-      isProviderWorkingOnDate(
-        providerId,
-        dateString
-      )
-    ) {
+    if (isProviderWorkingOnDate(providerId, dateString)) {
       return dateString;
     }
   }

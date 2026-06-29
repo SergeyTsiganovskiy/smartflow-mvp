@@ -77,10 +77,19 @@ function createAppointmentFromRequest(request, option) {
     option.preferred_time
   );
 
-  const durationMinutes = getServiceDurationMinutes(
-    request.customer_id,
-    request.service_id
-  );
+  const customer =
+    getCustomerById(
+      request.customer_id
+    );
+
+  const durationMinutes =
+    getServiceDurationMinutesForSession({
+      customer_phone:
+        customer ? customer.phone : '',
+
+      service_id:
+        request.service_id
+    });
 
   const endAt = addMinutesToDateTime(
     startAt,
@@ -623,6 +632,17 @@ function isAppointmentStillValid(appointment) {
 
   const calendarEvent =
     getCalendarEventByAppointment(appointment);
+
+  addAuditLog(
+  'APPOINTMENT_VALIDATION_DEBUG',
+  JSON.stringify({
+    appointment_id: appointment.appointment_id,
+    status: appointment.status,
+    provider_id: appointment.provider_id,
+    calendar_event_id: calendarEventId,
+    calendar_found: !!calendarEvent
+  })
+);
 
   if (calendarEvent) {
     return true;
