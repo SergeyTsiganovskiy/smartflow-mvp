@@ -542,15 +542,6 @@ function getAvailableTimeSlots(
       dateValue
     );
 
-  addAuditLog(
-    'AVAILABLE_SLOTS_SCHEDULE_DEBUG',
-    JSON.stringify({
-      providerId: providerId,
-      dateValue: dateValue,
-      schedule: schedule
-    })
-  );
-
   if (
     !schedule ||
     (
@@ -595,32 +586,54 @@ function getAvailableTimeSlots(
       dateValue
     );
 
-  const conflictCustomerIds =
+  const customer =
     customerId
-      ? getConflictingCustomerIds(customerId)
-      : [];
+      ? getCustomerById(customerId)
+      : null;
 
   const conflictAppointments =
-    getAppointmentsForCustomersOnDate(
-      conflictCustomerIds,
-      dateValue
-    );
+    customer
+      ? getConflictAppointmentsForDate(
+          customer.phone,
+          dateValue
+        )
+      : [];
 
   const allBlockingAppointments =
     providerAppointments.concat(
       conflictAppointments
     );
 
-  const busyIntervals = allBlockingAppointments
-    .filter(function(item) {
-      return item.startTime && item.endTime;
-    })
-    .map(function(item) {
-      return {
-        start: timeToMinutes(item.startTime),
-        end: timeToMinutes(item.endTime)
-      };
-    });
+  const busyIntervals =
+    allBlockingAppointments
+      .map(function(item) {
+        const startTime =
+          item.startTime ||
+          extractTimeFromDateTime(
+            item.start_at
+          );
+
+        const endTime =
+          item.endTime ||
+          extractTimeFromDateTime(
+            item.end_at
+          );
+
+        if (!startTime || !endTime) {
+          return null;
+        }
+
+        return {
+          start:
+            timeToMinutes(startTime),
+
+          end:
+            timeToMinutes(endTime)
+        };
+      })
+      .filter(function(item) {
+        return item !== null;
+      });
 
   const stepMinutes = 30;
   const result = [];
@@ -630,7 +643,9 @@ function getAvailableTimeSlots(
     current + Number(durationMinutes) <= endMinutes;
     current += stepMinutes
   ) {
-    const slotStart = current;
+    const slotStart =
+      current;
+
     const slotEnd =
       current + Number(durationMinutes);
 
@@ -649,24 +664,8 @@ function getAvailableTimeSlots(
     }
   }
 
-  addAuditLog(
-    'AVAILABLE_SLOTS_DEBUG',
-    JSON.stringify({
-      providerId: providerId,
-      dateValue: dateValue,
-      durationMinutes: durationMinutes,
-      schedule: schedule,
-      providerAppointments: providerAppointments,
-      conflictAppointments: conflictAppointments,
-      busyIntervals: busyIntervals,
-      result: result
-    })
-  );
-
   return result;
 }
-
-
 
 function updateRequestStatus(requestId, status) {
   const sheet = SpreadsheetApp
@@ -859,13 +858,7 @@ function getLocalizedProviderName(provider) {
 
   const key = 'name_' + lang;
 
-  return String(
-    provider[key] ||
-    provider.name_ru ||
-    provider.name_uk ||
-    provider.name_en ||
-    ''
-  ).trim();
+  return String(getProviderName(provider)).trim();
 }
 
 function createProviderFromAdminSession(session) {

@@ -425,6 +425,12 @@ function getCustomerVisitHistory(phone) {
 }
 
 function syncCalendarCacheNearDatesTrigger() {
+  runWithCalendarCacheLock(function() {
+    syncCalendarCacheNearDatesTriggerInternal();
+  });
+}
+
+function syncCalendarCacheNearDatesTriggerInternal() {
     const settings =
         getSettings();
 
@@ -459,6 +465,12 @@ function syncCalendarCacheNearDatesTrigger() {
 }
 
 function syncCalendarCacheLongRangeTrigger() {
+  runWithCalendarCacheLock(function() {
+    syncCalendarCacheLongRangeTriggerInternal();
+  });
+}
+
+function syncCalendarCacheLongRangeTriggerInternal() {
   const settings =
     getSettings();
 
@@ -496,6 +508,29 @@ function syncCalendarCacheLongRangeTrigger() {
   syncCustomerVisitHistoryFromCalendarCache();
   clearOldCalendarCache();
   syncCustomerProfiles();
+}
+
+function runWithCalendarCacheLock(callback) {
+  const lock =
+    LockService.getScriptLock();
+
+  const locked =
+    lock.tryLock(30000);
+
+  if (!locked) {
+    addAuditLog(
+      'CALENDAR_CACHE_LOCK_SKIP',
+      'Another sync is already running'
+    );
+
+    return;
+  }
+
+  try {
+    callback();
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function clearOldCalendarCache() {

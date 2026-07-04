@@ -181,16 +181,26 @@ function updateCalendarEventForAppointment(appointmentId) {
 }
 
 function getCalendarAppointmentsByPhone(phone) {
-  const phoneKey = getPhoneSearchKey(phone);
-  const knownEventIds = getAllAppointmentCalendarEventIds();
-  const providers = getProviders();
+  const phoneKey =
+    getPhoneSearchKey(phone);
+
+  const knownEventIds =
+    getAllAppointmentCalendarEventIds();
+
+  const providers =
+    getProviders();
+
   const checkedCalendarIds = {};
   const result = [];
 
-  const now = new Date();
-  const future = new Date();
+  const now =
+    new Date();
 
-  const settings = getSettings();
+  const future =
+    new Date();
+
+  const settings =
+    getSettings();
 
   const cacheDays =
     Number(
@@ -203,15 +213,9 @@ function getCalendarAppointmentsByPhone(phone) {
 
   providers.forEach(function(provider) {
     const providerId =
-      provider.id ||
       provider.provider_id;
 
     if (!providerId) {
-      addAuditLog(
-        'MY_CALENDAR_PROVIDER_SKIP_NO_ID',
-        JSON.stringify(provider)
-      );
-
       return;
     }
 
@@ -223,14 +227,6 @@ function getCalendarAppointmentsByPhone(phone) {
     }
 
     if (checkedCalendarIds[calendarId]) {
-      addAuditLog(
-        'MY_CALENDAR_SKIP_DUPLICATE_CALENDAR',
-        JSON.stringify({
-          providerId: providerId,
-          calendarId: calendarId
-        })
-      );
-
       return;
     }
 
@@ -240,22 +236,22 @@ function getCalendarAppointmentsByPhone(phone) {
       CalendarApp.getCalendarById(calendarId);
 
     if (!calendar) {
-      addAuditLog(
-        'MY_CALENDAR_NOT_FOUND',
-        JSON.stringify({
-          calendarId: calendarId
-        })
-      );
-
       return;
     }
 
     const events =
-      calendar.getEvents(now, future);
+      calendar.getEvents(
+        now,
+        future
+      );
 
     events.forEach(function(event) {
       const eventId =
         event.getId();
+
+      if (knownEventIds.indexOf(eventId) !== -1) {
+        return;
+      }
 
       const title =
         event.getTitle() || '';
@@ -266,54 +262,14 @@ function getCalendarAppointmentsByPhone(phone) {
       const fullText =
         title + '\n' + description;
 
-      if (knownEventIds.indexOf(eventId) !== -1) {
-        addAuditLog(
-          'MY_CALENDAR_EVENT_SKIP_KNOWN',
-          JSON.stringify({
-            eventId: eventId,
-            title: title
-          })
-        );
-
-        return;
-      }
-
       const eventPhone =
         extractValueByLabel(
           fullText,
-          getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PHONE)
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_PHONE
+          )
         ) ||
         extractPhoneFromText(fullText);
-
-      const serviceName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_SERVICE)
-        );
-
-      const providerName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER)
-        );
-
-      const customerName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER)
-        );
-
-      const locationName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_LOCATION)
-        );
-
-      const commentText =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT)
-        );
 
       if (!eventPhone) {
         return;
@@ -323,6 +279,46 @@ function getCalendarAppointmentsByPhone(phone) {
         return;
       }
 
+      const serviceName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_SERVICE
+          )
+        );
+
+      const providerName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER
+          )
+        );
+
+      const customerName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER
+          )
+        );
+
+      const locationName =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_LOCATION
+          )
+        );
+
+      const commentText =
+        extractValueByLabel(
+          fullText,
+          getMessageValues(
+            MESSAGE_KEYS.CALENDAR_LABEL_COMMENT
+          )
+        );
+
       result.push({
         source: 'calendar_manual',
         title: title,
@@ -331,11 +327,11 @@ function getCalendarAppointmentsByPhone(phone) {
         end_at: event.getEndTime(),
         calendar_event_id: eventId,
         phone: eventPhone,
+        customer_name: customerName,
         service_name: serviceName,
         provider_name: providerName,
-        customer_name: customerName,
         location_name: locationName,
-        customer_note: commentText,
+        customer_note: commentText
       });
     });
   });
@@ -343,14 +339,6 @@ function getCalendarAppointmentsByPhone(phone) {
   result.sort(function(a, b) {
     return new Date(a.start_at) - new Date(b.start_at);
   });
-
-  addAuditLog(
-    'MY_CALENDAR_APPOINTMENTS_RESULT',
-    JSON.stringify({
-      count: result.length,
-      result: result
-    })
-  );
 
   return result;
 }
@@ -614,157 +602,6 @@ function calendarEventMatchesProvider(event, providerId) {
   );
 }
 
-function getManualCalendarBusySlotsForProvider(providerId, dateValue) {
-  const provider = findProviderById(providerId);
-
-  if (!provider) {
-    return [];
-  }
-
-  const calendarId = getProviderCalendarId(providerId);
-
-  if (!calendarId) {
-    return [];
-  }
-
-  const calendar = CalendarApp.getCalendarById(calendarId);
-
-  if (!calendar) {
-    return [];
-  }
-
-  const dateString = normalizeDateForStorage(dateValue);
-
-  const dayStart = new Date(dateString + 'T00:00:00');
-  const dayEnd = new Date(dateString + 'T23:59:59');
-
-  const knownEventIds = getAllAppointmentCalendarEventIds();
-  const events = calendar.getEvents(dayStart, dayEnd);
-
-  const result = [];
-
-  events.forEach(function(event) {
-    const eventId = event.getId();
-
-    if (knownEventIds.indexOf(eventId) !== -1) {
-      return;
-    }
-
-    const title = event.getTitle() || '';
-    const description = event.getDescription() || '';
-    const fullText = title + '\n' + description;
-
-    addAuditLog(
-  'MANUAL_EVENT_PARSE_DEBUG',
-  JSON.stringify({
-    title: title,
-    description: description,
-    phoneLabels: getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PHONE),
-    serviceLabels: getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_SERVICE),
-    providerLabels: getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER),
-    phone: extractValueByLabel(
-      fullText,
-      getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PHONE)
-    ),
-    service: extractValueByLabel(
-      fullText,
-      getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_SERVICE)
-    ),
-    provider: extractValueByLabel(
-      fullText,
-      getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER)
-    )
-  })
-);
-
-    const appointmentId =
-      extractAppointmentIdFromText(fullText);
-
-    if (appointmentId) {
-      const appointment =
-        getAppointmentById(appointmentId);
-
-      if (!appointment) {
-        return;
-      }
-
-      if (String(appointment.provider_id) !== String(providerId)) {
-        return;
-      }
-
-      const customer =
-        getCustomerById(appointment.customer_id);
-
-      const service =
-        findServiceById(appointment.service_id);
-
-      result.push({
-        source: 'calendar_bot',
-        appointment_id: appointment.appointment_id,
-        request_id: appointment.request_id,
-        customer_id: appointment.customer_id,
-        service_id: appointment.service_id,
-        provider_id: appointment.provider_id,
-        location_id: appointment.location_id,
-        start_at: event.getStartTime(),
-        end_at: event.getEndTime(),
-        startTime: extractTimeFromDateTime(event.getStartTime()),
-        endTime: extractTimeFromDateTime(event.getEndTime()),
-        status: appointment.status,
-        calendar_event_id: eventId,
-        phone: customer ? customer.phone : '',
-        customer_name: customer ? customer.name : '',
-        service_name: service ? service.name : '',
-        provider_name: provider.name,
-        title: title,
-        description: description
-      });
-
-      return;
-    }
-
-    if (!calendarEventMatchesProvider(event, providerId)) {
-      return;
-    }
-
-    const phone =
-      extractValueByLabel(
-        fullText,
-        getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PHONE)
-      );
-
-    const serviceName =
-      extractValueByLabel(
-        fullText,
-        getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_SERVICE)
-      );
-
-    result.push({
-      source: 'calendar_manual',
-      appointment_id: '',
-      request_id: '',
-      customer_id: '',
-      service_id: '',
-      provider_id: providerId,
-      location_id: provider.location_id,
-      start_at: event.getStartTime(),
-      end_at: event.getEndTime(),
-      startTime: extractTimeFromDateTime(event.getStartTime()),
-      endTime: extractTimeFromDateTime(event.getEndTime()),
-      status: 'confirmed',
-      calendar_event_id: eventId,
-      phone: phone,
-      customer_name: '',
-      service_name: serviceName,
-      provider_name: provider.name,
-      title: title,
-      description: description
-    });
-  });
-
-  return result;
-}
-
 function getManualCalendarAppointmentsByDateOptimized(dateValue) {
   const providers = getProviders();
   const calendars = {};
@@ -799,9 +636,11 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
       calendars[calendarId] = [];
     }
 
+    const providerName = getProviderName(provider);
+
     calendars[calendarId].push({
       provider_id: providerId,
-      provider_name: provider.name,
+      provider_name: providerName,
       location_id: provider.location_id
     });
   });
@@ -818,7 +657,10 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
     }
 
     const events =
-      calendar.getEvents(dayStart, dayEnd);
+      calendar.getEvents(
+        dayStart,
+        dayEnd
+      );
 
     events.forEach(function(event) {
       const eventId =
@@ -847,10 +689,8 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
 
       const matchedProvider =
         calendars[calendarId].find(function(provider) {
-          return (
-            normalizeTextForSearch(provider.provider_name) ===
-            normalizeTextForSearch(providerNameFromEvent)
-          );
+          return normalizeTextForSearch(provider.provider_name) ===
+            normalizeTextForSearch(providerNameFromEvent);
         });
 
       if (!matchedProvider) {
@@ -898,6 +738,10 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
           )
         );
 
+      if (!phone) {
+        return;
+      }
+
       result.push({
         source: 'calendar_manual',
         appointment_id: '',
@@ -926,3 +770,32 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
 
   return result;
 }
+
+function getManualCalendarBusySlotsForProvider(
+  providerId,
+  dateValue
+) {
+  const appointments =
+    getManualCalendarAppointmentsByDateOptimized(
+      dateValue
+    );
+
+  const result = [];
+
+  appointments.forEach(function(appointment) {
+    if (String(appointment.provider_id) !== String(providerId)) {
+      return;
+    }
+
+    result.push({
+      startTime:
+        appointment.startTime,
+
+      endTime:
+        appointment.endTime
+    });
+  });
+
+  return result;
+}
+

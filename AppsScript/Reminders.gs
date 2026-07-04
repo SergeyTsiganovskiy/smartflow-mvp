@@ -115,3 +115,4 @@ function markAppointmentReminder24hSent(
     new Date()
   );
 }
+

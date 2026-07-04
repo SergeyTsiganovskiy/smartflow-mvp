@@ -777,25 +777,72 @@ function normalizeTextForSearch(value) {
     .trim();
 }
 
-function extractValueByLabel(text, labels) {
-  const lines = String(text || '').split('\n');
+function extractValueByLabel(
+  text,
+  labels
+) {
+  const source =
+    String(text || '');
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = String(lines[i] || '').trim();
+  if (!source) {
+    return '';
+  }
 
-    for (let j = 0; j < labels.length; j++) {
-      const label = labels[j];
+  const allLabels =
+    getCalendarLabelValues();
 
-      const normalizedLine =
-        normalizeTextForSearch(line);
+  for (let i = 0; i < labels.length; i++) {
+    const label =
+      String(labels[i] || '').trim();
 
-      const normalizedLabel =
-        normalizeTextForSearch(label);
-
-      if (normalizedLine.indexOf(normalizedLabel + ':') === 0) {
-        return line.substring(line.indexOf(':') + 1).trim();
-      }
+    if (!label) {
+      continue;
     }
+
+    const startMarker =
+      label + ':';
+
+    const startIndex =
+      source.indexOf(startMarker);
+
+    if (startIndex === -1) {
+      continue;
+    }
+
+    const valueStart =
+      startIndex + startMarker.length;
+
+    let valueEnd =
+      source.length;
+
+    allLabels.forEach(function(nextLabel) {
+      const nextMarker =
+        String(nextLabel || '').trim() + ':';
+
+      if (!nextMarker || nextMarker === startMarker) {
+        return;
+      }
+
+      const nextIndex =
+        source.indexOf(
+          nextMarker,
+          valueStart
+        );
+
+      if (
+        nextIndex !== -1 &&
+        nextIndex < valueEnd
+      ) {
+        valueEnd = nextIndex;
+      }
+    });
+
+    return source
+      .substring(
+        valueStart,
+        valueEnd
+      )
+      .trim();
   }
 
   return '';
@@ -857,4 +904,26 @@ function formatPhoneForDisplay(phone) {
   }
 
   return value;
+}
+
+function getCalendarLabelValues() {
+  const labels = [];
+
+  [
+    MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER,
+    MESSAGE_KEYS.CALENDAR_LABEL_PHONE,
+    MESSAGE_KEYS.CALENDAR_LABEL_SERVICE,
+    MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER,
+    MESSAGE_KEYS.CALENDAR_LABEL_LOCATION,
+    MESSAGE_KEYS.CALENDAR_LABEL_COMMENT
+  ].forEach(function(messageKey) {
+    getMessageValues(messageKey)
+      .forEach(function(value) {
+        if (value) {
+          labels.push(value);
+        }
+      });
+  });
+
+  return labels;
 }

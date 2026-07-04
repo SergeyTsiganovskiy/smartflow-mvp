@@ -179,6 +179,15 @@ function handleAdminMessage(message) {
     return;
   }
 
+  if (text === getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TOMORROW)) {
+    showTomorrowAppointments(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
   if (text === getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_PROVIDER)) {
     startAppointmentsByProvider(chatId, settings);
     return;
@@ -298,6 +307,44 @@ function handleAdminMessage(message) {
 
   if (text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_DELETE)) {
     startDeleteCustomerProfile(chatId, settings);
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_CONFLICTS_MENU)) {
+    startCustomerConflicts(chatId, settings);
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_CONFLICT_ADD)) {
+    startAddCustomerConflict(chatId, settings);
+    return;
+  }
+
+  if (
+  text ===
+    getMessage(
+      MESSAGE_KEYS.CUSTOMER_CONFLICT_LIST
+    )
+  ) {
+    startListCustomerConflicts(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  if (
+    text ===
+    getMessage(
+      MESSAGE_KEYS.CUSTOMER_CONFLICT_DELETE
+    )
+  ) {
+    startDeleteCustomerConflict(
+      chatId,
+      settings
+    );
+
     return;
   }
 
@@ -480,6 +527,70 @@ function handleAdminMessage(message) {
     return;
   }
 
+  if (
+    state ===
+    ADMIN_STATES.WAITING_CUSTOMER_CONFLICT_MAIN_PHONE
+  ) {
+    processCustomerConflictMainPhone(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
+
+  if (
+    state ===
+    ADMIN_STATES.WAITING_CUSTOMER_CONFLICT_PHONE
+  ) {
+    processCustomerConflictPhone(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
+
+  if (
+    state ===
+    ADMIN_STATES.WAITING_CUSTOMER_CONFLICT_LIST_PHONE
+  ) {
+    processShowCustomerConflicts(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
+
+  if (
+    state ===
+    ADMIN_STATES.WAITING_CUSTOMER_CONFLICT_DELETE_MAIN_PHONE
+  ) {
+    processDeleteCustomerConflictMainPhone(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
+
+  if (
+    state ===
+    ADMIN_STATES.WAITING_CUSTOMER_CONFLICT_DELETE_PHONE
+  ) {
+    processDeleteCustomerConflictPhone(
+      chatId,
+      text,
+      settings
+    );
+
+    return;
+  }
 
   // =========================
   // CREATE PROVIDER STATES
@@ -3977,6 +4088,7 @@ function sendAppointmentsMenu(chatId, settings) {
 function buildAppointmentsMenuKeyboard() {
   return buildKeyboardWithMainMenu([
     [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY) }],
+    [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TOMORROW) }],
     [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_NEXT_WORKING_DAY) }],
     [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_PROVIDER) }],
     [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_DATE) }]
@@ -4075,6 +4187,108 @@ function showTodayAppointmentsAdmin(chatId, settings) {
     buildKeyboardWithMainMenu([])
   );
 
+}
+
+function showTomorrowAppointments(
+  chatId,
+  settings
+) {
+  setPreviousMenu(chatId, 'APPOINTMENTS_MENU');
+
+  const tomorrow = new Date();
+
+  tomorrow.setDate(
+    tomorrow.getDate() + 1
+  );
+
+  const dateString =
+    Utilities.formatDate(
+      tomorrow,
+      settings.TimeZone || 'Europe/Kyiv',
+      'yyyy-MM-dd'
+    );
+
+  const appointments =
+    getCachedAppointmentsByDate(dateString);
+
+  if (appointments.length === 0) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.NO_APPOINTMENTS_FOUND),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS_TOMORROW) +
+    '</b>\n\n';
+
+  appointments.forEach(function(appointment) {
+    const customerText =
+      String(appointment.customer_name || '').trim()
+        ? String(appointment.customer_name || '').trim() +
+          ' ' +
+          String(appointment.phone || '').trim()
+        : String(appointment.phone || '').trim();
+
+    const serviceText =
+      String(appointment.service_name || '').trim();
+
+    const providerText =
+      String(appointment.provider_name || '').trim();
+
+    const locationText =
+      String(appointment.location_name || '').trim();
+
+    text +=
+      '<b>' +
+      extractTimeFromDateTime(appointment.start_at) +
+      '-' +
+      extractTimeFromDateTime(appointment.end_at) +
+      '</b>\n';
+
+    text +=
+      '👤 ' +
+      (customerText || '-') +
+      '\n';
+
+    text +=
+      '💅 ' +
+      (serviceText || '-') +
+      '\n';
+
+    text +=
+      '👩‍💼 ' +
+      (providerText || '-') +
+      '\n';
+
+    text +=
+      '📍 ' +
+      (locationText || '-') +
+      '\n';
+
+    if (appointment.source === 'calendar_manual') {
+      text +=
+        '📌 ' +
+        getMessage(
+          MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL
+        ) +
+        '\n';
+    }
+
+    text += '\n';
+  });
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    buildKeyboardWithMainMenu([])
+  );
 }
 
 function startAppointmentsByProvider(chatId, settings) {
@@ -4582,6 +4796,11 @@ function buildCustomersMenuKeyboard() {
     [
       {
         text: getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_DELETE)
+      }
+    ],
+    [
+      {
+        text: getMessage(MESSAGE_KEYS.CUSTOMER_CONFLICTS_MENU)
       }
     ],
     [
@@ -5407,3 +5626,5 @@ function showCustomerVisitHistory(
     buildKeyboardWithMainMenu([])
   );
 }
+
+

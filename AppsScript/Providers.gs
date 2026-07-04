@@ -220,3 +220,9 @@ function getProviderSchedules() {
   PROVIDER_SCHEDULES_CACHE = result;
   return result;
 }
+
+function getProviderName(provider) {
+  return getMessage(
+    provider.name_key
+  );
+}

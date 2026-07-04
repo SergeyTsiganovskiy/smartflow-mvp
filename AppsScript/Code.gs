@@ -3,13 +3,14 @@ function doPost(e) {
     const update =
       JSON.parse(e.postData.contents);
 
-    addAuditLog(
+/*    addAuditLog(
       'DOPOST_ADMIN_DEBUG',
       JSON.stringify({
         parameters: e.parameter,
         body: e.postData.contents
       })
     );
+*/
 
     const botType =
       e.parameter && e.parameter.bot
@@ -140,21 +141,6 @@ function testActiveRequestRecipients() {
   );
 }
 
-function testConflictAppointments() {
-  const customerIds =
-    getConflictingCustomerIds('cust_001');
-
-  const result =
-    getAppointmentsForCustomersOnDate(
-      customerIds,
-      new Date('2026-06-16')
-    );
-
-  Logger.log(
-    JSON.stringify(result)
-  );
-}
-
 function testGeneral() {
   clearCalendarCacheForDate('2026-06-23');
   syncCalendarCacheForDate('2026-06-23')
@@ -222,47 +208,6 @@ function testAppointmentsMenuKeyboard1() {
   );
 }
 
-function buildAppointmentsMenuKeyboard() {
-  return {
-    keyboard: [
-      [
-        {
-          text: getMessage(
-            MESSAGE_KEYS.ADMIN_APPOINTMENTS_TODAY
-          )
-        }
-      ],
-      [
-        {
-          text: getMessage(
-            MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_PROVIDER
-          )
-        }
-      ],
-      [
-        {
-          text: getMessage(
-            MESSAGE_KEYS.ADMIN_APPOINTMENTS_BY_DATE
-          )
-        }
-      ],
-      [
-        {
-          text: getMessage(
-            MESSAGE_KEYS.BACK
-          )
-        },
-        {
-          text: getMessage(
-            MESSAGE_KEYS.MAIN_MENU
-          )
-        }
-      ]
-    ],
-    resize_keyboard: true
-  };
-}
-
 function testCustomerProfiles() {
   const profile =
     createCustomerProfile({
@@ -328,7 +273,7 @@ function testSyncYesterdayVisitHistory() {
 
 function testSyncCalendarCache() {
   //syncCalendarCacheLongRangeTrigger();
-  syncCalendarCacheNearDatesTrigger
+  syncCalendarCacheNearDatesTrigger();
 }
 
 function testDeletedAppointmentEvent() {
@@ -401,4 +346,14 @@ function testProviderEventsForDate() {
       })
     );
   });
+}
+
+function testManualCalendarDuplicationRows() {
+syncCalendarCacheForDate('2026-07-01');
+}
+
+function testSyncManualDate() {
+  syncCalendarCacheForDate(
+    '2026-07-04'
+  );
 }

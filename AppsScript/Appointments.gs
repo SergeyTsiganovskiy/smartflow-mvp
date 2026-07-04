@@ -398,78 +398,6 @@ function updateAppointmentField(appointmentId, fieldName, value) {
   }
 }
 
-function getAppointmentsForCustomersOnDate(
-  customerIds,
-  dateValue
-) {
-  if (!customerIds || customerIds.length === 0) {
-    return [];
-  }
-
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const customerIdIndex =
-    headers.indexOf('customer_id');
-
-  const startAtIndex =
-    headers.indexOf('start_at');
-
-  const endAtIndex =
-    headers.indexOf('end_at');
-
-  const statusIndex =
-    headers.indexOf('status');
-
-  const targetDate =
-    normalizeDateForStorage(dateValue);
-
-  const result = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const customerId =
-      String(rows[i][customerIdIndex]);
-
-    const status =
-      String(rows[i][statusIndex])
-        .toLowerCase();
-
-    if (status !== 'confirmed') {
-      continue;
-    }
-
-    if (
-      customerIds.indexOf(customerId) === -1
-    ) {
-      continue;
-    }
-
-    const startAt = rows[i][startAtIndex];
-    const endAt = rows[i][endAtIndex];
-
-    const appointmentDate =
-      normalizeDateForStorage(startAt);
-
-    if (appointmentDate !== targetDate) {
-      continue;
-    }
-
-    result.push({
-      customer_id: customerId,
-      startTime:
-        extractTimeFromDateTime(startAt),
-      endTime:
-        extractTimeFromDateTime(endAt)
-    });
-  }
-
-  return result;
-}
-
 function updateAppointmentDateTime(
   appointmentId,
   startAt,
@@ -633,17 +561,6 @@ function isAppointmentStillValid(appointment) {
   const calendarEvent =
     getCalendarEventByAppointment(appointment);
 
-  addAuditLog(
-  'APPOINTMENT_VALIDATION_DEBUG',
-  JSON.stringify({
-    appointment_id: appointment.appointment_id,
-    status: appointment.status,
-    provider_id: appointment.provider_id,
-    calendar_event_id: calendarEventId,
-    calendar_found: !!calendarEvent
-  })
-);
-
   if (calendarEvent) {
     return true;
   }
@@ -651,15 +568,6 @@ function isAppointmentStillValid(appointment) {
   updateAppointmentStatus(
     appointment.appointment_id,
     'cancelled'
-  );
-
-  addAuditLog(
-    'APPOINTMENT_AUTO_CANCELLED_MISSING_CALENDAR_EVENT',
-    JSON.stringify({
-      appointment_id: appointment.appointment_id,
-      provider_id: appointment.provider_id,
-      calendar_event_id: calendarEventId
-    })
   );
 
   return false;
