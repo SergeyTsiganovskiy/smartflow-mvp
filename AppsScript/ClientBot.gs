@@ -5,10 +5,33 @@ function handleClientMessage(message) {
   const text = message.text || '';
   const state = String(getUserState(chatId) || '').trim();
 
-  addAuditLog(
-    'STATE_DEBUG_STRICT',
-    'text=' + text + ', state=[' + state + '], length=' + state.length
-  );
+
+  const currentNavigation =
+    getCurrentNavigation(chatId);
+
+  if (
+    text === getMessage(MESSAGE_KEYS.BACK) &&
+    currentNavigation &&
+    currentNavigation.menu === CLIENT_MENUS.ADD_ANOTHER_OPTION
+  ) {
+    rollbackLastClientOption(chatId);
+
+    handleClientBackButton(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  if (text === getMessage(MESSAGE_KEYS.BACK)) {
+    handleClientBackButton(
+      chatId,
+      settings
+    );
+
+    return;
+  }
 
   if (
     text === '/start' ||
@@ -316,6 +339,8 @@ function handleClientMessage(message) {
       requestId
     );
 
+    resetClientNavigationToMain(chatId);
+
     sendTelegramMessage(
       settings.ClientBotToken,
       chatId,
@@ -552,6 +577,13 @@ function handleClientMessage(message) {
 }
 
 function sendClientStartMenu(chatId, settings) {
+  resetNavigation(chatId);
+
+  pushNavigation(
+    chatId,
+    CLIENT_MENUS.MAIN
+  );
+
   const text =
     getMessage(MESSAGE_KEYS.MAIN_MENU_TEXT);
 
@@ -582,7 +614,11 @@ function sendClientStartMenu(chatId, settings) {
 }
 
 function showLocations(chatId, settings) {
-  setUserState(chatId, STATES.WAITING_LOCATION);
+  navigateClient(
+    chatId,
+    CLIENT_MENUS.LOCATIONS,
+    STATES.WAITING_LOCATION
+  );
 
   const locations = getLocations();
 
@@ -609,7 +645,11 @@ function showLocations(chatId, settings) {
 }
 
 function showServices(chatId, settings) {
-  setUserState(chatId, STATES.WAITING_SERVICE);
+  navigateClient(
+    chatId,
+    CLIENT_MENUS.SERVICES,
+    STATES.WAITING_SERVICE
+  );
 
   const services = getServices();
 
@@ -636,6 +676,13 @@ function showServices(chatId, settings) {
 }
 
 function showProviders(chatId, settings) {
+
+  navigateClient(
+    chatId,
+    CLIENT_MENUS.PROVIDERS,
+    STATES.WAITING_PROVIDER
+  );
+
   const session = getUserSession(chatId);
 
   if (!session || !session.location_id) {
@@ -647,7 +694,7 @@ function showProviders(chatId, settings) {
     return;
   }
 
-  setUserState(chatId, STATES.WAITING_PROVIDER);
+
 
   const providers = getProvidersByLocation(session.location_id);
   const keyboardRows = [];
@@ -669,7 +716,11 @@ function showProviders(chatId, settings) {
 }
 
 function showDateOptions(chatId, settings) {
-  setUserState(chatId, STATES.WAITING_OPTION_DATE);
+  navigateClient(
+    chatId,
+    CLIENT_MENUS.DATES,
+    STATES.WAITING_OPTION_DATE
+  );
 
   const keyboard = buildKeyboardWithMainMenu([
     [
@@ -693,37 +744,24 @@ function showDateOptions(chatId, settings) {
 }
 
 function showTimeOptions(chatId, settings) {
-
-
-  setUserState(chatId, STATES.WAITING_OPTION_TIME);
+  navigateClient(
+    chatId,
+    CLIENT_MENUS.TIMES,
+    STATES.WAITING_OPTION_TIME
+  );
 
   const session = getUserSession(chatId);
-
-  addAuditLog(
-    'SESSION_BEFORE_DURATION',
-    JSON.stringify(session)
-  );
 
   const durationMinutes =
     getServiceDurationMinutesForSession(
       session
     );
 
-  addAuditLog(
-    'TIME_OPTIONS_DURATION',
-    String(durationMinutes)
-  );
-
   const slots = getAvailableTimeSlots(
     session.provider_id,
     session.current_option_date,
     durationMinutes,
     session.customer_id
-  );
-
-  addAuditLog(
-    'AVAILABLE_SLOTS',
-    JSON.stringify(slots)
   );
 
   if (slots.length === 0) {
@@ -768,8 +806,12 @@ function showTimeOptions(chatId, settings) {
 }
 
 function showAddAnotherOption(chatId, settings) {
-  setUserState(chatId, STATES.WAITING_ADD_ANOTHER_OPTION);
-
+  navigateClient(
+    chatId,
+    CLIENT_MENUS.ADD_ANOTHER_OPTION,
+    STATES.WAITING_ADD_ANOTHER_OPTION
+  );
+  
   const keyboard = buildKeyboardWithMainMenu([
     [
       { text: getMessage(MESSAGE_KEYS.YES) }
@@ -2240,4 +2282,34 @@ function getRequestOptionsByRequestId(requestId) {
   });
 
   return result;
+}
+
+function rollbackLastClientOption(chatId) {
+  const session =
+    getUserSession(chatId);
+
+  const optionCount =
+    Number(session.option_count || 0);
+
+  if (optionCount <= 0) {
+    return;
+  }
+
+  setUserSessionValue(
+    chatId,
+    'option' + optionCount + '_date',
+    ''
+  );
+
+  setUserSessionValue(
+    chatId,
+    'option' + optionCount + '_time',
+    ''
+  );
+
+  setUserSessionValue(
+    chatId,
+    'option_count',
+    optionCount - 1
+  );
 }
