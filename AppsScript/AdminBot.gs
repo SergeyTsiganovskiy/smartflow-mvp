@@ -1,4 +1,10 @@
 function sendAdminMainMenu(chatId, settings) {
+  resetNavigation(chatId);
+
+  pushNavigation(
+    chatId,
+    ADMIN_MENUS.MAIN
+  );
   const keyboard = {
     keyboard: [
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS) }],
@@ -738,6 +744,8 @@ function isAdminUser(chatId) {
 }
 
 function sendProvidersMenu(chatId, settings) {
+  navigateAdmin(chatId, ADMIN_MENUS.PROVIDERS);
+
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
@@ -974,7 +982,11 @@ function processProviderTelegramId(chatId, text, settings) {
 }
 
 function showProvidersListAdmin(chatId, settings) {
-  setPreviousMenu(chatId, 'PROVIDERS_MENU');
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.PROVIDERS
+  );
 
   const providers = getProviders();
 
@@ -2328,92 +2340,44 @@ function setPreviousMenu(chatId, menuName) {
 }
 
 function processAdminBack(chatId, settings) {
-  const session = getUserSession(chatId);
-  const previousMenu = session.previous_menu || '';
-  const state = String(getUserState(chatId) || '').trim();
+  const session =
+    getUserSession(chatId);
 
-  if (
-    state === ADMIN_STATES.WAITING_SCHEDULE_START_TIME ||
-    state === ADMIN_STATES.WAITING_SCHEDULE_END_TIME
-  ) {
-    returnToScheduleDays(chatId, settings);
+  const state =
+    String(getUserState(chatId) || '').trim();
+
+  if (handleCustomerBack(chatId, settings, state)) {
     return;
   }
 
-  if (state === ADMIN_STATES.WAITING_SCHEDULE_DAY) {
-    clearUserSession(chatId);
-    setUserState(chatId, '');
-
-    sendProvidersMenu(chatId, settings);
+  if (handleServiceBack(chatId, settings, state)) {
     return;
   }
 
-  if (
-    previousMenu === 'PROVIDER_EDIT_FIELDS' ||
-    state === ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT
-  ) {
-    clearUserSession(chatId);
-    setPreviousMenu(chatId, 'PROVIDERS_MENU');
-
-    startEditProvider(chatId, settings);
+  if (handleAppointmentBack(chatId, settings, state)) {
     return;
   }
 
-  if (
-    previousMenu === 'OVERRIDE_PROVIDERS_LIST' ||
-    state === ADMIN_STATES.WAITING_OVERRIDE_ACTION ||
-    state === ADMIN_STATES.WAITING_OVERRIDE_REASON ||
-    state === ADMIN_STATES.WAITING_OVERRIDE_DATE ||
-    state === ADMIN_STATES.WAITING_OVERRIDE_START_TIME ||
-    state === ADMIN_STATES.WAITING_OVERRIDE_END_TIME ||
-    state === ADMIN_STATES.WAITING_OVERRIDE_TO_DELETE
-  ) {
-    clearUserSession(chatId);
-
-    startProviderOverrides(
-      chatId,
-      settings
-    );
-
+  if (handleProviderBack(chatId, settings, state)) {
     return;
   }
 
-  if (previousMenu === 'PROVIDERS_MENU') {
-    clearUserSession(chatId);
-    setUserState(chatId, '');
-
-    sendProvidersMenu(chatId, settings);
+  if (handleScheduleBack(chatId, settings, state)) {
     return;
   }
 
-  if (
-    previousMenu === 'SERVICE_EDIT_FIELDS' ||
-    state === ADMIN_STATES.WAITING_SERVICE_FIELD_TO_EDIT
-  ) {
-    clearUserSession(chatId);
-    setPreviousMenu(chatId, 'SERVICES_MENU');
-
-    startEditService(chatId, settings);
-    return;
-  }  
-
-  if (
-    previousMenu === 'SERVICES_MENU'
-  ) {
-    clearUserSession(chatId);
-
-    sendServicesMenu(
-      chatId,
-      settings
-    );
-
+  if (handleOverrideBack(chatId, settings, state)) {
     return;
   }
 
-  clearUserSession(chatId);
-  setUserState(chatId, '');
+  if (handleAdminResultBack(chatId, settings, session)) {
+    return;
+  }
 
-  sendAdminMainMenu(chatId, settings);
+  handleAdminBackButton(
+    chatId,
+    settings
+  );
 }
 
 function processOverrideDate(chatId, text, settings) {
@@ -2764,6 +2728,8 @@ function processProviderToEnable(chatId, text, settings) {
 }
 
 function sendServicesMenu(chatId, settings) {
+  navigateAdmin(chatId, ADMIN_MENUS.SERVICES);
+
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
@@ -3064,30 +3030,6 @@ function processServiceName(chatId, text, settings) {
   showServiceLocations(chatId, settings);
 }
 
-function showServiceLocations(chatId, settings) {
-  const locations = getLocations();
-  const keyboardRows = [];
-
-  locations.forEach(function(location) {
-    keyboardRows.push([
-      {
-        text: location.name
-      }
-    ]);
-  });
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_LOCATION
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.SELECT_SERVICE_LOCATION),
-    buildKeyboardWithMainMenu(keyboardRows)
-  );
-}
 
 function processServiceLocation(chatId, text, settings) {
   const location = findLocationByName(text);
@@ -3260,7 +3202,11 @@ function processServiceDurationMax(chatId, text, settings) {
 }
 
 function showServicesListAdmin(chatId, settings) {
-  setPreviousMenu(chatId, 'SERVICES_MENU');
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.SERVICES
+  );
 
   const services = getServices();
 
@@ -3373,8 +3319,6 @@ function processServiceToEdit(chatId, text, settings) {
 function showServiceEditFields(chatId, serviceId, settings) {
   setUserSessionValue(chatId, 'edit_service_id', serviceId);
   setUserSessionValue(chatId, 'edit_service_field', '');
-
-  setPreviousMenu(chatId, 'SERVICE_EDIT_FIELDS');
 
   const keyboard = buildKeyboardWithMainMenu([
     [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_NAME) }],
@@ -3674,10 +3618,9 @@ function processServiceToEnable(chatId, text, settings) {
 }
 
 function startCustomerServices(chatId, settings) {
-  setPreviousMenu(chatId, 'SERVICES_MENU');
-
-  setUserState(
+  navigateAdmin(
     chatId,
+    ADMIN_MENUS.SERVICES,
     ADMIN_STATES.WAITING_CUSTOMER_SERVICE_PHONE
   );
 
@@ -4077,6 +4020,8 @@ function processCustomerServiceToDelete(chatId, text, settings) {
 }
 
 function sendAppointmentsMenu(chatId, settings) {
+  navigateAdmin(chatId, ADMIN_MENUS.APPOINTMENTS);
+
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
@@ -4096,7 +4041,13 @@ function buildAppointmentsMenuKeyboard() {
 }
 
 function showTodayAppointmentsAdmin(chatId, settings) {
-  setPreviousMenu(chatId, 'APPOINTMENTS_MENU');
+  
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
+
 
   const today =
     Utilities.formatDate(
@@ -4193,7 +4144,11 @@ function showTomorrowAppointments(
   chatId,
   settings
 ) {
-  setPreviousMenu(chatId, 'APPOINTMENTS_MENU');
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
 
   const tomorrow = new Date();
 
@@ -4337,6 +4292,12 @@ function processAppointmentsProvider(chatId, text, settings) {
 
   setUserState(chatId, '');
 
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
+
   showAppointmentsByProviderAdmin(
     chatId,
     settings,
@@ -4479,6 +4440,13 @@ function buildAppointmentDateKeyboardRows(settings) {
 }
 
 function processAppointmentsDate(chatId, text, settings) {
+
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
+
   const dateValue =
     parseDateFromDisplayText(text, settings);
 
@@ -4493,6 +4461,8 @@ function processAppointmentsDate(chatId, text, settings) {
   }
 
   setUserState(chatId, '');
+
+
 
   showAppointmentsByDateAdmin(
     chatId,
@@ -4628,6 +4598,12 @@ function processNextWorkingDayProvider(
   text,
   settings
 ) {
+
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
   const provider =
     findProviderByName(text);
 
@@ -4763,6 +4739,9 @@ function sendCustomersMenu(
   chatId,
   settings
 ) {
+
+  navigateAdmin(chatId, ADMIN_MENUS.CUSTOMERS);
+
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
@@ -4815,14 +4794,10 @@ function startCustomerProfile(
   chatId,
   settings
 ) {
-  setUserState(
+  navigateAdmin(
     chatId,
+    ADMIN_MENUS.CUSTOMERS,
     ADMIN_STATES.WAITING_CUSTOMER_PROFILE_PHONE
-  );
-
-  setPreviousMenu(
-    chatId,
-    'CUSTOMERS_MENU'
   );
 
   sendTelegramMessage(

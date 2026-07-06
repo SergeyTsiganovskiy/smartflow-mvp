@@ -2,14 +2,9 @@ function startCustomerConflicts(
   chatId,
   settings
 ) {
-  setUserState(
+  navigateAdmin(
     chatId,
-    ''
-  );
-
-  setPreviousMenu(
-    chatId,
-    'CUSTOMER_CONFLICTS_MENU'
+    ADMIN_MENUS.CUSTOMER_CONFLICTS
   );
 
   sendTelegramMessage(
@@ -31,9 +26,7 @@ function startCustomerConflicts(
           text: getMessage(
             MESSAGE_KEYS.CUSTOMER_CONFLICT_LIST
           )
-        }
-      ],
-      [
+        },
         {
           text: getMessage(
             MESSAGE_KEYS.CUSTOMER_CONFLICT_DELETE
