@@ -1,16 +1,8 @@
 function doPost(e) {
   try {
+
     const update =
       JSON.parse(e.postData.contents);
-
-/*    addAuditLog(
-      'DOPOST_ADMIN_DEBUG',
-      JSON.stringify({
-        parameters: e.parameter,
-        body: e.postData.contents
-      })
-    );
-*/
 
     const botType =
       e.parameter && e.parameter.bot
@@ -24,13 +16,6 @@ function doPost(e) {
         botType.toUpperCase()
       )
     ) {
-      addAuditLog(
-        'DUPLICATE_UPDATE_SKIPPED',
-        JSON.stringify({
-          botType: botType,
-          updateId: update.update_id
-        })
-      );
 
       return HtmlService.createHtmlOutput('OK');
     }
@@ -52,7 +37,7 @@ function doPost(e) {
     }
 
     if (update.callback_query) {
-      handleOwnerCallback(update.callback_query);
+      handleClientCallback(update.callback_query);
     }
 
     return HtmlService.createHtmlOutput('OK');
@@ -71,6 +56,23 @@ function handleAdminCallback(callbackQuery) {
   addAuditLog(
     'ADMIN_CALLBACK',
     JSON.stringify(callbackQuery)
+  );
+}
+
+function handleClientCallback(callbackQuery) {
+  const data =
+    callbackQuery.data || '';
+
+  if (data.indexOf('confirm_appointment:') === 0) {
+    processAppointmentConfirmation(
+      callbackQuery
+    );
+
+    return;
+  }
+
+  handleOwnerCallback(
+    callbackQuery
   );
 }
 
@@ -355,5 +357,51 @@ syncCalendarCacheForDate('2026-07-01');
 function testSyncManualDate() {
   syncCalendarCacheForDate(
     '2026-07-04'
+  );
+}
+
+function testSendConfirmButton() {
+  syncCalendarCacheForDate('2026-07-08');
+  //send24hAppointmentReminders();
+}
+
+function checkAdminWebhook() {
+  const settings = getSettings();
+
+  const url =
+    'https://api.telegram.org/bot' +
+    settings.AdminBotToken +
+    '/getWebhookInfo';
+
+  Logger.log(
+    UrlFetchApp.fetch(url).getContentText()
+  );
+}
+
+function checkAdminBotIdentity() {
+
+  const settings = getSettings();
+
+  const url =
+    'https://api.telegram.org/bot' +
+    settings.AdminBotToken +
+    '/getMe';
+
+  Logger.log(
+    UrlFetchApp.fetch(url).getContentText()
+  );
+}
+
+function testGetMessageAccess() {
+  Logger.log(JSON.stringify(MESSAGE_KEYS));
+  Logger.log(getMessage(MESSAGE_KEYS.ADMIN_LOCATIONS));
+}
+
+function testSendAdminMainMenu() {
+  const settings = getSettings();
+
+  sendAdminMainMenu(
+    726107007,
+    settings
   );
 }

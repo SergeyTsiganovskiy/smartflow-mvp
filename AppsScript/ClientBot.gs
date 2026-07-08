@@ -811,7 +811,7 @@ function showAddAnotherOption(chatId, settings) {
     CLIENT_MENUS.ADD_ANOTHER_OPTION,
     STATES.WAITING_ADD_ANOTHER_OPTION
   );
-  
+
   const keyboard = buildKeyboardWithMainMenu([
     [
       { text: getMessage(MESSAGE_KEYS.YES) }
@@ -983,6 +983,92 @@ function notifyOwnerAboutRequestFromSession(session, requestId) {
       recipient.telegram_id,
       text,
       inlineKeyboard
+    );
+  });
+}
+
+function notifyProviderAboutCustomerConfirmation(
+  appointment
+) {
+  const settings =
+    getSettings();
+
+  const customer =
+    getCustomerById(
+      appointment.customer_id
+    );
+
+  const service =
+    findServiceById(
+      appointment.service_id
+    );
+
+  const provider =
+    findProviderById(
+      appointment.provider_id
+    );
+
+  const location =
+    findLocationById(
+      appointment.location_id
+    );
+
+  let text =
+    '<b>' +
+    getMessage(
+      MESSAGE_KEYS.PROVIDER_CUSTOMER_CONFIRMED_APPOINTMENT
+    ) +
+    '</b>\n\n';
+
+  text +=
+    '👤 ' +
+    (customer ? customer.name : '-') +
+    '\n';
+
+  text +=
+    '📞 ' +
+    (customer ? customer.phone : '-') +
+    '\n';
+
+  text +=
+    '📅 ' +
+    formatDateTimeForDisplay(
+      appointment.start_at
+    ) +
+    '\n';
+
+  text +=
+    '💅 ' +
+    (service ? service.name : '-') +
+    '\n';
+
+  text +=
+    '👩‍💼 ' +
+    (provider ? provider.name : '-') +
+    '\n';
+
+  text +=
+    '📍 ' +
+    (location ? location.name : '-');
+
+  const recipients =
+    getActiveRequestRecipients();
+
+  if (recipients.length === 0) {
+    sendTelegramMessage(
+      settings.ClientBotToken,
+      settings.OwnerTelegramId,
+      text
+    );
+
+    return;
+  }
+
+  recipients.forEach(function(recipient) {
+    sendTelegramMessage(
+      settings.ClientBotToken,
+      recipient.telegram_id,
+      text
     );
   });
 }
@@ -1452,15 +1538,27 @@ function showCustomDateOptions(chatId, settings) {
   const keyboardRows = [];
   const today = new Date();
 
-  for (let i = 0; i < 60; i++) {
-    const date = addDaysToDate(today, i);
+  const daysAhead =
+    Number(settings.BookingDaysAhead || 60);
+
+  const safeDaysAhead =
+    daysAhead > 0
+      ? daysAhead
+      : 60;
+
+  for (let i = 0; i < safeDaysAhead; i++) {
+    const date =
+      addDaysToDate(today, i);
 
     keyboardRows.push([
-      { text: formatDateButton(date) }
+      {
+        text: formatDateButton(date)
+      }
     ]);
   }
 
-  const keyboard = buildKeyboardWithMainMenu(keyboardRows);
+  const keyboard =
+    buildKeyboardWithMainMenu(keyboardRows);
 
   sendTelegramMessage(
     settings.ClientBotToken,
@@ -1491,7 +1589,8 @@ function showMyAppointmentsByPhone(chatId, settings, phone) {
     getActiveAppointmentsByPhone(phone);
 
   const calendarAppointments =
-    getCalendarAppointmentsByPhone(phone);
+    getCalendarAppointmentsByPhone(phone)
+      .filter(isCurrentOrFutureAppointment);
 
   const visibleAppointments = [];
 
@@ -1510,6 +1609,10 @@ function showMyAppointmentsByPhone(chatId, settings, phone) {
       String(syncedAppointment.status || '').toLowerCase() !==
       'confirmed'
     ) {
+      return;
+    }
+
+    if (!isCurrentOrFutureAppointment(syncedAppointment)) {
       return;
     }
 
@@ -1564,28 +1667,7 @@ function showMyAppointmentsByPhone(chatId, settings, phone) {
     );
   });
 
-  addAuditLog(
-  'MY_CALENDAR_APPOINTMENTS_BEFORE_SEND',
-  JSON.stringify({
-    count: calendarAppointments.length,
-    appointments: calendarAppointments
-  })
-);
-
   calendarAppointments.forEach(function(appointment) {
-
-    addAuditLog(
-  'MY_CALENDAR_APPOINTMENT_SEND_ITEM',
-  JSON.stringify({
-    title: appointment.title,
-    start_at: appointment.start_at,
-    calendar_event_id: appointment.calendar_event_id,
-    phone: appointment.phone,
-    service_name: appointment.service_name,
-    provider_name: appointment.provider_name
-  })
-);
-
     sendCalendarAppointmentCard(
       chatId,
       settings,
@@ -2312,4 +2394,20 @@ function rollbackLastClientOption(chatId) {
     'option_count',
     optionCount - 1
   );
+}
+
+function isCurrentOrFutureAppointment(appointment) {
+  const endValue =
+    appointment.end_at ||
+    appointment.endAt ||
+    appointment.endTime;
+
+  if (!endValue) {
+    return true;
+  }
+
+  const endDate =
+    parseDateTimeForCalendar(endValue);
+
+  return endDate.getTime() >= new Date().getTime();
 }

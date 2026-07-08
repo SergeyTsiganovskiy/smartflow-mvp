@@ -149,9 +149,9 @@ function buildCalendarCacheRow(record) {
 
         record.synced_at || now,
         record.created_at || now,
-        record.updated_at || now
-
-
+        record.updated_at || now,
+        record.customer_confirmed || '',
+        record.customer_confirmed_at || ''
     ];
 }
 
@@ -276,7 +276,11 @@ function buildAppointmentCacheRows(dateValue) {
 
                 customer_note: item.customer_note,
 
-                synced_at: new Date()
+                synced_at: new Date(),
+
+                customer_confirmed: item.customer_confirmed || '',
+
+                customer_confirmed_at: item.customer_confirmed_at || ''
             })
         );
 

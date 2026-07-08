@@ -36,6 +36,10 @@ function initializeAdminNavigation() {
   ADMIN_NAVIGATION_HANDLERS[
     ADMIN_MENUS.CUSTOMER_CONFLICTS
   ] = startCustomerConflicts;
+
+  ADMIN_NAVIGATION_HANDLERS[
+    ADMIN_MENUS.LOCATIONS
+  ] = sendLocationsMenu;
 }
 
 function openAdminMenu(chatId, settings, menu) {

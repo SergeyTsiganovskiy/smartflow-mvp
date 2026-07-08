@@ -35,3 +35,7 @@ function getSettings() {
 
   return SETTINGS_CACHE;
 }
+
+function resetSettingsCache() {
+  SETTINGS_CACHE = null;
+}

@@ -1,6 +1,5 @@
 function send24hAppointmentReminders() {
   const settings = getSettings();
-
   const now = new Date();
 
   const currentHour = Number(
@@ -21,14 +20,16 @@ function send24hAppointmentReminders() {
   const appointments =
     getAppointmentsFor24hReminder();
 
-  appointments.forEach(function(
-    appointment
-  ) {
+  appointments.forEach(function(appointment) {
+    appointment =
+      syncAppointmentWithCalendar(
+        appointment,
+        true
+      );
 
-    appointment = syncAppointmentWithCalendar(
-      appointment,
-      true
-    );
+    if (!appointment) {
+      return;
+    }
 
     const customer =
       getCustomerById(
@@ -50,13 +51,35 @@ function send24hAppointmentReminders() {
     sendTelegramMessage(
       settings.ClientBotToken,
       customer.telegram_id,
-      text
+      text,
+      buildAppointmentConfirmInlineKeyboard(
+        appointment.appointment_id
+      )
     );
 
     markAppointmentReminder24hSent(
       appointment.appointment_id
     );
   });
+}
+
+function buildAppointmentConfirmInlineKeyboard(
+  appointmentId
+) {
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.CUSTOMER_CONFIRM_APPOINTMENT
+          ),
+          callback_data:
+            'confirm_appointment:' +
+            appointmentId
+        }
+      ]
+    ]
+  };
 }
 
 function buildAppointmentReminderText(

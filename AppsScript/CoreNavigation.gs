@@ -8,7 +8,7 @@ function resetNavigation(chatId) {
 
 function getNavigationStack(chatId) {
   const session =
-    getUserSession(chatId);
+    getUserSession(chatId) || {};
 
   if (!session.navigation_stack) {
     return [];

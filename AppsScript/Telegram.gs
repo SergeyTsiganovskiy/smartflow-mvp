@@ -289,3 +289,60 @@ function pollClientBot() {
       );
   });
 }
+
+function answerCallbackQuery(
+  callbackQueryId,
+  text
+) {
+  const settings =
+    getSettings();
+
+  const url =
+    'https://api.telegram.org/bot' +
+    settings.ClientBotToken +
+    '/answerCallbackQuery';
+
+  const payload = {
+    callback_query_id: callbackQueryId,
+    text: text || '',
+    show_alert: false
+  };
+
+  UrlFetchApp.fetch(
+    url,
+    {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    }
+  );
+}
+
+function editTelegramMessageReplyMarkup(
+  botToken,
+  chatId,
+  messageId,
+  replyMarkup
+) {
+  const url =
+    'https://api.telegram.org/bot' +
+    botToken +
+    '/editMessageReplyMarkup';
+
+  const payload = {
+    chat_id: chatId,
+    message_id: messageId,
+    reply_markup: replyMarkup || {}
+  };
+
+  UrlFetchApp.fetch(
+    url,
+    {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    }
+  );
+}

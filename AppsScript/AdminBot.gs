@@ -5,13 +5,17 @@ function sendAdminMainMenu(chatId, settings) {
     chatId,
     ADMIN_MENUS.MAIN
   );
+
+
+  
   const keyboard = {
     keyboard: [
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_SERVICES) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS) }],
       [{ text: getMessage(MESSAGE_KEYS.ADMIN_CUSTOMERS) }],
-      [{ text: getMessage(MESSAGE_KEYS.ADMIN_SETTINGS) }]
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_SETTINGS) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_LOCATIONS) }],
     ],
     resize_keyboard: true
   };
@@ -347,6 +351,24 @@ function handleAdminMessage(message) {
     )
   ) {
     startDeleteCustomerConflict(
+      chatId,
+      settings
+    );
+
+    return;
+  }
+
+  // =========================
+  // LOCATIONS MENU COMMANDS
+  // =========================
+
+   if (
+    text ===
+    getMessage(
+      MESSAGE_KEYS.ADMIN_LOCATIONS
+    )
+  ) {
+    sendLocationsMenu(
       chatId,
       settings
     );
@@ -733,14 +755,27 @@ function handleAdminMessage(message) {
 function isAdminUser(chatId) {
   const settings = getSettings();
 
-  const ids =
+  const ownerId =
+    String(settings.OwnerTelegramId || '').trim();
+
+  const adminIds =
     String(settings.AdminTelegramIds || '')
       .split(',')
-      .map(function(item) {
-        return String(item).trim();
+      .map(function(id) {
+        return String(id).trim();
+      })
+      .filter(function(id) {
+        return id;
       });
 
-  return ids.indexOf(String(chatId)) !== -1;
+  const chatIdText =
+    String(chatId).trim();
+
+  if (ownerId && chatIdText === ownerId) {
+    return true;
+  }
+
+  return adminIds.indexOf(chatIdText) !== -1;
 }
 
 function sendProvidersMenu(chatId, settings) {
@@ -4041,13 +4076,11 @@ function buildAppointmentsMenuKeyboard() {
 }
 
 function showTodayAppointmentsAdmin(chatId, settings) {
-  
   setUserSessionValue(
     chatId,
     'admin_back_menu',
     ADMIN_MENUS.APPOINTMENTS
   );
-
 
   const today =
     Utilities.formatDate(
@@ -4105,6 +4138,10 @@ function showTodayAppointmentsAdmin(chatId, settings) {
       '\n';
 
     text +=
+      getCustomerConfirmationText(appointment) +
+      '\n';
+
+    text +=
       '💅 ' +
       (serviceText || '-') +
       '\n';
@@ -4137,7 +4174,6 @@ function showTodayAppointmentsAdmin(chatId, settings) {
     text,
     buildKeyboardWithMainMenu([])
   );
-
 }
 
 function showTomorrowAppointments(
@@ -4150,7 +4186,8 @@ function showTomorrowAppointments(
     ADMIN_MENUS.APPOINTMENTS
   );
 
-  const tomorrow = new Date();
+  const tomorrow =
+    new Date();
 
   tomorrow.setDate(
     tomorrow.getDate() + 1
@@ -4209,6 +4246,10 @@ function showTomorrowAppointments(
     text +=
       '👤 ' +
       (customerText || '-') +
+      '\n';
+
+    text +=
+      getCustomerConfirmationText(appointment) +
       '\n';
 
     text +=
@@ -4305,85 +4346,6 @@ function processAppointmentsProvider(chatId, text, settings) {
   );
 }
 
-function showAppointmentsByProviderAdmin(
-  chatId,
-  settings,
-  provider
-) {
-  const appointments =
-    getCachedAppointmentsByProvider(
-      provider.provider_id
-    );
-
-  if (appointments.length === 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.NO_APPOINTMENTS_FOUND),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  let text =
-    '<b>' +
-    getMessage(MESSAGE_KEYS.APPOINTMENTS_BY_PROVIDER_TITLE) +
-    ': ' +
-    provider.name +
-    '</b>\n\n';
-
-  appointments.forEach(function(appointment) {
-    text +=
-      '<b>' +
-      formatDateTimeForDisplay(appointment.start_at) +
-      ' - ' +
-      extractTimeFromDateTime(appointment.end_at) +
-      '</b>\n';
-
-    text +=
-      '👤 ' +
-      (
-        appointment.customer_name
-          ? appointment.customer_name + ' ' + appointment.phone
-          : appointment.phone || '-'
-      ) +
-      '\n';
-
-    text +=
-      '💅 ' +
-      (appointment.service_name || '-') +
-      '\n';
-
-    text +=
-      '📍 ' +
-      (appointment.location_name || '-') +
-      '\n';
-
-    if (appointment.customer_note) {
-      text +=
-        '📝 ' +
-        appointment.customer_note +
-        '\n';
-    }
-
-    if (appointment.source === 'calendar_manual') {
-      text +=
-        '📌 ' +
-        getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL) +
-        '\n';
-    }
-
-    text += '\n';
-  });
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    text,
-    buildKeyboardWithMainMenu([])
-  );
-}
 
 function startAppointmentsByDate(chatId, settings) {
   const keyboardRows =
@@ -4471,88 +4433,7 @@ function processAppointmentsDate(chatId, text, settings) {
   );
 }
 
-function showAppointmentsByDateAdmin(
-  chatId,
-  settings,
-  dateValue
-) {
-  const appointments =
-    getCachedAppointmentsByDate(dateValue);
 
-  if (appointments.length === 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.NO_APPOINTMENTS_FOUND),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  let text =
-    '<b>' +
-    getMessage(MESSAGE_KEYS.APPOINTMENTS_BY_DATE_TITLE) +
-    ': ' +
-    formatDateForDisplay(dateValue) +
-    '</b>\n\n';
-
-  appointments.forEach(function(appointment) {
-    text +=
-      '<b>' +
-      extractTimeFromDateTime(appointment.start_at) +
-      '-' +
-      extractTimeFromDateTime(appointment.end_at) +
-      '</b>\n';
-
-    text +=
-      '👤 ' +
-      (
-        appointment.customer_name
-          ? appointment.customer_name + ' ' + appointment.phone
-          : appointment.phone || '-'
-      ) +
-      '\n';
-
-    text +=
-      '💅 ' +
-      (appointment.service_name || '-') +
-      '\n';
-
-    text +=
-      '👩‍💼 ' +
-      (appointment.provider_name || '-') +
-      '\n';
-
-    text +=
-      '📍 ' +
-      (appointment.location_name || '-') +
-      '\n';
-
-    if (appointment.customer_note) {
-      text +=
-        '📝 ' +
-        appointment.customer_note +
-        '\n';
-    }
-
-    if (appointment.source === 'calendar_manual') {
-      text +=
-        '📌 ' +
-        getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL) +
-        '\n';
-    }
-
-    text += '\n';
-  });
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    text,
-    buildKeyboardWithMainMenu([])
-  );
-}
 
 function startNextWorkingDayAppointments(
   chatId,
@@ -4628,11 +4509,200 @@ function processNextWorkingDayProvider(
   );
 }
 
+function showAppointmentsByDateAdmin(
+  chatId,
+  settings,
+  dateValue
+) {
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
+
+  const appointments =
+    getCachedAppointmentsByDate(dateValue);
+
+  if (appointments.length === 0) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.NO_APPOINTMENTS_FOUND),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.APPOINTMENTS_BY_DATE_TITLE) +
+    ': ' +
+    formatDateForDisplay(dateValue) +
+    '</b>\n\n';
+
+  appointments.forEach(function(appointment) {
+    text +=
+      '<b>' +
+      extractTimeFromDateTime(appointment.start_at) +
+      '-' +
+      extractTimeFromDateTime(appointment.end_at) +
+      '</b>\n';
+
+    text +=
+      '👤 ' +
+      (
+        appointment.customer_name
+          ? appointment.customer_name + ' ' + appointment.phone
+          : appointment.phone || '-'
+      ) +
+      '\n';
+
+    text +=
+      getCustomerConfirmationText(appointment) +
+      '\n';
+
+    text +=
+      '💅 ' +
+      (appointment.service_name || '-') +
+      '\n';
+
+    text +=
+      '👩‍💼 ' +
+      (appointment.provider_name || '-') +
+      '\n';
+
+    text +=
+      '📍 ' +
+      (appointment.location_name || '-') +
+      '\n';
+
+    if (appointment.customer_note) {
+      text +=
+        '📝 ' +
+        appointment.customer_note +
+        '\n';
+    }
+
+    if (appointment.source === 'calendar_manual') {
+      text +=
+        '📌 ' +
+        getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL) +
+        '\n';
+    }
+
+    text += '\n';
+  });
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    buildKeyboardWithMainMenu([])
+  );
+}
+
+function showAppointmentsByProviderAdmin(
+  chatId,
+  settings,
+  provider
+) {
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
+
+  const appointments =
+    getCachedAppointmentsByProvider(
+      provider.provider_id
+    );
+
+  if (appointments.length === 0) {
+    sendTelegramMessage(
+      settings.AdminBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.NO_APPOINTMENTS_FOUND),
+      buildKeyboardWithMainMenu([])
+    );
+
+    return;
+  }
+
+  let text =
+    '<b>' +
+    getMessage(MESSAGE_KEYS.APPOINTMENTS_BY_PROVIDER_TITLE) +
+    ': ' +
+    provider.name +
+    '</b>\n\n';
+
+  appointments.forEach(function(appointment) {
+    text +=
+      '<b>' +
+      formatDateTimeForDisplay(appointment.start_at) +
+      ' - ' +
+      extractTimeFromDateTime(appointment.end_at) +
+      '</b>\n';
+
+    text +=
+      '👤 ' +
+      (
+        appointment.customer_name
+          ? appointment.customer_name + ' ' + appointment.phone
+          : appointment.phone || '-'
+      ) +
+      '\n';
+
+    text +=
+      getCustomerConfirmationText(appointment) +
+      '\n';
+
+    text +=
+      '💅 ' +
+      (appointment.service_name || '-') +
+      '\n';
+
+    text +=
+      '📍 ' +
+      (appointment.location_name || '-') +
+      '\n';
+
+    if (appointment.customer_note) {
+      text +=
+        '📝 ' +
+        appointment.customer_note +
+        '\n';
+    }
+
+    if (appointment.source === 'calendar_manual') {
+      text +=
+        '📌 ' +
+        getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL) +
+        '\n';
+    }
+
+    text += '\n';
+  });
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    text,
+    buildKeyboardWithMainMenu([])
+  );
+}
+
 function showNextWorkingDayAppointmentsAdmin(
   chatId,
   settings,
   provider
 ) {
+  setUserSessionValue(
+    chatId,
+    'admin_back_menu',
+    ADMIN_MENUS.APPOINTMENTS
+  );
+
   const providerId =
     provider.provider_id ||
     provider.id;
@@ -4698,6 +4768,10 @@ function showNextWorkingDayAppointmentsAdmin(
           ? appointment.customer_name + ' ' + appointment.phone
           : appointment.phone || '-'
       ) +
+      '\n';
+
+    text +=
+      getCustomerConfirmationText(appointment) +
       '\n';
 
     text +=
@@ -4817,10 +4891,17 @@ function processCustomerProfilePhone(
     findCustomerProfileByPhone(text);
 
   if (!profile || profile.active === false) {
+    setUserState(
+      chatId,
+      ADMIN_STATES.WAITING_CUSTOMER_PROFILE_PHONE
+    );
+
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND),
+      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND) +
+        '\n\n' +
+        getMessage(MESSAGE_KEYS.ENTER_CUSTOMER_PHONE),
       buildKeyboardWithMainMenu([])
     );
 
@@ -5601,5 +5682,67 @@ function showCustomerVisitHistory(
     buildKeyboardWithMainMenu([])
   );
 }
+
+function sendLocationsMenu(
+  chatId,
+  settings
+) {
+  setUserState(
+    chatId,
+    ADMIN_STATES.WAITING_LOCATIONS_MENU
+  );
+
+  pushNavigation(
+    chatId,
+    ADMIN_MENUS.LOCATIONS
+  );
+
+  const keyboard =
+    buildKeyboardWithMainMenu([
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.LOCATIONS_LIST
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.LOCATION_ADD
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.LOCATION_EDIT
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.LOCATION_DISABLE
+          )
+        },
+        {
+          text: getMessage(
+            MESSAGE_KEYS.LOCATION_ENABLE
+          )
+        }
+      ]
+    ]);
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.LOCATIONS_MENU_TITLE
+    ),
+    keyboard
+  );
+}
+
 
 
