@@ -53,9 +53,54 @@ function doPost(e) {
 }
 
 function handleAdminCallback(callbackQuery) {
+  const data =
+    callbackQuery.data || '';
+
+  const parts =
+    data.split('|');
+
+  const action =
+    parts[0];
+
+  const requestId =
+    parts[1] || '';
+
   addAuditLog(
     'ADMIN_CALLBACK',
-    JSON.stringify(callbackQuery)
+    JSON.stringify({
+      data: data,
+      action: action,
+      requestId: requestId
+    })
+  );
+
+  if (
+    action.indexOf('approve_option_') === 0
+  ) {
+    processRequestApproveOption(
+      callbackQuery,
+      action,
+      requestId
+    );
+
+    return;
+  }
+
+  if (
+    action ===
+    'reject_request'
+  ) {
+    processRequestReject(
+      callbackQuery,
+      requestId
+    );
+
+    return;
+  }
+
+  addAuditLog(
+    'UNKNOWN_ADMIN_CALLBACK',
+    data
   );
 }
 
@@ -71,9 +116,30 @@ function handleClientCallback(callbackQuery) {
     return;
   }
 
-  handleOwnerCallback(
+  handleAppointmentCallback(
     callbackQuery
   );
+}
+
+function handleRequestCallback(callbackQuery) {
+  const data =
+    callbackQuery.data || '';
+
+  if (data.indexOf('approve_option_') === 0) {
+    processApproveRequestOption(
+      callbackQuery
+    );
+
+    return;
+  }
+
+  if (data.indexOf('reject_request|') === 0) {
+    processRejectRequest(
+      callbackQuery
+    );
+
+    return;
+  }
 }
 
 function testMessages() {

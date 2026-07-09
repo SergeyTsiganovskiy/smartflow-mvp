@@ -346,3 +346,32 @@ function handleOverrideBack(chatId, settings, state) {
 
   return true;
 }
+
+function isLocationWizardState(state) {
+  return [
+    ADMIN_STATES.WAITING_LOCATION_NAME,
+    ADMIN_STATES.WAITING_LOCATION_ADDRESS,
+    ADMIN_STATES.WAITING_LOCATION_PHONE,
+
+    ADMIN_STATES.WAITING_LOCATION_TO_EDIT,
+    ADMIN_STATES.WAITING_LOCATION_FIELD_TO_EDIT,
+    ADMIN_STATES.WAITING_LOCATION_NEW_VALUE,
+
+    ADMIN_STATES.WAITING_LOCATION_TO_DISABLE,
+    ADMIN_STATES.WAITING_LOCATION_TO_ENABLE
+  ].indexOf(state) !== -1;
+}
+
+function handleLocationBack(chatId, settings, state) {
+  if (!isLocationWizardState(state)) {
+    return false;
+  }
+
+  backToAdminMenu(
+    chatId,
+    settings,
+    ADMIN_MENUS.LOCATIONS
+  );
+
+  return true;
+}

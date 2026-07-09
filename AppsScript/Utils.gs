@@ -927,3 +927,19 @@ function getCalendarLabelValues() {
 
   return labels;
 }
+
+function findItemByName(items, name) {
+  const searchName =
+    String(name || '').trim();
+
+  for (let i = 0; i < items.length; i++) {
+    if (
+      String(items[i].name || '').trim() ===
+      searchName
+    ) {
+      return items[i];
+    }
+  }
+
+  return null;
+}
