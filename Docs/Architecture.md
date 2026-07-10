@@ -1,686 +1,559 @@
-# Architecture.md
+# SmartFlow Technical Architecture
 
-# SmartFlow Beauty Demo Architecture
+## 1. Overview
 
-## Overview
+SmartFlow is an event-driven Google Apps Script application integrating two Telegram bots, Google Sheets, and Google Calendar.
 
-SmartFlow Beauty Demo is a beauty salon booking system built on:
+Primary event sources:
 
-* Telegram Client Bot
-* Google Apps Script
-* Google Sheets
-* Google Calendar
+- Telegram webhook updates;
+- time-driven Apps Script triggers;
+- manual admin actions;
+- calendar synchronization jobs;
+- test/debug functions.
 
-The system follows a request → approval → appointment workflow.
-
-Customers submit booking requests through Telegram.
-
-Owners review requests and approve one of the proposed time options.
-
-After approval:
-
-* Appointment is created
-* Google Calendar event is created
-* Customer receives confirmation
-* Reminder workflow becomes active
-
----
-
-# Main Components
-
-## ClientBot
-
-ClientBot is used by customers.
-
-Functions:
-
-* Book appointment
-* View appointments
-* Cancel appointment
-* Reschedule appointment
-* View contacts
-* Receive reminders
-
-Main menu:
+## 2. System context
 
 ```text
-📅 Записаться
-📋 Мои записи
-📞 Контакты
-🏠 Главное меню
+Telegram Customer
+      │
+      ▼
+  Client Bot
+      │ webhook
+      ▼
+Google Apps Script
+ ├── Routing
+ ├── State machines
+ ├── Navigation
+ ├── Business logic
+ ├── Persistence
+ ├── Calendar integration
+ └── Notifications
+      │
+      ├── Google Sheets
+      ├── Google Calendar
+      └── Admin Bot
 ```
 
-Main menu button is available throughout all major flows.
+## 3. Runtime
 
----
+Google Apps Script provides:
 
-## Google Sheets
+- `doPost(e)` HTTP entry point;
+- SpreadsheetApp;
+- Calendar services/helpers;
+- UrlFetchApp for Telegram API;
+- Utilities for date/time;
+- triggers;
+- execution logs.
 
-Google Sheets acts as the primary database.
+No dedicated server is required.
 
-Main entities:
+## 4. Webhook routing
+
+Both bots can use the same Apps Script deployment.
+
+Typical endpoints:
 
 ```text
-Settings
-Messages
-Locations
-Services
-Providers
-ProviderSchedule
-ProviderScheduleOverrides
-Customers
-CustomerServiceSettings
-CustomerConflicts
-Requests
-RequestOptions
-Appointments
-UserSessions
-AuditLog
+Client: /exec
+Admin:  /exec?bot=admin
 ```
 
----
+`doPost(e)`:
 
-## Google Calendar
+1. parses JSON;
+2. resolves bot type;
+3. rejects duplicate updates;
+4. routes messages or callback queries;
+5. logs top-level errors;
+6. returns `OK` or `ERROR`.
 
-Google Calendar is used as:
+Simplified routing:
 
-* Appointment calendar
-* Manual appointment source
-* Synchronization source
+```javascript
+if (botType === 'admin') {
+  if (update.message) handleAdminMessage(update.message);
+  if (update.callback_query) handleAdminCallback(update.callback_query);
+  return;
+}
 
-Each appointment created by the bot receives:
+if (update.message) handleClientMessage(update.message);
+if (update.callback_query) handleClientCallback(update.callback_query);
+```
+
+## 5. Bot separation
+
+### Client Bot
+
+Main entry points:
 
 ```text
-calendar_event_id
+handleClientMessage()
+handleClientCallback()
 ```
 
-stored inside Appointments.
+Client callbacks include appointment confirmation and appointment cancel/reschedule actions.
 
----
+`processAppointmentConfirmation()` handles the 24-hour reminder confirmation.
 
-# Booking Flow
+Other appointment actions are delegated to `handleAppointmentCallback()`.
 
-Customer flow:
+### Admin Bot
+
+Main entry points:
 
 ```text
-Book
-↓
-Enter Name
-↓
-Enter Phone
-↓
-Select Location
-↓
-Select Service
-↓
-Select Provider
-↓
-Select Date
-↓
-Select Time
-↓
-Add more options? (up to 3)
-↓
-Enter Note
-↓
-Request Created
+handleAdminMessage()
+handleAdminCallback()
 ```
 
-Request is sent to owner.
-
----
-
-# Owner Approval Flow
-
-Owner receives request.
-
-Request contains:
+Request approval/rejection is delegated to:
 
 ```text
-Customer
-Phone
-Location
-Service
-Provider
-Note
-Time Options
+processRequestApproveOption()
+processRequestReject()
 ```
 
-Owner may:
+Admin request messages must be edited with `AdminBotToken`; client messages with `ClientBotToken`.
+
+## 6. Module organization
+
+The exact filenames may evolve, but the architecture is domain-oriented.
+
+### Infrastructure
+
+- `Code.gs` — webhook and global routing;
+- `Config.gs` — constants, sheet names, state/menu identifiers;
+- `Telegram.gs` — Telegram API helpers;
+- `Messages.gs` — localization;
+- `Settings.gs` — settings/cache;
+- `Utils.gs` — shared helpers;
+- `Database.gs` — generic Sheet/session helpers.
+
+### Bot and callback modules
+
+- `ClientBot.gs`;
+- `AdminBot.gs`;
+- `ClientCallbacks.gs`;
+- `AdminCallbacks.gs`;
+- `AppointmentCallbacks.gs`;
+- `RequestCallbacks.gs`.
+
+### Navigation
+
+- `CoreNavigation.gs`;
+- `ClientNavigation.gs`;
+- `AdminNavigation.gs`.
+
+### Domain modules
+
+- `Customers.gs`;
+- `Providers.gs`;
+- `ProviderSchedules.gs`;
+- `ProviderOverrides.gs`;
+- `Services.gs`;
+- `Locations.gs`;
+- `Requests.gs`;
+- `Appointments.gs`;
+- `CustomerConflicts.gs`;
+- `Notifications.gs`.
+
+### Calendar and diagnostics
+
+- `CalendarSync.gs`;
+- `CalendarCache.gs`;
+- `AuditLog` helpers;
+- duplicate-update helpers.
+
+## 7. Navigation architecture
+
+### Stable menus
+
+Admin menu identifiers include:
 
 ```text
-Approve Option 1
-Approve Option 2
-Approve Option 3
-Reject Request
+ADMIN_MAIN
+ADMIN_APPOINTMENTS
+ADMIN_CUSTOMERS
+ADMIN_CUSTOMER_CONFLICTS
+ADMIN_SETTINGS
+ADMIN_PROVIDERS
+ADMIN_SERVICES
+ADMIN_LOCATIONS
 ```
 
-After approval:
+Hierarchy:
 
 ```text
-Appointment created
-Calendar event created
-Request status updated
-Customer notified
+MAIN
+├── APPOINTMENTS
+├── CUSTOMERS
+└── SETTINGS
+    ├── PROVIDERS
+    ├── SERVICES
+    └── LOCATIONS
 ```
 
-Confirmed option is highlighted in owner message when multiple options exist.
+### Navigation stack
 
----
-
-# Availability Engine
-
-Availability is calculated from:
-
-```text
-Provider Schedule
-Provider Schedule Overrides
-Existing Provider Appointments
-Customer-specific Duration
-Customer Conflict Rules
-Current Time Restrictions
-```
-
-Slot step:
-
-```text
-30 minutes
-```
-
----
-
-# Schedule System
-
-## ProviderSchedule
-
-Stores weekly schedules.
+Stored in `UserSessions` as serialized JSON.
 
 Example:
 
-```text
-MON 09:00-18:00
-TUE 09:00-18:00
-...
+```json
+[
+  {"menu":"ADMIN_MAIN"},
+  {"menu":"ADMIN_SETTINGS"},
+  {"menu":"ADMIN_PROVIDERS"}
+]
 ```
 
----
+Core concepts:
 
-## ProviderScheduleOverrides
+- `getNavigationStack`;
+- `saveNavigationStack`;
+- `pushNavigation`;
+- `trimNavigationToMenu`;
+- `getCurrentNavigation`;
+- `resetNavigation`.
 
-Stores date-specific changes.
+### Duplicate prevention
+
+`pushNavigation()` must:
+
+- skip pushes in render-only mode;
+- tolerate boolean/string values for the flag;
+- skip pushing the same current menu twice.
+
+### Render-only mode
+
+Used when a parent menu is displayed after a wizard without adding a duplicate stack entry.
+
+```javascript
+setNavigationRenderOnly(chatId, true);
+try {
+  openAdminMenu(chatId, settings, menu);
+} finally {
+  setNavigationRenderOnly(chatId, false);
+}
+```
+
+### Menu registry
+
+```javascript
+ADMIN_NAVIGATION_HANDLERS[ADMIN_MENUS.MAIN] = sendAdminMainMenu;
+ADMIN_NAVIGATION_HANDLERS[ADMIN_MENUS.SETTINGS] = sendSettingsMenu;
+ADMIN_NAVIGATION_HANDLERS[ADMIN_MENUS.PROVIDERS] = sendProvidersMenu;
+ADMIN_NAVIGATION_HANDLERS[ADMIN_MENUS.SERVICES] = sendServicesMenu;
+ADMIN_NAVIGATION_HANDLERS[ADMIN_MENUS.LOCATIONS] = sendLocationsMenu;
+```
+
+Every stable menu must be registered. A missing handler causes fallback to Main.
+
+### Back behavior
+
+Back is processed in two stages:
+
+1. wizard-specific return;
+2. generic stack pop.
+
+Expected flows:
+
+```text
+Provider wizard → Providers
+Providers → Settings
+Settings → Main
+```
+
+## 8. State machine and sessions
+
+### State
+
+The current interaction step is stored separately from navigation.
 
 Examples:
 
 ```text
-Vacation
-Day Off
-Holiday
-Short Day
-Extra Day
+WAITING_PROVIDER_NAME
+WAITING_PROVIDER_LOCATION
+WAITING_PROVIDER_PHONE
+WAITING_SERVICE_PRICE_MIN
+WAITING_LOCATION_NEW_VALUE
+WAITING_CUSTOM_DATE
 ```
 
-Priority:
+### Session
+
+Temporary values include booking data, wizard fields, edit IDs, schedule data, override data, rescheduling data, and navigation metadata.
+
+### Targeted resets
+
+Do not use global session clearing inside wizards if navigation must survive.
+
+Use:
 
 ```text
-Override
-↓
-Weekly Schedule
+resetProviderWizardSession()
+resetServiceWizardSession()
+resetLocationWizardSession()
+resetAdminWizard()
 ```
 
----
+These clear temporary domain data while preserving `navigation_stack`.
 
-# Customer Identification
+## 9. Telegram keyboard architecture
 
-Customer is identified primarily by:
+Reply keyboards remain visible until replaced.
+
+Rules:
+
+- selection step → send options keyboard;
+- text step → send `buildKeyboardWithMainMenu([])`;
+- do not call the keyboard builder separately without passing its result;
+- inline keyboards are used for message-specific actions.
+
+Examples of inline actions:
+
+- approve/reject request;
+- confirm appointment;
+- cancel/reschedule appointment;
+- Yes/No confirmation.
+
+Localized confirmation labels use `CONFIRM_YES` and `CONFIRM_NO`.
+
+## 10. Callback architecture
+
+### Client callbacks
+
+`handleClientCallback()` handles customer confirmation and delegates appointment actions.
+
+### Admin callbacks
+
+`handleAdminCallback()` parses callback data such as:
 
 ```text
-Phone Number
+approve_option_1|req_...
+reject_request|req_...
 ```
 
-During booking:
+and delegates to request callback functions.
+
+### Appointment callbacks
+
+`handleAppointmentCallback()` handles:
+
+- calendar event cancel/reschedule;
+- appointment cancel/reschedule;
+- confirmation dialogs;
+- return to appointment card.
+
+### Token correctness
+
+A Telegram message can only be edited by the bot that sent it.
+
+- admin notification → `AdminBotToken`;
+- customer message → `ClientBotToken`.
+
+## 11. Localization
+
+`Messages` uses:
 
 ```text
-Name
-↓
-Phone
-↓
-Customer Lookup/Create
-↓
-Availability Search
+key | uk | ru | en
 ```
 
-This allows customer-specific business rules.
+Code uses:
 
----
+```javascript
+getMessage(MESSAGE_KEYS.KEY)
+```
 
-# Customer-Specific Duration
+Dynamic entities can also use message keys, for example location names and addresses.
 
-System supports individual service duration.
+The target is zero hardcoded UI text.
 
-Priority:
+## 12. Settings and caches
+
+### Settings
+
+`getSettings()` reads key/value rows and stores an in-memory object in `SETTINGS_CACHE`.
+
+Typical settings:
 
 ```text
-CustomerServiceSettings.duration_minutes
-↓
-Services.default_duration_minutes
+BusinessName
+Language
+Currency
+TimeZone
+ClientBotToken
+AdminBotToken
+AdminTelegramIds
+MainCalendarId
+BookingDaysAhead
+ReminderDayBefore
+Reminder2Hours
 ```
 
-Lookup key:
+The Settings module should automatically reset the cache after updates.
+
+### Runtime caches
+
+Known caches:
 
 ```text
-customer_id
-service_id
-provider_id
+SETTINGS_CACHE
+MESSAGES_CACHE
+LOCATIONS_CACHE
+CALENDAR_CACHE
 ```
+
+### Location API
+
+```text
+getActiveLocations()
+getAllLocations()
+getLocations()  // compatibility alias
+```
+
+### Cache invalidation
+
+Writes must invalidate relevant caches:
+
+- location write → locations cache;
+- message write → messages cache;
+- setting write → settings cache;
+- appointment/calendar write → calendar cache.
+
+## 13. Calendar architecture
+
+### Appointment creation
+
+```text
+Approved request
+→ Appointments row
+→ Google Calendar event
+→ CalendarCache refresh
+```
+
+### Synchronization
+
+`syncAppointmentWithCalendar()` validates appointment/calendar consistency.
+
+### Manual calendar events
+
+Normalized with:
+
+```text
+source = calendar_manual
+```
+
+and shown with a marker in Admin Bot.
+
+### Cancellation/rescheduling
+
+Flows update Sheets, Calendar, cache, session, and Telegram messages.
+
+## 14. Request processing
+
+### Request creation
+
+The Client Bot writes a `Requests` row plus several `RequestOptions`.
+
+### Approval
+
+`processRequestApproveOption()`:
+
+1. parses selected priority;
+2. loads request/option;
+3. prevents duplicate appointment creation;
+4. creates appointment;
+5. creates calendar event;
+6. updates statuses;
+7. edits admin message;
+8. notifies customer.
+
+### Rejection
+
+`processRequestReject()` updates statuses, edits the admin message, and notifies the customer.
+
+## 15. Notifications
+
+Admin recipients come from `RequestRecipients`.
+
+Current eligibility:
+
+```text
+active = TRUE
+receive_new_requests = TRUE
+telegram_id exists
+```
+
+Customer confirmation notifications can reuse the same recipient mechanism.
+
+## 16. Duplicate update protection
+
+Telegram may retry updates.
+
+SmartFlow checks:
+
+```text
+update_id + bot_type
+```
+
+before executing business logic.
+
+This is essential for approve/reject/cancel/reschedule/confirm operations.
+
+## 17. Logging and error handling
+
+Top-level webhook errors are written to `AuditLog`.
 
 Examples:
 
 ```text
-Default Haircut = 60 min
-
-Customer A:
-Haircut with Alice = 90 min
-
-Customer B:
-Haircut with Alice = 45 min
+DOPOST_ERROR
+ADMIN_CALLBACK
+APPROVE_OPTION_DEBUG
+ADMIN_BACK_STACK_DEBUG
 ```
 
----
-
-# Customer Conflicts
-
-Some customers should never be present simultaneously.
-
-Rules stored in:
-
-```text
-CustomerConflicts
-```
-
-Example:
-
-```text
-cust_001 → cust_005
-cust_005 → cust_001
-```
-
-When calculating availability:
-
-```text
-Appointments of conflicting customers
-also block available slots
-```
-
-Conflict works salon-wide.
-
-Not provider-specific.
-
----
-
-# Request System
-
-Requests are temporary objects.
-
-Status:
-
-```text
-pending
-confirmed
-rejected
-```
-
-A request may contain:
-
-```text
-1-3 preferred time options
-```
-
-Stored separately in:
-
-```text
-RequestOptions
-```
-
----
-
-# Appointment System
-
-Appointment is created only after approval.
-
-Statuses:
-
-```text
-confirmed
-cancelled
-completed
-no_show
-```
-
-Appointment stores:
-
-```text
-Customer
-Service
-Provider
-Location
-Start
-End
-Calendar Event Id
-Note
-Reminder Status
-```
-
----
-
-# Google Calendar Integration
-
-Every approved appointment creates:
-
-```text
-Calendar Event
-```
-
-Description contains:
-
-Localized visible information:
-
-```text
-Customer
-Phone
-Service
-Provider
-Location
-Note
-```
-
-And technical section:
-
-```text
-[TECH]
-appointment_id=...
-```
-
-Example:
-
-```text
-Клиент: Иван
-Телефон: 0661234567
-Услуга: Стрижка
-Мастер: Алиса
-Локация: Центр
-Комментарий: -
-
-[TECH]
-appointment_id=appt_123
-```
-
-The system never parses localized text.
-
-All technical operations use:
-
-```text
-appointment_id
-```
-
-from TECH section.
-
----
-
-# My Appointments
-
-Customer enters phone.
-
-System searches:
-
-```text
-Appointments
-Google Calendar
-```
-
-Displays:
-
-```text
-Date
-Time
-Service
-Provider
-Location
-```
-
-Available actions:
-
-```text
-Reschedule
-Cancel
-```
-
----
-
-# Cancellation Flow
-
-```text
-My Appointments
-↓
-Cancel
-↓
-Confirm
-↓
-Appointment.status = cancelled
-↓
-Calendar Event Deleted
-↓
-Notifications Sent
-```
-
----
-
-# Reschedule Flow
-
-```text
-My Appointments
-↓
-Reschedule
-↓
-Choose Date
-↓
-Choose Time
-↓
-Appointment Updated
-↓
-Calendar Event Updated
-```
-
-Supports:
-
-```text
-Bot-created appointments
-Manual calendar appointments
-```
-
-Main menu button is available on every step.
-
----
-
-# Reminder System
-
-24-hour reminders.
-
-Conditions:
-
-```text
-Appointment Tomorrow
-Status = confirmed
-Reminder Not Sent
-Telegram Id Exists
-```
-
-After sending:
-
-```text
-reminder_24h_sent_at
-```
-
-is filled.
-
-If appointment time changes:
-
-```text
-Reminder flag reset
-```
-
----
-
-# Contacts
-
-Contacts are stored in Locations.
-
-Localized text is stored in Messages.
-
-Locations contain:
-
-```text
-name_key
-address_key
-phone_1
-phone_2
-instagram
-telegram
-website
-google_maps_url
-working_hours
-```
-
-Messages contain:
-
-```text
-LOCATION_001_NAME
-LOCATION_001_ADDRESS
-```
-
-This separates:
-
-```text
-Business Data
-↓
-Locations
-
-Translations
-↓
-Messages
-```
-
----
-
-# Localization
-
-All UI text comes from:
-
-```text
-Messages
-```
-
-Supported languages:
-
-```text
-uk
-ru
-en
-```
-
-System language is controlled through:
-
-```text
-Settings.Language
-```
-
----
-
-# Session Management
-
-Temporary state is stored in:
-
-```text
-UserSessions
-```
-
-Stores:
-
-```text
-Customer
-Service
-Provider
-Location
-Current Flow State
-Booking Options
-Reschedule Data
-```
-
----
-
-# Audit Logging
-
-All critical operations write to:
-
-```text
-AuditLog
-```
-
-Used for:
-
-```text
-Debugging
-Availability Investigation
-Request Processing
-Calendar Sync
-```
-
----
-
-# Removed Features
-
-No longer used:
-
-```text
-Any Provider
-ProviderExceptions
-ClientConflicts
-SMARTFLOW_DATA JSON block
-```
-
-Current replacements:
-
-```text
-Specific Provider Selection
-ProviderScheduleOverrides
-CustomerConflicts
-TECH appointment_id block
-```
-
----
-
-# Current Status
-
-ClientBot v1 Stable
-
-Implemented:
-
-```text
-Booking
-My Appointments
-Contacts
-Approval Flow
-Google Calendar
-Customer Durations
-Customer Conflicts
-Cancellation
-Reschedule
-Reminders
-Localization
-Main Menu Navigation
-```
-
-Next phase:
-
-```text
-AdminBot v1
-```
+Temporary debugging events should be removed after fixes.
+
+Telegram helpers should expose failed API responses even when `muteHttpExceptions` is enabled.
+
+## 18. Security
+
+- restrict Admin Bot by Telegram ID;
+- never commit bot tokens;
+- keep production Sheets private;
+- use placeholders in templates;
+- rotate leaked tokens;
+- configure web app permissions carefully;
+- avoid exposing customer data in logs.
+
+## 19. Extension points
+
+Future extensions:
+
+- Telegram Web App;
+- provider-specific interface;
+- roles and permissions;
+- analytics/reports;
+- payments;
+- inventory;
+- loyalty/subscriptions;
+- additional business templates;
+- automated installer.
+
+## 20. Remaining architectural work
+
+- complete Settings CRUD;
+- centralize cache invalidation;
+- split remaining large functions;
+- remove remaining hardcoded strings;
+- normalize historical `OWNER_*` message keys;
+- standardize CRUD helpers;
+- formalize date/time parsing;
+- add navigation/state tests;
+- document triggers and deployment.

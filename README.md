@@ -1,163 +1,115 @@
 # SmartFlow
 
-Telegram-first automation platform for small business.
+SmartFlow is a Telegram-first business automation platform built on **Google Apps Script**, **Google Sheets**, **Google Calendar**, and the **Telegram Bot API**.
 
-## Overview
+It is designed for small appointment-based businesses that need booking, customer management, staff management, notifications, and configuration without running a traditional CRM server.
 
-SmartFlow helps small businesses manage customer requests using Telegram as a single control center.
+The current reference implementation targets a **beauty salon**, while the architecture is intended to be reusable for barbershops, massage studios, nail studios, clinics, repair services, fitness studios, tutors, pet grooming, and other service businesses.
 
-The system is designed for:
+## Core idea
 
-* Beauty salons
-* Barbershops
-* Massage therapists
-* Repair services
-* Private specialists
-* OLX stores
-* Small local businesses
+- customers use a dedicated **Client Bot**;
+- administrators use a separate **Admin Bot**;
+- Google Apps Script is the backend;
+- Google Sheets stores data and configuration;
+- Google Calendar stores and synchronizes confirmed appointments;
+- each business can own its own deployment and data.
 
----
+## Main features
 
-## Core Idea
+### Client Bot
 
-Customer requests may come from:
+- multilingual UI: Ukrainian, Russian, English;
+- customer registration and profile lookup;
+- location, service, provider, date, and time selection;
+- “any provider” option;
+- multiple appointment options;
+- booking request creation;
+- current and future appointment list;
+- cancellation and rescheduling;
+- 24-hour reminders;
+- customer appointment confirmation;
+- configurable booking horizon through `BookingDaysAhead`.
 
-* Telegram
-* Instagram
-* Website
-* OLX
-* Prom
-* Other sources
+### Admin Bot
 
-SmartFlow converts all requests into a single workflow.
+- new request notifications;
+- approve or reject proposed appointment options;
+- appointment views by day, date, and provider;
+- customer management and conflict handling;
+- provider CRUD, schedules, and overrides;
+- service CRUD with price and duration ranges;
+- location CRUD;
+- customer confirmation status in appointment lists;
+- hierarchical mobile-friendly navigation;
+- wizard-based creation and editing.
 
----
+## Technology stack
 
-## Architecture
+- Google Apps Script
+- Google Sheets
+- Telegram Bot API
+- Google Calendar
+- JavaScript
+- Git / GitHub
 
-Client-owned installation.
-
-Each business receives:
-
-* Own Telegram Bot
-* Own Google Sheets database
-* Own Google Apps Script backend
-* Full ownership of data
-
-SmartFlow provides:
-
-* Templates
-* Setup
-* Documentation
-* Support
-* Reusable modules
-
----
-
-## Current MVP
-
-Implemented:
-
-* Telegram webhook
-* Multi-language support (uk, ru, en)
-* Booking flow
-* Location selection
-* Service selection
-* User state management
-* User session management
-* Audit log
-
-Current flow:
-
-Start
-↓
-Book Appointment
-↓
-Select Location
-↓
-Select Service
-
----
-
-## Project Structure
+## High-level architecture
 
 ```text
-AppsScript/
-│
-├── Code.gs
-├── ClientBot.gs
-├── Database.gs
-├── Telegram.gs
-├── Config.gs
-└── Messages.gs
-
-Docs/
-│
-├── Architecture.md
-├── DatabaseSchema.md
-└── Roadmap.md
+Customer
+   │
+   ▼
+Client Bot
+   │
+   ▼
+Google Apps Script
+   ├── Google Sheets
+   ├── Google Calendar
+   └── Telegram Bot API
+              │
+              ▼
+          Admin Bot
 ```
 
-## Philosophy
+## Documentation
 
-Start simple.
+- [`PROJECT.md`](PROJECT.md) — vision, scope, business rules, and functionality;
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — modules, routing, navigation, caching, and integrations;
+- [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) — logical Google Sheets schema and relationships.
 
-Instead of complex scheduling:
+## Current status
 
-Customer submits up to 3 preferred time slots.
+Implemented foundations include:
 
-Master manually confirms the appointment.
+- dual-bot architecture;
+- multilingual message system;
+- booking request flow;
+- Google Calendar integration;
+- navigation stack and Back behavior;
+- wizard state management;
+- appointment cancellation, rescheduling, reminders, and confirmation;
+- customer, provider, service, and location management;
+- calendar cache;
+- audit logging;
+- configurable admin request recipients.
 
-This approach reduces complexity and improves reliability during MVP stage.
+The next major area is the complete **Settings** module, followed by global refactoring, testing, and release preparation.
 
----
+## Design principles
 
-## Roadmap
+- Telegram-first interface;
+- no dedicated server required;
+- business-owned data;
+- localized UI text;
+- minimal hardcoding;
+- explicit state machines;
+- separation of transport, navigation, business logic, and persistence;
+- reusable modules for multiple service industries.
 
-### v0.2
+## Security note
 
-* Provider selection
-* Multiple appointment options
-* Customer name
-* Customer phone
-* Request creation
+Do not commit production bot tokens, calendar identifiers, customer data, or other secrets.
 
-### v0.3
+## License
 
-* Admin Bot
-
-### v0.4
-
-* Appointment reminders
-
-### v0.5
-
-* Google Calendar integration
-
-### v0.6
-
-* Multi-location support
-
-### v0.7
-
-* Website booking
-
-### v0.8
-
-* Instagram integration
-
-### v0.9
-
-* OLX integration
-
-### v1.0
-
-Universal SmartFlow platform for small business.
-
----
-
-## Status
-
-SmartFlow Beauty MVP v0.1-alpha
-
-Work in progress.
+Add the selected license here.
