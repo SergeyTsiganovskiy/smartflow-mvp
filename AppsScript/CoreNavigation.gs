@@ -33,20 +33,41 @@ function saveNavigationStack(chatId, stack) {
 
 function pushNavigation(chatId, menu) {
   const session =
-    getUserSession(chatId);
+    getUserSession(chatId) || {};
 
-  if (session.navigation_render_only === true) {
+  const renderOnly =
+    session.navigation_render_only === true ||
+    String(
+      session.navigation_render_only || ''
+    ).toUpperCase() === 'TRUE';
+
+  if (renderOnly) {
     return;
   }
 
   const stack =
     getNavigationStack(chatId);
 
+  const current =
+    stack.length > 0
+      ? stack[stack.length - 1]
+      : null;
+
+  if (
+    current &&
+    current.menu === menu
+  ) {
+    return;
+  }
+
   stack.push({
     menu: menu
   });
 
-  saveNavigationStack(chatId, stack);
+  saveNavigationStack(
+    chatId,
+    stack
+  );
 }
 
 function getCurrentNavigation(chatId) {

@@ -40,6 +40,10 @@ function initializeAdminNavigation() {
   ADMIN_NAVIGATION_HANDLERS[
     ADMIN_MENUS.LOCATIONS
   ] = sendLocationsMenu;
+
+  ADMIN_NAVIGATION_HANDLERS[
+    ADMIN_MENUS.SETTINGS
+  ] = sendSettingsMenu;
 }
 
 function openAdminMenu(chatId, settings, menu) {
@@ -59,11 +63,7 @@ function openAdminMenu(chatId, settings, menu) {
     return;
   }
 
-  setNavigationRenderOnly(chatId, true);
-
   handler(chatId, settings);
-
-  setNavigationRenderOnly(chatId, false);
 }
 
 function handleAdminBackButton(chatId, settings) {
@@ -77,7 +77,10 @@ function handleAdminBackButton(chatId, settings) {
 
   stack.pop();
 
-  saveNavigationStack(chatId, stack);
+  saveNavigationStack(
+    chatId,
+    stack
+  );
 
   const current =
     stack[stack.length - 1];
@@ -87,10 +90,20 @@ function handleAdminBackButton(chatId, settings) {
     return;
   }
 
+  setNavigationRenderOnly(
+    chatId,
+    true
+  );
+
   openAdminMenu(
     chatId,
     settings,
     current.menu
+  );
+
+  setNavigationRenderOnly(
+    chatId,
+    false
   );
 }
 
@@ -147,19 +160,39 @@ function backToAdminMenu(
     );
 
   if (!trimmed) {
-    resetNavigation(chatId);
+    const stack =
+      getNavigationStack(chatId);
+
+    if (stack.length === 0) {
+      pushNavigation(
+        chatId,
+        ADMIN_MENUS.MAIN
+      );
+    }
 
     pushNavigation(
       chatId,
-      ADMIN_MENUS.MAIN
+      menu
     );
   }
 
-  openAdminMenu(
+  setNavigationRenderOnly(
     chatId,
-    settings,
-    menu
+    true
   );
+
+  try {
+    openAdminMenu(
+      chatId,
+      settings,
+      menu
+    );
+  } finally {
+    setNavigationRenderOnly(
+      chatId,
+      false
+    );
+  }
 }
 
 function isCustomerWizardState(state) {
@@ -257,10 +290,14 @@ function handleProviderBack(chatId, settings, state) {
     return false;
   }
 
-  backToAdminMenu(chatId, settings, ADMIN_MENUS.PROVIDERS);
+  backToAdminMenu(
+    chatId,
+    settings,
+    ADMIN_MENUS.PROVIDERS
+  );
+
   return true;
 }
-
 function handleAdminResultBack(chatId, settings, session) {
   const adminBackMenu =
     session.admin_back_menu || '';
