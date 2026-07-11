@@ -102,3 +102,40 @@ function handleClientBackButton(chatId, settings) {
     current.menu
   );
 }
+
+function sendClientStartMenu(chatId, settings) {
+  resetNavigation(chatId);
+
+  pushNavigation(
+    chatId,
+    CLIENT_MENUS.MAIN
+  );
+
+  const text =
+    getMessage(MESSAGE_KEYS.MAIN_MENU_TEXT);
+
+  const keyboard = {
+    keyboard: [
+      [
+        { text: getMessage(MESSAGE_KEYS.BOOK) }
+      ],
+      [
+        { text: getMessage(MESSAGE_KEYS.MY_APPOINTMENTS) }
+      ],
+      [
+        { text: getMessage(MESSAGE_KEYS.CONTACTS) }
+      ],
+      [
+        { text: getMessage(MESSAGE_KEYS.MAIN_MENU) }
+      ]
+    ],
+    resize_keyboard: true
+  };
+
+  sendTelegramMessage(
+    settings.ClientBotToken,
+    chatId,
+    text,
+    keyboard
+  );
+}

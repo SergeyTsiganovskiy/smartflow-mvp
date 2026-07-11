@@ -134,10 +134,15 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 ### Bot and callback modules
 
 - `ClientBot.gs`;
+- `ClientBooking.gs`;
+- `ClientAppointments.gs`;
+- `ClientContacts.gs`;
 - `AdminBot.gs`;
 - `ClientCallbacks.gs`;
 - `AdminCallbacks.gs`;
 - `AppointmentCallbacks.gs`;
+- `AppointmentCards.gs`;
+- `AppointmentRescheduling.gs`;
 - `RequestCallbacks.gs`.
 
 ### Navigation
@@ -163,6 +168,7 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 
 - `CalendarSync.gs`;
 - `CalendarCache.gs`;
+- `Diagnostics.gs` — manual test and deployment-check functions, isolated from webhook routing;
 - `AuditLog` helpers;
 - duplicate-update helpers.
 
