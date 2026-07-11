@@ -74,16 +74,6 @@ function handleClientMessage(message) {
     return;
   }
 
-  if (
-    text === getMessage(MESSAGE_KEYS.BOOK_APPOINTMENT)
-  ) {
-    clearUserSession(chatId);
-    setUserState(chatId, '');
-
-    showLocations(chatId, settings);
-    return;
-  }
-
   if (state === STATES.WAITING_CUSTOMER_PHONE) {
     const customerPhone = normalizePhone(text);
 
@@ -326,8 +316,9 @@ function handleClientMessage(message) {
     let customerNote = text.trim();
 
     if (
-      customerNote === '-' ||
-      customerNote === '—'
+      text === getMessage(
+        MESSAGE_KEYS.BOOK_APPOINTMENT
+      )
     ) {
       customerNote = '';
     }
