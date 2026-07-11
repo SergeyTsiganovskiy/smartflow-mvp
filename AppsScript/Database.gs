@@ -397,6 +397,38 @@ function getRequestOptionByPriority(requestId, priority) {
   return null;
 }
 
+function getRequestOptionsByRequestId(requestId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('RequestOptions');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const item = {};
+
+    headers.forEach(function(header, index) {
+      item[header] = rows[i][index];
+    });
+
+    if (
+      String(item.request_id) ===
+      String(requestId)
+    ) {
+      result.push(item);
+    }
+  }
+
+  result.sort(function(a, b) {
+    return Number(a.priority) - Number(b.priority);
+  });
+
+  return result;
+}
+
 function updateRequestOptionsAfterApproval(requestId, approvedPriority) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()

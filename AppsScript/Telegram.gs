@@ -346,38 +346,3 @@ function editTelegramMessageReplyMarkup(
     }
   );
 }
-
-function sendAdminNotification(text, inlineKeyboard) {
-  const settings = getSettings();
-  const recipients = getActiveRequestRecipients();
-
-  if (recipients.length === 0) {
-    addAuditLog(
-      'ADMIN_NOTIFICATION_SKIPPED',
-      'No active RequestRecipients'
-    );
-
-    return false;
-  }
-
-  recipients.forEach(function(recipient) {
-    if (inlineKeyboard) {
-      sendTelegramMessageWithInlineKeyboard(
-        settings.AdminBotToken,
-        recipient.telegram_id,
-        text,
-        inlineKeyboard
-      );
-
-      return;
-    }
-
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      recipient.telegram_id,
-      text
-    );
-  });
-
-  return true;
-}

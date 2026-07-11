@@ -61,6 +61,22 @@ function getAppointmentsByCustomerIds(customerIds) {
   return result;
 }
 
+function isCurrentOrFutureAppointment(appointment) {
+  const endValue =
+    appointment.end_at ||
+    appointment.endAt ||
+    appointment.endTime;
+
+  if (!endValue) {
+    return true;
+  }
+
+  const endDate =
+    parseDateTimeForCalendar(endValue);
+
+  return endDate.getTime() >= new Date().getTime();
+}
+
 function createAppointmentFromRequest(request, option) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
