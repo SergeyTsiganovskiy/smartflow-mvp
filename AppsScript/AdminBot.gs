@@ -963,9 +963,6 @@ function handleAdminMessage(message) {
 function isAdminUser(chatId) {
   const settings = getSettings();
 
-  const ownerId =
-    String(settings.OwnerTelegramId || '').trim();
-
   const adminIds =
     String(settings.AdminTelegramIds || '')
       .split(',')
@@ -978,10 +975,6 @@ function isAdminUser(chatId) {
 
   const chatIdText =
     String(chatId).trim();
-
-  if (ownerId && chatIdText === ownerId) {
-    return true;
-  }
 
   return adminIds.indexOf(chatIdText) !== -1;
 }
@@ -1030,50 +1023,6 @@ function processProviderName(
   showProviderLocations(
     chatId,
     settings
-  );
-}
-
-function showProviderLocations(
-  chatId,
-  settings
-) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_LOCATION
-  );
-
-  const keyboardRows = [];
-
-  getActiveLocations().forEach(function(location) {
-    keyboardRows.push([
-      {
-        text: location.name
-      }
-    ]);
-  });
-
-  if (keyboardRows.length === 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(
-        MESSAGE_KEYS.NO_ACTIVE_LOCATIONS
-      ),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(
-      MESSAGE_KEYS.SELECT_LOCATION
-    ),
-    buildKeyboardWithMainMenu(
-      keyboardRows
-    )
   );
 }
 
@@ -3035,39 +2984,6 @@ function buildServicesMenuKeyboard() {
   ]);
 }
 
-function startCreateService(chatId, settings) {
-  setPreviousMenu(chatId, 'SERVICES_MENU');
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_NAME
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_SERVICE_NAME),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processServiceName(chatId, text, settings) {
-  const serviceName = String(text || '').trim();
-
-  if (!serviceName) {
-    startCreateService(chatId, settings);
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'service_name',
-    serviceName
-  );
-
-  showServiceLocations(chatId, settings);
-}
-
 function showServiceLocations(chatId, settings) {
   const locations = getLocations();
   const keyboardRows = [];
@@ -3090,142 +3006,6 @@ function showServiceLocations(chatId, settings) {
     chatId,
     getMessage(MESSAGE_KEYS.SELECT_SERVICE_LOCATION),
     buildKeyboardWithMainMenu(keyboardRows)
-  );
-}
-
-function processServiceLocation(chatId, text, settings) {
-  const location =
-    findLocationByName(text);
-
-  if (!location) {
-    showServiceLocations(chatId, settings);
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'service_location_id',
-    location.id
-  );
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_PRICE_MIN
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MIN),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processServicePriceMin(chatId, text, settings) {
-  const priceMin =
-    Number(String(text || '').trim());
-
-  if (!priceMin || priceMin < 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MIN),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'service_price_min',
-    priceMin
-  );
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_PRICE_MAX
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MAX),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processServicePriceMax(chatId, text, settings) {
-  const priceMax =
-    Number(String(text || '').trim());
-
-  const session =
-    getUserSession(chatId);
-
-  const priceMin =
-    Number(session.service_price_min || 0);
-
-  if (!priceMax || priceMax < priceMin) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MAX),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'service_price_max',
-    priceMax
-  );
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_DURATION_MIN
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_SERVICE_DURATION_MIN),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processServiceDurationMin(chatId, text, settings) {
-  const durationMin =
-    Number(String(text || '').trim());
-
-  if (!durationMin || durationMin <= 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ENTER_SERVICE_DURATION_MIN),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'service_duration_min',
-    durationMin
-  );
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_DURATION_MAX
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_SERVICE_DURATION_MAX),
-    buildKeyboardWithMainMenu([])
   );
 }
 
@@ -5505,80 +5285,6 @@ function processEditCustomerProfileValue(
     return;
   }
 
-  let updated = false;
-
-  if (field === 'phone') {
-    updated =
-      updateCustomerProfilePhone(
-        profileId,
-        text
-      );
-  } else {
-    const updates = {};
-
-    updates[field] = text;
-
-    updated =
-      updateCustomerProfile(
-        profileId,
-        updates
-      );
-  }
-
-  setUserState(chatId, '');
-
-  if (!updated) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(
-        MESSAGE_KEYS.CUSTOMER_NOT_FOUND
-      ),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_UPDATED
-    ),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processEditCustomerProfileValue(
-  chatId,
-  text,
-  settings
-) {
-  const session =
-    getUserSession(chatId);
-
-  const profileId =
-    session.customer_profile_id;
-
-  const field =
-    session.customer_profile_field;
-
-  if (!profileId || !field) {
-    setUserState(chatId, '');
-
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(
-        MESSAGE_KEYS.CUSTOMER_NOT_FOUND
-      ),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
   const updates = {};
 
   updates[field] = text;
@@ -6304,15 +6010,6 @@ function disableLocation(locationId) {
   setLocationActive(
     locationId,
     false
-  );
-}
-
-function findLocationByName(name, includeInactive) {
-  return findItemByName(
-    includeInactive
-      ? getAllLocations()
-      : getActiveLocations(),
-    name
   );
 }
 

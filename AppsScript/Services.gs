@@ -213,14 +213,6 @@ function getServiceDurationMinutesForSession(session) {
   );
 }
 
-function generateServiceId() {
-  return generateNextEntityId(
-    'Services',
-    'service_id',
-    'srv'
-  );
-}
-
 function generateServiceNameKey(serviceId) {
   const index = String(serviceId).replace('srv_', '');
 

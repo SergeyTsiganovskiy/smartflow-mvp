@@ -35,23 +35,6 @@ function formatDateForDisplay(value) {
     return '';
   }
 
-  const date = new Date(value);
-
-  return Utilities.formatDate(
-    date,
-    timezone,
-    'dd.MM.yyyy'
-  );
-}
-
-function formatDateForDisplay(value) {
-  const settings = getSettings();
-  const timezone = settings.TimeZone || 'Europe/Kyiv';
-
-  if (!value) {
-    return '';
-  }
-
   if (Object.prototype.toString.call(value) === '[object Date]') {
     return Utilities.formatDate(value, timezone, 'dd.MM.yyyy');
   }
@@ -113,16 +96,6 @@ function formatTimeForDisplay(value) {
   }
 
   return stringValue;
-}
-
-function buildDateTime(dateValue, timeValue) {
-  const settings = getSettings();
-  const timezone = settings.TimeZone || 'Europe/Kyiv';
-
-  const dateString = formatDateForStorage(dateValue);
-  const timeString = formatTimeForDisplay(timeValue);
-
-  return dateString + ' ' + timeString;
 }
 
 function normalizeDateForStorage(value) {
@@ -759,14 +732,6 @@ function isDuplicateTelegramUpdate(updateId, prefix) {
   props.setProperty(key, String(updateId));
 
   return false;
-}
-
-function normalizeTextForSearch(value) {
-  return String(value || '')
-    .toLowerCase()
-    .replace(/ё/g, 'е')
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 function normalizeTextForSearch(value) {

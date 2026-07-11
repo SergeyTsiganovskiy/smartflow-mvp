@@ -172,13 +172,6 @@ function addAuditLog(action, details) {
   ]);
 }
 
-function getProviders() {
-  return getProvidersIncludingInactive()
-    .filter(function(provider) {
-      return provider.active === true;
-    });
-}
-
 function findProviderByName(providerName) {
   const providers = getProviders();
   const targetName = String(providerName).trim();
@@ -509,25 +502,6 @@ function isRequestAlreadyProcessed(requestId) {
 
 
 
-function getProviderScheduleForDate(providerId, dateValue) {
-  const normalizedDate = normalizeDateForStorage(dateValue);
-
-  const override =
-    getProviderScheduleOverrideForDate(providerId, normalizedDate);
-
-  if (override) {
-    return override;
-  }
-
-  const dayOfWeek =
-    getDayOfWeekCode(normalizedDate);
-
-  return getProviderWeeklySchedule(
-    providerId,
-    dayOfWeek
-  );
-}
-
 function getProviderScheduleOverrideForDate(providerId, normalizedDate) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
@@ -771,40 +745,6 @@ function getProviderCalendarId(providerId) {
 }
 
 function getActiveAppointmentsByPhone(phone) {
-  const searchPhone = getPhoneSearchKey(phone);
-
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName('Customers');
-
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-
-  const customerIdIndex = headers.indexOf('customer_id');
-  const phoneIndex = headers.indexOf('phone');
-
-  const customerIds = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const rowPhone = getPhoneSearchKey(rows[i][phoneIndex]);
-
-    if (
-      rowPhone === searchPhone ||
-      rowPhone.endsWith(searchPhone) ||
-      searchPhone.endsWith(rowPhone)
-    ) {
-      customerIds.push(rows[i][customerIdIndex]);
-    }
-  }
-
-  if (customerIds.length === 0) {
-    return [];
-  }
-
-  return getAppointmentsByCustomerIds(customerIds);
-}
-
-function getActiveAppointmentsByPhone(phone) {
   const searchPhoneKey = getPhoneSearchKey(phone);
 
   const sheet = SpreadsheetApp
@@ -978,10 +918,6 @@ function createProvider(providerData) {
   createDefaultProviderSchedule(providerId);
 
   return providerId;
-}
-
-function generateProviderId() {
-  return 'prov_' + new Date().getTime();
 }
 
 function generateProviderNameKey(providerId) {

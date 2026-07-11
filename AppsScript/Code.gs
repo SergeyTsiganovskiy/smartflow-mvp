@@ -147,23 +147,9 @@ function testMessages() {
   Logger.log(text);
 }
 
-function testSendTelegram() {
-  const settings = getSettings();
-
-  sendTelegramMessage(
-    settings.ClientBotToken,
-    settings.OwnerTelegramId,
-    'SmartFlow test successful ✅'
-  );
-}
-
-function testSendToOwner() {
-  const settings = getSettings();
-
-  sendTelegramMessage(
-    settings.ClientBotToken,
-    settings.OwnerTelegramId,
-    'Manual test from current project ✅'
+function testSendAdminNotification() {
+  sendAdminNotification(
+    'SmartFlow admin notification test successful ✅'
   );
 }
 

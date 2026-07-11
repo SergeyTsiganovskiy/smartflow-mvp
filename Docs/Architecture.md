@@ -450,6 +450,14 @@ source = calendar_manual
 
 and shown with a marker in Admin Bot.
 
+Manual events remain Calendar-only records and are not mirrored into `Appointments`. They occupy a slot only in the provider calendar containing the event; calendars of other providers remain available for the same interval.
+
+Admin Bot extracts any available customer, phone, service, provider, location, and comment values from the localized structured Calendar description. Missing values do not prevent the event from occupying the slot or appearing in appointment lists. Calendar ownership, rather than a provider label in the description, determines which provider is busy.
+
+Manual events do not enter Client Bot confirmation, reminder, cancellation, or rescheduling flows.
+
+Planned synchronization will process an ended manual event with a valid phone number as a completed visit. It will upsert `CustomerProfiles` and visit history idempotently, even if other customer details are missing.
+
 ### Cancellation/rescheduling
 
 Flows update Sheets, Calendar, cache, session, and Telegram messages.
@@ -532,6 +540,8 @@ Telegram helpers should expose failed API responses even when `muteHttpException
 - configure web app permissions carefully;
 - avoid exposing customer data in logs.
 
+Refactoring priority is security first, followed by preservation of current behavior and separation of responsibilities. Schema fields are not changed until their production meaning is explicitly established. Structural changes must be incremental, reviewable, and reversible.
+
 ## 19. Extension points
 
 Future extensions:
@@ -552,7 +562,7 @@ Future extensions:
 - centralize cache invalidation;
 - split remaining large functions;
 - remove remaining hardcoded strings;
-- normalize historical `OWNER_*` message keys;
+- migrate historical `OWNER_*` storage keys in the `Messages` sheet to `ADMIN_*`; code identifiers and notification paths already use Admin terminology;
 - standardize CRUD helpers;
 - formalize date/time parsing;
 - add navigation/state tests;

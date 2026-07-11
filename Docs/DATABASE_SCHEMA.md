@@ -56,7 +56,6 @@ Currency
 TimeZone
 ClientBotToken
 AdminBotToken
-OwnerTelegramId
 AdminTelegramIds
 MainCalendarId
 ClientWebAppUrl

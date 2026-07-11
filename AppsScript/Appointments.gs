@@ -692,7 +692,7 @@ function processAppointmentConfirmation(
     appointmentId
   );
 
-  notifyProviderAboutCustomerConfirmation(
+  notifyAdminsAboutCustomerConfirmation(
     appointment
   );
 

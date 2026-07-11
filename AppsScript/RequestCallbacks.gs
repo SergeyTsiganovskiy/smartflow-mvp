@@ -104,7 +104,7 @@ function processRequestApproveOption(
     getRequestOptionsByRequestId(requestId);
 
   const adminText =
-    buildOwnerRequestConfirmedText(
+    buildAdminRequestConfirmedText(
       request,
       requestOptions,
       priority
@@ -192,7 +192,7 @@ function processRequestReject(
     originalText +
       '\n\n' +
       getMessage(
-        MESSAGE_KEYS.OWNER_REQUEST_REJECTED_STATUS
+        MESSAGE_KEYS.ADMIN_REQUEST_REJECTED_STATUS
       )
   );
 

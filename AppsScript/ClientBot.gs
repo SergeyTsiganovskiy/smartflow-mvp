@@ -344,7 +344,7 @@ function handleClientMessage(message) {
     const requestId =
       finalizeRequestFromSession(session);
 
-    notifyOwnerAboutRequestFromSession(
+    notifyAdminsAboutRequestFromSession(
       session,
       requestId
     );
@@ -562,7 +562,7 @@ function handleClientMessage(message) {
       getMessage(MESSAGE_KEYS.APPOINTMENT_RESCHEDULED_CLIENT)
     );
 
-    notifyOwnerAboutReschedule(
+    notifyAdminsAboutReschedule(
       updatedAppointment,
       oldStartAt,
       oldEndAt
@@ -871,7 +871,7 @@ function askCustomerPhone(chatId, settings) {
   );
 }
 
-function notifyOwnerAboutRequestFromSession(session, requestId) {
+function notifyAdminsAboutRequestFromSession(session, requestId) {
   const settings = getSettings();
 
   const location = findLocationById(session.location_id);
@@ -883,19 +883,19 @@ function notifyOwnerAboutRequestFromSession(session, requestId) {
 
   let text =
     '<b>' +
-    getMessage(MESSAGE_KEYS.NEW_REQUEST_OWNER_TITLE) +
+    getMessage(MESSAGE_KEYS.NEW_REQUEST_ADMIN_TITLE) +
     '</b>\n\n';
 
   text +=
     '👤 ' +
-    getMessage(MESSAGE_KEYS.OWNER_CUSTOMER) +
+    getMessage(MESSAGE_KEYS.ADMIN_CUSTOMER) +
     ': ' +
     session.customer_name +
     '\n';
 
   text +=
     '📞 ' +
-    getMessage(MESSAGE_KEYS.OWNER_PHONE) +
+    getMessage(MESSAGE_KEYS.ADMIN_PHONE) +
     ': ' +
     session.customer_phone +
     '\n';
@@ -907,28 +907,28 @@ function notifyOwnerAboutRequestFromSession(session, requestId) {
 
   text +=
     '📍 ' +
-    getMessage(MESSAGE_KEYS.OWNER_LOCATION) +
+    getMessage(MESSAGE_KEYS.ADMIN_LOCATION) +
     ': ' +
     (location ? location.name : session.location_id) +
     '\n';
 
   text +=
     '💅 ' +
-    getMessage(MESSAGE_KEYS.OWNER_SERVICE) +
+    getMessage(MESSAGE_KEYS.ADMIN_SERVICE) +
     ': ' +
     (service ? service.name : session.service_id) +
     '\n';
 
   text +=
     '👩‍💼 ' +
-    getMessage(MESSAGE_KEYS.OWNER_PROVIDER) +
+    getMessage(MESSAGE_KEYS.ADMIN_PROVIDER) +
     ': ' +
     (provider ? provider.name : session.provider_id) +
     '\n\n';
 
   text +=
     '<b>' +
-    getMessage(MESSAGE_KEYS.OWNER_TIME_OPTIONS) +
+    getMessage(MESSAGE_KEYS.ADMIN_TIME_OPTIONS) +
     ':</b>\n';
 
   for (let i = 1; i <= 3; i++) {
@@ -973,31 +973,10 @@ function notifyOwnerAboutRequestFromSession(session, requestId) {
     }
   ]);
 
-  const recipients =
-    getActiveRequestRecipients();
-
-  if (recipients.length === 0) {
-    sendTelegramMessageWithInlineKeyboard(
-      settings.AdminBotToken,
-      settings.OwnerTelegramId,
-      text,
-      inlineKeyboard
-    );
-
-    return;
-  }
-
-  recipients.forEach(function(recipient) {
-    sendTelegramMessageWithInlineKeyboard(
-      settings.AdminBotToken,
-      recipient.telegram_id,
-      text,
-      inlineKeyboard
-    );
-  });
+  sendAdminNotification(text, inlineKeyboard);
 }
 
-function notifyProviderAboutCustomerConfirmation(
+function notifyAdminsAboutCustomerConfirmation(
   appointment
 ) {
   const settings =
@@ -1061,26 +1040,7 @@ function notifyProviderAboutCustomerConfirmation(
     '📍 ' +
     (location ? location.name : '-');
 
-  const recipients =
-    getActiveRequestRecipients();
-
-  if (recipients.length === 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      settings.OwnerTelegramId,
-      text
-    );
-
-    return;
-  }
-
-  recipients.forEach(function(recipient) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      recipient.telegram_id,
-      text
-    );
-  });
+  sendAdminNotification(text);
 }
 
 function handleAppointmentCallback(callbackQuery) {
@@ -1220,7 +1180,7 @@ function handleAppointmentCallback(callbackQuery) {
 
     updateAppointmentStatus(appointmentId, 'cancelled');
     deleteCalendarEvent(appointment);
-    notifyOwnerAboutCancellation(appointment);
+    notifyAdminsAboutCancellation(appointment);
 
     editTelegramMessage(
       settings.ClientBotToken,
@@ -1524,7 +1484,7 @@ function sendAppointmentCard(
   );
 }
 
-function notifyOwnerAboutCancellation(
+function notifyAdminsAboutCancellation(
   appointment
 ) {
   const settings = getSettings();
@@ -1552,7 +1512,7 @@ function notifyOwnerAboutCancellation(
   const text =
     '❌ ' +
     getMessage(
-      MESSAGE_KEYS.OWNER_APPOINTMENT_CANCELLED
+      MESSAGE_KEYS.ADMIN_APPOINTMENT_CANCELLED
     ) +
     '\n\n' +
 
@@ -1591,11 +1551,7 @@ function notifyOwnerAboutCancellation(
       ? location.name
       : '');
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    settings.OwnerTelegramId,
-    text
-  );
+  sendAdminNotification(text);
 }
 
 function showRescheduleDateOptions(chatId, settings) {
@@ -1790,7 +1746,7 @@ function showRescheduleCustomDateOptions(
   );
 }
 
-function notifyOwnerAboutReschedule(appointment, oldStartAt, oldEndAt) {
+function notifyAdminsAboutReschedule(appointment, oldStartAt, oldEndAt) {
   const settings = getSettings();
 
   const customer = getCustomerById(appointment.customer_id);
@@ -1799,7 +1755,7 @@ function notifyOwnerAboutReschedule(appointment, oldStartAt, oldEndAt) {
   const location = findLocationById(appointment.location_id);
 
   const text =
-    '🔄 ' + getMessage(MESSAGE_KEYS.OWNER_APPOINTMENT_RESCHEDULED) +
+    '🔄 ' + getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENT_RESCHEDULED) +
     '\n\n' +
     '👤 ' + (customer ? customer.name : '') + '\n' +
     '📞 ' + (customer ? customer.phone : '') + '\n\n' +
@@ -1811,11 +1767,7 @@ function notifyOwnerAboutReschedule(appointment, oldStartAt, oldEndAt) {
     '👩‍💼 ' + (provider ? provider.name : '') + '\n' +
     '📍 ' + (location ? location.name : '');
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    settings.OwnerTelegramId,
-    text
-  );
+  sendAdminNotification(text);
 }
 
 function sendCalendarAppointmentCard(chatId, settings, appointment) {
@@ -2048,7 +2000,7 @@ function showContacts(chatId, settings) {
   );
 }
 
-function buildOwnerRequestConfirmedText(
+function buildAdminRequestConfirmedText(
   request,
   options,
   approvedPriority
@@ -2060,19 +2012,19 @@ function buildOwnerRequestConfirmedText(
 
   let text =
     '<b>' +
-    getMessage(MESSAGE_KEYS.NEW_REQUEST_OWNER_TITLE) +
+    getMessage(MESSAGE_KEYS.NEW_REQUEST_ADMIN_TITLE) +
     '</b>\n\n';
 
   text +=
     '👤 ' +
-    getMessage(MESSAGE_KEYS.OWNER_CUSTOMER) +
+    getMessage(MESSAGE_KEYS.ADMIN_CUSTOMER) +
     ': ' +
     (customer ? customer.name : request.customer_id) +
     '\n';
 
   text +=
     '📞 ' +
-    getMessage(MESSAGE_KEYS.OWNER_PHONE) +
+    getMessage(MESSAGE_KEYS.ADMIN_PHONE) +
     ': ' +
     (customer ? customer.phone : '') +
     '\n';
@@ -2084,28 +2036,28 @@ function buildOwnerRequestConfirmedText(
 
   text +=
     '📍 ' +
-    getMessage(MESSAGE_KEYS.OWNER_LOCATION) +
+    getMessage(MESSAGE_KEYS.ADMIN_LOCATION) +
     ': ' +
     (location ? location.name : request.location_id) +
     '\n';
 
   text +=
     '💅 ' +
-    getMessage(MESSAGE_KEYS.OWNER_SERVICE) +
+    getMessage(MESSAGE_KEYS.ADMIN_SERVICE) +
     ': ' +
     (service ? service.name : request.service_id) +
     '\n';
 
   text +=
     '👩‍💼 ' +
-    getMessage(MESSAGE_KEYS.OWNER_PROVIDER) +
+    getMessage(MESSAGE_KEYS.ADMIN_PROVIDER) +
     ': ' +
     (provider ? provider.name : request.provider_id) +
     '\n\n';
 
   text +=
     '<b>' +
-    getMessage(MESSAGE_KEYS.OWNER_TIME_OPTIONS) +
+    getMessage(MESSAGE_KEYS.ADMIN_TIME_OPTIONS) +
     ':</b>\n';
 
   options.forEach(function(option) {
@@ -2130,7 +2082,7 @@ function buildOwnerRequestConfirmedText(
   text +=
     '\n' +
     getMessage(
-      MESSAGE_KEYS.OWNER_REQUEST_CONFIRMED_STATUS
+      MESSAGE_KEYS.ADMIN_REQUEST_CONFIRMED_STATUS
     );
 
   return text;

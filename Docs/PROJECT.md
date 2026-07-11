@@ -107,7 +107,7 @@ The administrator can:
 - manage locations;
 - configure the system.
 
-The project is moving away from a special technical “Owner” callback role. Operational request processing belongs to the Admin Bot.
+There is no separate technical Owner callback role. Operational request processing belongs to the Admin Bot.
 
 ### Provider
 
@@ -386,7 +386,44 @@ Typical statuses include pending, confirmed, rejected, cancelled, rescheduled, a
 
 ### Manual calendar entries
 
-Google Calendar events created outside SmartFlow can appear in admin lists with a manual-calendar marker.
+Google Calendar events created outside SmartFlow:
+
+- occupy time only for the provider whose calendar contains the event;
+- do not block other providers working at the same time;
+- appear in Admin Bot appointment lists with a manual-calendar marker;
+- remain Calendar events and do not create `Appointments` rows;
+- do not participate in Client Bot confirmation, reminder, cancellation, or rescheduling flows.
+
+When present, structured event details are read from the Calendar description:
+
+```text
+Customer: ...
+Phone: ...
+Service: ...
+Provider: ...
+Location: ...
+Comment: ...
+```
+
+Actual labels are localized through message keys. The containing provider calendar is authoritative for slot ownership; a provider value written in the description is display data.
+
+Missing description fields do not stop the event from occupying its provider's time or appearing in Admin Bot.
+
+After a manual event has ended, a valid phone number should allow the customer to be added to `CustomerProfiles` and the visit to be recorded. This synchronization is planned work. It must normalize phones, avoid duplicate profiles and visits, and work even when other customer information is absent.
+
+### Customer data roles
+
+- `Customers` is operational and populated dynamically through bot activity.
+- `CustomerProfiles` represents customers who received a service and may also be maintained manually through Admin Bot.
+- A profile may be created automatically after a completed visit, including a completed manual Calendar event with a valid phone number.
+
+### Scheduling isolation
+
+Providers may work in parallel. A busy interval belonging to one provider must never make the same interval unavailable for another provider.
+
+### Bot roles
+
+The supported interaction roles are Client and Admin. Admin access uses `AdminTelegramIds`, and Admin notifications use eligible `RequestRecipients`.
 
 ### Parallel work
 
