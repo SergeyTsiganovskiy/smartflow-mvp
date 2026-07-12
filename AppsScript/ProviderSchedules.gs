@@ -170,3 +170,21 @@ function updateProviderScheduleField(
 
   return false;
 }
+function getProviderScheduleDay(
+  providerId,
+  dayCode
+) {
+  const schedule =
+    getProviderSchedule(providerId);
+
+  for (let i = 0; i < schedule.length; i++) {
+    if (
+      String(schedule[i].day_of_week) ===
+      String(dayCode)
+    ) {
+      return schedule[i];
+    }
+  }
+
+  return null;
+}
