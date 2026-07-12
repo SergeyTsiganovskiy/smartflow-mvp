@@ -138,6 +138,9 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 - `ClientAppointments.gs`;
 - `ClientContacts.gs`;
 - `AdminBot.gs`;
+- `AdminAccess.gs`;
+- `AdminCommandRouter.gs`;
+- `AdminStateRouter.gs`;
 - `AdminLocations.gs`;
 - `AdminServices.gs`;
 - `AdminCustomerServices.gs`;

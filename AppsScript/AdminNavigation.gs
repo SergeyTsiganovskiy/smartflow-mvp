@@ -412,3 +412,143 @@ function handleLocationBack(chatId, settings, state) {
 
   return true;
 }
+function sendAdminMainMenu(chatId, settings) {
+  resetNavigation(chatId);
+
+  pushNavigation(
+    chatId,
+    ADMIN_MENUS.MAIN
+  );
+
+  const keyboard = {
+    keyboard: [
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_CUSTOMERS) }],
+      [{ text: getMessage(MESSAGE_KEYS.ADMIN_SETTINGS) }],
+    ],
+    resize_keyboard: true
+  };
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.ADMIN_MAIN_MENU),
+    keyboard
+  );
+}
+
+function setPreviousMenu(chatId, menuName) {
+  setUserSessionValue(
+    chatId,
+    'previous_menu',
+    menuName
+  );
+}
+
+function processAdminBack(chatId, settings) {
+  const session =
+    getUserSession(chatId);
+
+  const state =
+    String(getUserState(chatId) || '').trim();
+
+  addAuditLog(
+  'ADMIN_BACK_STACK_DEBUG',
+  JSON.stringify({
+    state: state,
+    stack: getNavigationStack(chatId),
+    current: getCurrentNavigation(chatId)
+  })
+);
+
+  if (handleCustomerBack(chatId, settings, state)) {
+    return;
+  }
+
+  if (handleServiceBack(chatId, settings, state)) {
+    return;
+  }
+
+  if (handleAppointmentBack(chatId, settings, state)) {
+    return;
+  }
+
+  if (handleProviderBack(chatId, settings, state)) {
+    return;
+  }
+
+  if (handleScheduleBack(chatId, settings, state)) {
+    return;
+  }
+
+  if (handleOverrideBack(chatId, settings, state)) {
+    return;
+  }
+
+  if (handleLocationBack(chatId, settings, state)) {
+    return;
+  }
+
+  if (handleAdminResultBack(chatId, settings, session)) {
+    return;
+  }
+
+  handleAdminBackButton(
+    chatId,
+    settings
+  );
+}
+
+function sendSettingsMenu(
+  chatId,
+  settings
+) {
+  const stack =
+    getNavigationStack(chatId);
+
+  if (stack.length === 0) {
+    pushNavigation(
+      chatId,
+      ADMIN_MENUS.MAIN
+    );
+  }
+
+  navigateAdmin(
+    chatId,
+    ADMIN_MENUS.SETTINGS
+  );
+
+  const keyboard =
+    buildKeyboardWithMainMenu([
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.ADMIN_PROVIDERS
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.ADMIN_SERVICES
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.ADMIN_LOCATIONS
+          )
+        }
+      ]
+    ]);
+
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(
+      MESSAGE_KEYS.ADMIN_SETTINGS
+    ),
+    keyboard
+  );
+}
