@@ -19,7 +19,7 @@ function findCustomerByPhone(phone) {
 function getCustomerById(customerId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Customers');
+    .getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -51,7 +51,7 @@ function getCustomerById(customerId) {
 function getCustomerByPhone(phone) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Customers');
+    .getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -90,7 +90,7 @@ function getCustomers() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Customers');
+    .getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows =
     sheet.getDataRange().getValues();

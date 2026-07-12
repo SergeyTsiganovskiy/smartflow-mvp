@@ -5,7 +5,7 @@
 function getAppointmentById(appointmentId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -30,7 +30,7 @@ function getAppointmentById(appointmentId) {
 function getAppointmentsByCustomerIds(customerIds) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -80,7 +80,7 @@ function isCurrentOrFutureAppointment(appointment) {
 function createAppointmentFromRequest(request, option) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const headers = sheet.getDataRange().getValues()[0];
 
@@ -138,7 +138,7 @@ function createAppointmentFromRequest(request, option) {
 function getProviderAppointmentsForDate(providerId, dateValue) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -220,7 +220,7 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
 function appointmentExistsForRequest(requestId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -239,7 +239,7 @@ function appointmentExistsForRequest(requestId) {
 function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -268,7 +268,7 @@ function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
 function updateAppointmentStatus(appointmentId, status) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -297,7 +297,7 @@ function updateAppointmentStatus(appointmentId, status) {
 function getAllAppointmentCalendarEventIds() {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -320,7 +320,7 @@ function getAllAppointmentCalendarEventIds() {
 function getAppointmentsFor24hReminder() {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -384,7 +384,7 @@ function getAppointmentsFor24hReminder() {
 function updateAppointmentField(appointmentId, fieldName, value) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -421,7 +421,7 @@ function updateAppointmentDateTime(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -491,7 +491,7 @@ function getTodayAppointments() {
 function getAppointmentsByDate(dateValue) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const result = [];

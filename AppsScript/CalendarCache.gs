@@ -15,7 +15,7 @@ function getCalendarCache() {
 
     const sheet = SpreadsheetApp
         .getActiveSpreadsheet()
-        .getSheetByName('CalendarCache');
+    .getSheetByName(SHEET_NAMES.CALENDAR_CACHE);
 
     const rows =
         sheet.getDataRange().getValues();
@@ -53,7 +53,7 @@ function getCalendarCache() {
 function clearCalendarCacheForDate(dateValue) {
     const sheet = SpreadsheetApp
         .getActiveSpreadsheet()
-        .getSheetByName('CalendarCache');
+    .getSheetByName(SHEET_NAMES.CALENDAR_CACHE);
 
     const rows =
         sheet.getDataRange().getValues();
@@ -97,7 +97,7 @@ function appendCalendarCacheRows(rows) {
 
     const sheet = SpreadsheetApp
         .getActiveSpreadsheet()
-        .getSheetByName('CalendarCache');
+    .getSheetByName(SHEET_NAMES.CALENDAR_CACHE);
 
     sheet
         .getRange(
@@ -183,7 +183,7 @@ function syncCalendarCacheForDate(dateValue) {
 function buildAppointmentCacheRows(dateValue) {
     const sheet = SpreadsheetApp
         .getActiveSpreadsheet()
-        .getSheetByName('Appointments');
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
     const rows =
         sheet.getDataRange().getValues();
@@ -540,7 +540,7 @@ function runWithCalendarCacheLock(callback) {
 function clearOldCalendarCache() {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CalendarCache');
+    .getSheetByName(SHEET_NAMES.CALENDAR_CACHE);
 
   const rows =
     sheet.getDataRange().getValues();

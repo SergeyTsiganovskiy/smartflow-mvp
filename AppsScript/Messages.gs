@@ -82,7 +82,7 @@ function getMessageKeyByText(text) {
 function getMessageValues(messageKey) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Messages');
+    .getSheetByName(SHEET_NAMES.MESSAGES);
 
   const rows = sheet.getDataRange().getValues();
 

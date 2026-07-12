@@ -13,7 +13,7 @@ function getServices() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Services');
+    .getSheetByName(SHEET_NAMES.SERVICES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -84,7 +84,7 @@ function getCustomerServiceSetting(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -222,7 +222,7 @@ function generateServiceNameKey(serviceId) {
 function createService(serviceData) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Services');
+    .getSheetByName(SHEET_NAMES.SERVICES);
 
   const serviceId = generateServiceId();
 
@@ -258,7 +258,7 @@ function updateServiceField(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Services');
+    .getSheetByName(SHEET_NAMES.SERVICES);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0].map(function(header) {
@@ -322,7 +322,7 @@ function getServicesIncludingInactive() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Services');
+    .getSheetByName(SHEET_NAMES.SERVICES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -386,7 +386,7 @@ function getCustomerServiceSettingForService(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -422,7 +422,7 @@ function getCustomerServiceSettingForService(
 function getCustomerServiceSettingsByPhone(phone) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -464,7 +464,7 @@ function getCustomerServiceSettingsByPhone(phone) {
 function upsertCustomerServiceSetting(data) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -572,7 +572,7 @@ function deleteCustomerServiceSetting(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -606,7 +606,7 @@ function deleteCustomerServiceSettingByPhone(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerServiceSettings');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows =
     sheet.getDataRange().getValues();

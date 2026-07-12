@@ -8,7 +8,7 @@ function getProviderScheduleOverrides() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderScheduleOverrides');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const rows = sheet.getDataRange().getValues();
   const result = [];
@@ -63,7 +63,7 @@ function createProviderScheduleOverrideFromSession(chatId) {
 function createProviderScheduleOverride(data) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderScheduleOverrides');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const overrideId =
     generateOverrideId();
@@ -112,7 +112,7 @@ function createShortDayOverride(
 function getProviderOverrides(providerId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderScheduleOverrides');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -183,7 +183,7 @@ function buildOverrideLabel(item, index) {
 function disableProviderOverride(overrideId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderScheduleOverrides');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];

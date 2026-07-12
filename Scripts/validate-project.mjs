@@ -11,7 +11,9 @@ const files = fs.readdirSync(sourceDir)
 const errors = [];
 const functions = new Map();
 const usedMessageKeys = new Set();
+const usedSheetNames = new Set();
 let constantsSource = '';
+let configSource = '';
 
 for (const file of files) {
   const fullPath = path.join(sourceDir, file);
@@ -34,12 +36,24 @@ for (const file of files) {
     usedMessageKeys.add(match[1]);
   }
 
+  for (const match of source.matchAll(/SHEET_NAMES\.([A-Z][A-Z0-9_]*)/g)) {
+    usedSheetNames.add(match[1]);
+  }
+
+  if (/getSheetByName\(\s*['"]/.test(source)) {
+    errors.push(`Hardcoded sheet name in ${file}`);
+  }
+
   if (/\bOwnerTelegramId\b|\bnotifyOwner|\bbuildOwner/.test(source)) {
     errors.push(`Legacy Owner runtime reference in ${file}`);
   }
 
   if (file === 'Constants.gs') {
     constantsSource = source;
+  }
+
+  if (file === 'Config.gs') {
+    configSource = source;
   }
 }
 
@@ -60,6 +74,17 @@ for (const key of [...usedMessageKeys].sort()) {
   }
 }
 
+const definedSheetNames = new Set(
+  [...configSource.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
+    .map((match) => match[1])
+);
+
+for (const key of [...usedSheetNames].sort()) {
+  if (!definedSheetNames.has(key)) {
+    errors.push(`Undefined SHEET_NAMES.${key}`);
+  }
+}
+
 if (errors.length > 0) {
   console.error(errors.join('\n'));
   process.exit(1);
@@ -67,5 +92,6 @@ if (errors.length > 0) {
 
 console.log(
   `Validation passed: ${files.length} files, ` +
-  `${functions.size} global functions, ${usedMessageKeys.size} message keys.`
+  `${functions.size} global functions, ${usedMessageKeys.size} message keys, ` +
+  `${usedSheetNames.size} sheet names.`
 );

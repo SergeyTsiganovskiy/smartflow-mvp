@@ -1,7 +1,7 @@
 function getUserSession(telegramId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
+    .getSheetByName(SHEET_NAMES.USER_SESSIONS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -57,7 +57,7 @@ function getUserSession(telegramId) {
 function setUserSessionValue(telegramId, fieldName, value) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
+    .getSheetByName(SHEET_NAMES.USER_SESSIONS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0].map(function(header) {
@@ -134,7 +134,7 @@ function setUserSessionValues(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
+    .getSheetByName(SHEET_NAMES.USER_SESSIONS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -225,7 +225,7 @@ function setUserSessionValues(
 function clearUserSession(telegramId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('UserSessions');
+    .getSheetByName(SHEET_NAMES.USER_SESSIONS);
 
   const rows = sheet.getDataRange().getValues();
 

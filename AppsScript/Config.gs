@@ -1,10 +1,25 @@
 const SHEET_NAMES = {
   SETTINGS: 'Settings',
   MESSAGES: 'Messages',
+  USER_STATES: 'UserStates',
+  USER_SESSIONS: 'UserSessions',
   CUSTOMERS: 'Customers',
+  CUSTOMER_PROFILES: 'CustomerProfiles',
+  CUSTOMER_VISIT_HISTORY: 'CustomerVisitHistory',
+  CUSTOMER_CONFLICTS: 'CustomerConflicts',
+  CUSTOMER_SERVICE_SETTINGS: 'CustomerServiceSettings',
+  LOCATIONS: 'Locations',
+  PROVIDERS: 'Providers',
+  PROVIDER_SCHEDULE: 'ProviderSchedule',
+  PROVIDER_SCHEDULE_OVERRIDES: 'ProviderScheduleOverrides',
+  SERVICES: 'Services',
   REQUESTS: 'Requests',
   REQUEST_OPTIONS: 'RequestOptions',
-  APPOINTMENTS: 'Appointments'
+  REQUEST_RECIPIENTS: 'RequestRecipients',
+  APPOINTMENTS: 'Appointments',
+  CALENDAR_CACHE: 'CalendarCache',
+  AUDIT_LOG: 'AuditLog',
+  WEEK_DAYS: 'WeekDays'
 };
 
 let SETTINGS_CACHE = null;

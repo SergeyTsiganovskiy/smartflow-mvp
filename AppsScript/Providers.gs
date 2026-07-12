@@ -41,7 +41,7 @@ function getProvidersIncludingInactive() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Providers');
+    .getSheetByName(SHEET_NAMES.PROVIDERS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -193,7 +193,7 @@ function getProviderSchedules() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderSchedule');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   const rows = sheet.getDataRange().getValues();
   const result = [];

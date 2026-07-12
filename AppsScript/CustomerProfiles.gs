@@ -10,7 +10,7 @@ function getCustomerProfiles() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerProfiles');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_PROFILES);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -79,7 +79,7 @@ function createCustomerProfile(data) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName(
-      'CustomerProfiles'
+      SHEET_NAMES.CUSTOMER_PROFILES
     );
 
   const now =
@@ -144,7 +144,7 @@ function updateCustomerProfile(
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName(
-      'CustomerProfiles'
+      SHEET_NAMES.CUSTOMER_PROFILES
     );
 
   const rows =

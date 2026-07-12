@@ -1,7 +1,7 @@
 function setUserState(telegramId, state) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('UserStates');
+    .getSheetByName(SHEET_NAMES.USER_STATES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -19,7 +19,7 @@ function setUserState(telegramId, state) {
 function getUserState(telegramId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('UserStates');
+    .getSheetByName(SHEET_NAMES.USER_STATES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -44,7 +44,7 @@ function getActiveLocations() {
   }
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Locations');
+    .getSheetByName(SHEET_NAMES.LOCATIONS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -97,7 +97,7 @@ function getAllLocations() {
   }
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Locations');
+    .getSheetByName(SHEET_NAMES.LOCATIONS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -163,7 +163,7 @@ function findLocationByName(
 function addAuditLog(action, details) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('AuditLog');
+    .getSheetByName(SHEET_NAMES.AUDIT_LOG);
 
   sheet.appendRow([
     new Date(),
@@ -205,7 +205,7 @@ function generateId(prefix) {
 function createOrUpdateCustomer(session) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Customers');
+    .getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -277,7 +277,7 @@ function createOrUpdateCustomer(session) {
 function createRequest(customerId, session) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Requests');
+    .getSheetByName(SHEET_NAMES.REQUESTS);
 
   const headers = sheet.getDataRange().getValues()[0];
 
@@ -346,7 +346,7 @@ function findProviderById(providerId) {
 function getRequestById(requestId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Requests');
+    .getSheetByName(SHEET_NAMES.REQUESTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -371,7 +371,7 @@ function getRequestById(requestId) {
 function getRequestOptionByPriority(requestId, priority) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('RequestOptions');
+    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -400,7 +400,7 @@ function getRequestOptionByPriority(requestId, priority) {
 function getRequestOptionsByRequestId(requestId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('RequestOptions');
+    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -432,7 +432,7 @@ function getRequestOptionsByRequestId(requestId) {
 function updateRequestOptionsAfterApproval(requestId, approvedPriority) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('RequestOptions');
+    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -459,7 +459,7 @@ function updateCustomerStatus(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Customers');
+    .getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -494,7 +494,7 @@ function updateCustomerStatus(
 function createRequestOptions(requestId, session) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('RequestOptions');
+    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const headers = sheet.getDataRange().getValues()[0];
   const now = new Date();
@@ -537,7 +537,7 @@ function isRequestAlreadyProcessed(requestId) {
 function getProviderScheduleOverrideForDate(providerId, normalizedDate) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderScheduleOverrides');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -569,7 +569,7 @@ function getProviderScheduleOverrideForDate(providerId, normalizedDate) {
 function getProviderWeeklySchedule(providerId, dayOfWeek) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderSchedule');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -740,7 +740,7 @@ function getAvailableTimeSlots(
 function updateRequestStatus(requestId, status) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Requests');
+    .getSheetByName(SHEET_NAMES.REQUESTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -781,7 +781,7 @@ function getActiveAppointmentsByPhone(phone) {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Customers');
+    .getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -807,7 +807,7 @@ function getActiveAppointmentsByPhone(phone) {
 function getConflictingCustomerIds(customerId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerConflicts');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -850,7 +850,7 @@ function getConflictingCustomerIds(customerId) {
 function getActiveRequestRecipients() {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('RequestRecipients');
+    .getSheetByName(SHEET_NAMES.REQUEST_RECIPIENTS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -922,7 +922,7 @@ function createProviderFromAdminSession(session) {
 function createProvider(providerData) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Providers');
+    .getSheetByName(SHEET_NAMES.PROVIDERS);
 
   const providerId =
     generateProviderId();
@@ -962,7 +962,7 @@ function generateProviderNameKey(providerId) {
 function createOrUpdateMessageValues(messageKey, valuesByLang) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Messages');
+    .getSheetByName(SHEET_NAMES.MESSAGES);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -1007,7 +1007,7 @@ function createOrUpdateMessageValues(messageKey, valuesByLang) {
 function createMessageValuesForAllLanguages(value) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Messages');
+    .getSheetByName(SHEET_NAMES.MESSAGES);
 
   const headers =
     sheet.getDataRange().getValues()[0];
@@ -1036,7 +1036,7 @@ function getWeekDays() {
   }
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('WeekDays');
+    .getSheetByName(SHEET_NAMES.WEEK_DAYS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -1091,7 +1091,7 @@ function createDefaultProviderSchedule(providerId) {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderSchedule');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   days.forEach(function(day) {
     sheet.appendRow([
@@ -1107,7 +1107,7 @@ function createDefaultProviderSchedule(providerId) {
 function getProviderSchedule(providerId) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderSchedule');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -1169,7 +1169,7 @@ function updateProviderScheduleField(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('ProviderSchedule');
+    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   const rows =
     sheet.getDataRange().getValues();

@@ -220,7 +220,7 @@ function buildConflictAddKeyboard() {
 function createCustomerConflict(data) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerConflicts');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -373,7 +373,7 @@ function getCustomerConflictsByPhone(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerConflicts');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -517,7 +517,7 @@ function getCustomerConflictPhoneKeys(phone) {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerConflicts');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -680,7 +680,7 @@ function deactivateCustomerConflict(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerConflicts');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
   const rows =
     sheet.getDataRange().getValues();

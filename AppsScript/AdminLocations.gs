@@ -267,7 +267,7 @@ function createLocationFromSession(chatId) {
   const sheet =
     SpreadsheetApp
       .getActiveSpreadsheet()
-      .getSheetByName('Locations');
+    .getSheetByName(SHEET_NAMES.LOCATIONS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -346,7 +346,7 @@ function setLocationActive(
   const sheet =
     SpreadsheetApp
       .getActiveSpreadsheet()
-      .getSheetByName('Locations');
+    .getSheetByName(SHEET_NAMES.LOCATIONS);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -835,7 +835,7 @@ function updateLocationField(
   const sheet =
     SpreadsheetApp
       .getActiveSpreadsheet()
-      .getSheetByName('Locations');
+    .getSheetByName(SHEET_NAMES.LOCATIONS);
 
   const rows =
     sheet.getDataRange().getValues();

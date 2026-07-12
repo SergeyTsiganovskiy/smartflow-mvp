@@ -564,7 +564,7 @@ function updateProviderField(
 ) {
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('Providers');
+    .getSheetByName(SHEET_NAMES.PROVIDERS);
 
   const rows =
     sheet.getDataRange().getValues();

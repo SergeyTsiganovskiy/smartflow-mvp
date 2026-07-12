@@ -15,7 +15,7 @@ function getCustomerVisitHistoryRows() {
 
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
-    .getSheetByName('CustomerVisitHistory');
+    .getSheetByName(SHEET_NAMES.CUSTOMER_VISIT_HISTORY);
 
   const rows =
     sheet.getDataRange().getValues();
@@ -71,7 +71,7 @@ function createCustomerVisitHistory(
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName(
-      'CustomerVisitHistory'
+      SHEET_NAMES.CUSTOMER_VISIT_HISTORY
     );
 
   const now =
@@ -212,7 +212,7 @@ function updateCustomerVisitHistory(
   const sheet = SpreadsheetApp
     .getActiveSpreadsheet()
     .getSheetByName(
-      'CustomerVisitHistory'
+      SHEET_NAMES.CUSTOMER_VISIT_HISTORY
     );
 
   const rows =
