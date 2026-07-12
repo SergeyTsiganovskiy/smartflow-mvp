@@ -136,9 +136,11 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 ### Bot and callback modules
 
 - client entry and routing: `ClientBot.gs`, `ClientCommandRouter.gs`, `ClientStateRouter.gs`;
+- client command handlers: `ClientNavigationCommandHandler.gs` and `ClientMenuCommandHandler.gs` preserve navigation-before-menu priority;
 - client workflows: `ClientBooking.gs`, `ClientAppointments.gs`, `ClientContacts.gs`;
 - client state handlers: `ClientBookingStateHandler.gs` handles the booking wizard; `ClientAppointmentStateHandler.gs` handles appointment lookup states; `ClientRescheduleStateHandler.gs` handles rescheduling date/time states;
 - admin entry, access, and routing: `AdminBot.gs`, `AdminAccess.gs`, `AdminCommandRouter.gs`, `AdminStateRouter.gs`;
+- admin command handlers: navigation and section handlers run first, followed by `AdminProviderCommandHandler.gs`, `AdminServiceCommandHandler.gs`, `AdminAppointmentCommandHandler.gs`, `AdminCustomerCommandHandler.gs`, and `AdminLocationCommandHandler.gs`;
 - admin state handlers: `AdminServiceStateHandler.gs`, `AdminAppointmentStateHandler.gs`, `AdminCustomerStateHandler.gs`, `AdminLocationStateHandler.gs`, `AdminProviderStateHandler.gs`, `AdminScheduleStateHandler.gs`, and `AdminOverrideStateHandler.gs` preserve the original domain priority;
 - callback workflows: `AppointmentCallbacks.gs`, `AppointmentCards.gs`, `AppointmentConfirmations.gs`, `AppointmentRescheduling.gs`, `RequestCallbacks.gs`;
 - request and appointment notifications: `Notifications.gs`, `RequestNotifications.gs`, `Reminders.gs`.
