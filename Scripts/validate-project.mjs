@@ -12,8 +12,8 @@ const errors = [];
 const functions = new Map();
 const usedMessageKeys = new Set();
 const usedSheetNames = new Set();
-let constantsSource = '';
-let configSource = '';
+let messageKeysSource = '';
+let sheetNamesSource = '';
 
 for (const file of files) {
   const fullPath = path.join(sourceDir, file);
@@ -48,12 +48,12 @@ for (const file of files) {
     errors.push(`Legacy Owner runtime reference in ${file}`);
   }
 
-  if (file === 'Constants.gs') {
-    constantsSource = source;
+  if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
+    messageKeysSource = source;
   }
 
-  if (file === 'Config.gs') {
-    configSource = source;
+  if (/^const\s+SHEET_NAMES\s*=/m.test(source)) {
+    sheetNamesSource = source;
   }
 }
 
@@ -64,7 +64,7 @@ for (const [name, locations] of functions) {
 }
 
 const definedMessageKeys = new Set(
-  [...constantsSource.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
+  [...messageKeysSource.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
     .map((match) => match[1])
 );
 
@@ -75,7 +75,7 @@ for (const key of [...usedMessageKeys].sort()) {
 }
 
 const definedSheetNames = new Set(
-  [...configSource.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
+  [...sheetNamesSource.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
     .map((match) => match[1])
 );
 

@@ -52,6 +52,70 @@ function extractFunctions(source, origin, result) {
   });
 }
 
+function extractGlobalDeclarations(source, origin, result) {
+  const normalized = source.replace(/\r\n?/g, '\n');
+  const matches = [
+    ...normalized.matchAll(/^(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=/gm)
+  ];
+
+  matches.forEach(function(match) {
+    let quote = '';
+    let escaped = false;
+    let roundDepth = 0;
+    let squareDepth = 0;
+    let curlyDepth = 0;
+    let end = normalized.length;
+
+    for (let index = match.index; index < normalized.length; index++) {
+      const character = normalized[index];
+
+      if (quote) {
+        if (escaped) {
+          escaped = false;
+        } else if (character === '\\') {
+          escaped = true;
+        } else if (character === quote) {
+          quote = '';
+        }
+        continue;
+      }
+
+      if (character === "'" || character === '"' || character === '`') {
+        quote = character;
+      } else if (character === '(') {
+        roundDepth++;
+      } else if (character === ')') {
+        roundDepth--;
+      } else if (character === '[') {
+        squareDepth++;
+      } else if (character === ']') {
+        squareDepth--;
+      } else if (character === '{') {
+        curlyDepth++;
+      } else if (character === '}') {
+        curlyDepth--;
+      } else if (
+        character === ';' &&
+        roundDepth === 0 &&
+        squareDepth === 0 &&
+        curlyDepth === 0
+      ) {
+        end = index + 1;
+        break;
+      }
+    }
+
+    const body = normalized
+      .slice(match.index, end)
+      .split('\n')
+      .map((line) => line.trimEnd())
+      .join('\n')
+      .trim();
+
+    result.set(match[1], { body, origin });
+  });
+}
+
 function loadCurrentFunctions() {
   const result = new Map();
   const directory = path.join(root, 'AppsScript');
@@ -61,6 +125,24 @@ function loadCurrentFunctions() {
     .sort()
     .forEach(function(name) {
       extractFunctions(
+        fs.readFileSync(path.join(directory, name), 'utf8'),
+        name,
+        result
+      );
+    });
+
+  return result;
+}
+
+function loadCurrentGlobals() {
+  const result = new Map();
+  const directory = path.join(root, 'AppsScript');
+
+  fs.readdirSync(directory)
+    .filter((name) => name.endsWith('.gs'))
+    .sort()
+    .forEach(function(name) {
+      extractGlobalDeclarations(
         fs.readFileSync(path.join(directory, name), 'utf8'),
         name,
         result
@@ -90,9 +172,31 @@ function loadReferenceFunctions(reference) {
   return result;
 }
 
+function loadReferenceGlobals(reference) {
+  const result = new Map();
+  const files = execFileSync(
+    'git',
+    ['ls-tree', '-r', '--name-only', reference, 'AppsScript'],
+    { cwd: root, encoding: 'utf8' }
+  ).split(/\r?\n/).filter((name) => name.endsWith('.gs'));
+
+  files.forEach(function(name) {
+    const source = execFileSync(
+      'git',
+      ['show', `${reference}:${name}`],
+      { cwd: root, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 }
+    );
+    extractGlobalDeclarations(source, `${reference}:${name}`, result);
+  });
+
+  return result;
+}
+
 const reference = process.argv[2] || 'HEAD';
 const before = loadReferenceFunctions(reference);
 const after = loadCurrentFunctions();
+const globalsBefore = loadReferenceGlobals(reference);
+const globalsAfter = loadCurrentGlobals();
 const errors = [];
 
 for (const [name, item] of before) {
@@ -110,9 +214,27 @@ for (const [name, item] of after) {
   }
 }
 
+for (const [name, item] of globalsBefore) {
+  const current = globalsAfter.get(name);
+  if (!current) {
+    errors.push(`Missing global ${name} from ${item.origin}`);
+  } else if (current.body !== item.body) {
+    errors.push(`Changed global ${name}: ${item.origin} -> ${current.origin}`);
+  }
+}
+
+for (const [name, item] of globalsAfter) {
+  if (!globalsBefore.has(name)) {
+    errors.push(`Unexpected global ${name} in ${item.origin}`);
+  }
+}
+
 if (errors.length) {
   console.error(errors.join('\n'));
   process.exit(1);
 }
 
-console.log(`Function move verification passed: ${after.size} functions unchanged.`);
+console.log(
+  `Move verification passed: ${after.size} functions and ` +
+  `${globalsAfter.size} globals unchanged.`
+);
