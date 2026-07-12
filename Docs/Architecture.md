@@ -138,6 +138,14 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 - `ClientAppointments.gs`;
 - `ClientContacts.gs`;
 - `AdminBot.gs`;
+- `AdminLocations.gs`;
+- `AdminServices.gs`;
+- `AdminCustomerServices.gs`;
+- `AdminAppointments.gs`;
+- `AdminCustomers.gs`;
+- `AdminProviders.gs`;
+- `AdminProviderSchedules.gs`;
+- `AdminProviderOverrides.gs`;
 - `ClientCallbacks.gs`;
 - `AdminCallbacks.gs`;
 - `AppointmentCallbacks.gs`;
