@@ -129,7 +129,9 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 - `Messages.gs` — localization;
 - `Settings.gs` — settings/cache;
 - `Utils.gs` — shared helpers;
-- `Database.gs` — generic Sheet/session helpers.
+- `AuditLog.gs`, `UserStates.gs` — audit and conversation state persistence;
+- `Locations.gs`, `Customers.gs`, `Requests.gs` — domain-specific Sheet access;
+- `Availability.gs`, `ProviderSchedules.gs` — slot availability and provider schedules.
 
 ### Bot and callback modules
 

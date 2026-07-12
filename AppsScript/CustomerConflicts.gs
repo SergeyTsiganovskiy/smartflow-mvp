@@ -793,3 +793,43 @@ function processDeleteCustomerConflictPhone(
     buildConflictAddKeyboard()
   );
 }
+function getConflictingCustomerIds(customerId) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const customerIdIndex =
+    headers.indexOf('customer_id');
+
+  const conflictCustomerIdIndex =
+    headers.indexOf('conflict_customer_id');
+
+  const activeIndex =
+    headers.indexOf('active');
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const active =
+      String(rows[i][activeIndex])
+        .toUpperCase();
+
+    if (active !== 'TRUE') {
+      continue;
+    }
+
+    if (
+      String(rows[i][customerIdIndex]) ===
+      String(customerId)
+    ) {
+      result.push(
+        rows[i][conflictCustomerIdIndex]
+      );
+    }
+  }
+
+  return result;
+}

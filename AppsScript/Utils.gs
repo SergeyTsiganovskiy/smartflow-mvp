@@ -908,3 +908,6 @@ function findItemByName(items, name) {
 
   return null;
 }
+function generateId(prefix) {
+  return prefix + '_' + new Date().getTime();
+}

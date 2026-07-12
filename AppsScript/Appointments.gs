@@ -747,3 +747,28 @@ function getCustomerConfirmationText(appointment) {
     ? getMessage(MESSAGE_KEYS.APPOINTMENT_CONFIRMED_BY_CUSTOMER)
     : '⏳ ' + getMessage(MESSAGE_KEYS.APPOINTMENT_NOT_CONFIRMED_BY_CUSTOMER);
 }
+function getActiveAppointmentsByPhone(phone) {
+  const searchPhoneKey = getPhoneSearchKey(phone);
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName(SHEET_NAMES.CUSTOMERS);
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const customerIdIndex = headers.indexOf('customer_id');
+  const phoneIndex = headers.indexOf('phone');
+
+  const customerIds = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const rowPhoneKey = getPhoneSearchKey(rows[i][phoneIndex]);
+
+    if (rowPhoneKey === searchPhoneKey) {
+      customerIds.push(rows[i][customerIdIndex]);
+    }
+  }
+
+  return getAppointmentsByCustomerIds(customerIds);
+}

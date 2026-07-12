@@ -226,3 +226,127 @@ function getProviderName(provider) {
     provider.name_key
   );
 }
+function findProviderByName(providerName) {
+  const providers = getProviders();
+  const targetName = String(providerName).trim();
+
+  for (let i = 0; i < providers.length; i++) {
+    if (String(providers[i].name).trim() === targetName) {
+      return providers[i];
+    }
+  }
+
+  return null;
+}
+
+function getProvidersByLocation(locationId) {
+  const providers = getProviders();
+  const result = [];
+
+  providers.forEach(function(provider) {
+    if (String(provider.location_id) === String(locationId)) {
+      result.push(provider);
+    }
+  });
+
+  return result;
+}
+
+function findProviderById(providerId) {
+  const providers = getProviders();
+
+  for (let i = 0; i < providers.length; i++) {
+    if (String(providers[i].id) === String(providerId)) {
+      return providers[i];
+    }
+  }
+
+  return null;
+}
+function getProviderCalendarId(providerId) {
+  const provider =
+    findProviderById(providerId);
+
+  if (
+    provider &&
+    provider.calendar_id
+  ) {
+    return provider.calendar_id;
+  }
+
+  const settings =
+    getSettings();
+
+  return settings.DefaultCalendarId || '';
+}
+
+function getLocalizedProviderName(provider) {
+  const settings = getSettings();
+  const lang = settings.Language || 'ru';
+
+  const key = 'name_' + lang;
+
+  return String(getProviderName(provider)).trim();
+}
+
+function createProviderFromAdminSession(session) {
+  const providerName =
+    String(session.provider_name || '').trim();
+
+  const locationId =
+    String(session.provider_location_id || '').trim();
+
+  const phone =
+    String(session.provider_phone || '').trim();
+
+  const telegramId =
+    String(session.provider_telegram_id || '').trim();
+
+  return createProvider({
+    name: providerName,
+    location_id: locationId,
+    phone: phone,
+    telegram_id: telegramId,
+    calendar_id: ''
+  });
+}
+
+function createProvider(providerData) {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName(SHEET_NAMES.PROVIDERS);
+
+  const providerId =
+    generateProviderId();
+
+  const nameKey =
+    generateProviderNameKey(providerId);
+
+  createOrUpdateMessageValues(
+    nameKey,
+    createMessageValuesForAllLanguages(
+      providerData.name
+    )
+  );
+
+  sheet.appendRow([
+    providerId,
+    providerData.location_id,
+    nameKey,
+    providerData.phone,
+    providerData.telegram_id,
+    providerData.calendar_id || '',
+    true
+  ]);
+
+  createDefaultProviderSchedule(providerId);
+
+  return providerId;
+}
+
+function generateProviderNameKey(providerId) {
+  return (
+    'PROVIDER_NAME_' +
+    String(providerId).replace('prov_', '')
+  );
+}
