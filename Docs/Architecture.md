@@ -134,6 +134,8 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 ### Bot and callback modules
 
 - `ClientBot.gs`;
+- `ClientCommandRouter.gs`;
+- `ClientStateRouter.gs`;
 - `ClientBooking.gs`;
 - `ClientAppointments.gs`;
 - `ClientContacts.gs`;
