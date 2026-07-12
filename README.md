@@ -93,7 +93,7 @@ Implemented foundations include:
 - audit logging;
 - configurable admin request recipients.
 
-The next major area is the complete **Settings** module, followed by global refactoring, testing, and release preparation.
+The codebase has been decomposed into focused workflow, query, command, synchronization, and integration modules. The next major areas are router simplification, the complete **Settings** module, broader automated testing, and release preparation.
 
 ## Design principles
 

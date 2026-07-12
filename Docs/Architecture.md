@@ -123,70 +123,82 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 
 ### Infrastructure
 
-- `Code.gs` — webhook and global routing;
-- `Config.gs` — constants, sheet names, state/menu identifiers;
-- `Telegram.gs` — Telegram API helpers;
-- `Messages.gs` — localization;
-- `Settings.gs` — settings/cache;
+- `Code.gs` — webhook entry points and global bot routing;
+- `Config.gs` — sheet names, runtime settings, and settings cache;
+- `States.gs`, `Menus.gs`, `MessageKeys.gs` — conversation states, menu identifiers, and localization keys;
+- `Telegram.gs` — Telegram message and callback API helpers;
+- `TelegramWebhooks.gs` — webhook setup, inspection, deletion, and manual polling;
+- `Messages.gs`, `MessageCommands.gs` — localized message reads and writes;
+- `AuditLog.gs` — persistent diagnostic and operational audit entries;
 - `DateTimeUtils.gs`, `PhoneUtils.gs`, `IdUtils.gs`, `TextUtils.gs` — focused shared helpers;
-- `CalendarMetadata.gs`, `KeyboardUtils.gs`, `TelegramUpdateGuard.gs` — integration-specific helpers;
-- `AuditLog.gs`, `UserStates.gs` — audit and conversation state persistence;
-- `Locations.gs`, `Customers.gs`, `Requests.gs` — domain-specific Sheet access;
-- `Availability.gs`, `ProviderSchedules.gs` — slot availability and provider schedules.
+- `CalendarMetadata.gs`, `KeyboardUtils.gs`, `TelegramUpdateGuard.gs` — integration-specific helpers.
 
 ### Bot and callback modules
 
-- `ClientBot.gs`;
-- `ClientCommandRouter.gs`;
-- `ClientStateRouter.gs`;
-- `ClientBooking.gs`;
-- `ClientAppointments.gs`;
-- `ClientContacts.gs`;
-- `AdminBot.gs`;
-- `AdminAccess.gs`;
-- `AdminCommandRouter.gs`;
-- `AdminStateRouter.gs`;
-- `AdminLocations.gs`;
-- `AdminServices.gs`;
-- `AdminCustomerServices.gs`;
-- `AdminAppointments.gs`;
-- `AdminCustomers.gs`;
-- `AdminProviders.gs`;
-- `AdminProviderSchedules.gs`;
-- `AdminProviderOverrides.gs`;
-- `ClientCallbacks.gs`;
-- `AdminCallbacks.gs`;
-- `AppointmentCallbacks.gs`;
-- `AppointmentCards.gs`;
-- `AppointmentRescheduling.gs`;
-- `RequestCallbacks.gs`.
+- client entry and routing: `ClientBot.gs`, `ClientCommandRouter.gs`, `ClientStateRouter.gs`;
+- client workflows: `ClientBooking.gs`, `ClientAppointments.gs`, `ClientContacts.gs`;
+- admin entry, access, and routing: `AdminBot.gs`, `AdminAccess.gs`, `AdminCommandRouter.gs`, `AdminStateRouter.gs`;
+- callback workflows: `AppointmentCallbacks.gs`, `AppointmentCards.gs`, `AppointmentConfirmations.gs`, `AppointmentRescheduling.gs`, `RequestCallbacks.gs`;
+- request and appointment notifications: `Notifications.gs`, `RequestNotifications.gs`, `Reminders.gs`.
+
+### Admin workflow modules
+
+Large admin sections are split by operation while preserving global Apps Script function names:
+
+- customers: `AdminCustomers.gs`, `AdminCustomerProfileView.gs`, `AdminCustomerList.gs`, `AdminCustomerVisitHistory.gs`, `AdminCustomerProfiles.gs`;
+- customer service settings: `AdminCustomerServiceView.gs`, `AdminCustomerServiceEditing.gs`, `AdminCustomerServiceDeletion.gs`;
+- customer conflicts: `CustomerConflicts.gs`, `AdminCustomerConflictCreation.gs`, `AdminCustomerConflictView.gs`, `AdminCustomerConflictDeletion.gs`;
+- appointments: `AdminAppointments.gs`, `AdminAppointmentDaily.gs`, `AdminAppointmentFilters.gs`, `AdminAppointmentNextWorkingDay.gs`;
+- locations: `AdminLocations.gs`, `AdminLocationCreation.gs`, `AdminLocationEditing.gs`, `AdminLocationActivation.gs`;
+- services: `AdminServices.gs`, `AdminServiceCreation.gs`, `AdminServiceEditing.gs`, `AdminServiceActivation.gs`;
+- providers: `AdminProviders.gs`, `AdminProviderCreation.gs`, `AdminProviderEditing.gs`, `AdminProviderActivation.gs`;
+- provider schedules: `AdminProviderScheduleView.gs`, `AdminProviderSchedules.gs`;
+- schedule overrides: `AdminProviderOverrideCreation.gs`, `AdminProviderOverrideList.gs`, `AdminProviderOverrideDeletion.gs`.
 
 ### Navigation
 
 - `CoreNavigation.gs`;
 - `ClientNavigation.gs`;
-- `AdminNavigation.gs`.
+- `AdminNavigation.gs`;
+- `AdminBackNavigation.gs`.
 
-### Domain modules
+### Domain persistence
 
-- `Customers.gs`;
-- `Providers.gs`;
-- `ProviderSchedules.gs`;
-- `ProviderOverrides.gs`;
-- `Services.gs`;
-- `Locations.gs`;
-- `Requests.gs`;
-- `Appointments.gs`;
-- `CustomerConflicts.gs`;
-- `Notifications.gs`.
+Sheet-backed domains use an explicit query/command split where useful:
 
-### Calendar and diagnostics
+- customers: `Customers.gs`, `CustomerCommands.gs`;
+- customer profiles: `CustomerProfiles.gs`, `CustomerProfileCommands.gs`, `CustomerProfileSync.gs`;
+- visit history: `CustomerVisitHistory.gs`, `CustomerVisitHistoryCommands.gs`, `CustomerVisitHistorySync.gs`;
+- customer conflicts: `CustomerConflictRepository.gs`, `CustomerConflictCommands.gs`;
+- customer service settings: `CustomerServiceSettings.gs`, `CustomerServiceSettingCommands.gs`;
+- providers: `Providers.gs`, `ProviderCommands.gs`;
+- provider schedules: `ProviderSchedules.gs`, `ProviderScheduleCommands.gs`;
+- provider overrides: `ProviderOverrides.gs`, `ProviderOverrideCommands.gs`;
+- services: `Services.gs`, `ServiceCommands.gs`;
+- locations: `Locations.gs`, `LocationCommands.gs`;
+- requests: `Requests.gs`, `RequestCommands.gs`;
+- appointments: `AppointmentQueries.gs`, `Appointments.gs`;
+- conversation state: `UserStates.gs`, `UserStateCommands.gs`, `Sessions.gs`, `SessionCommands.gs`.
 
-- `CalendarSync.gs`;
-- `CalendarCache.gs`;
-- `Diagnostics.gs` — manual test and deployment-check functions, isolated from webhook routing;
-- `AuditLog` helpers;
-- duplicate-update helpers.
+Query modules own reads and caches. Command modules own Sheet mutations. This separation is organizational only: Apps Script still exposes all top-level functions globally.
+
+### Calendar, availability, and diagnostics
+
+- `Availability.gs` — provider-aware slot calculation;
+- `Calendar.gs` — Calendar reads and provider matching;
+- `CalendarSynchronization.gs` — synchronization of linked appointments;
+- `CalendarEvents.gs`, `CalendarEventQueries.gs` — Calendar event commands and queries;
+- `ManualCalendarAppointments.gs` — manual Calendar events shown as occupied provider slots and admin appointments;
+- `CalendarCache.gs`, `CalendarCacheCommands.gs` — cache reads and mutations;
+- `CalendarCacheBuilders.gs`, `CalendarCacheQueries.gs`, `CalendarCacheSync.gs` — cache row construction, domain queries, and trigger orchestration;
+- `Diagnostics.gs` — manual test and deployment-check functions isolated from webhook routing.
+
+### Refactoring safety checks
+
+- `Scripts/validate-project.mjs` checks syntax, duplicate global functions, message keys, sheet-name constants, hardcoded sheet names, and legacy Owner references;
+- `Scripts/verify-function-moves.mjs` compares all global function bodies and top-level `const`, `let`, and `var` declarations with a Git reference;
+- mechanical file moves must pass both checks and `git diff --check` before deployment;
+- behavior-changing work is isolated from mechanical moves and requires targeted regression after `clasp push`.
 
 ## 7. Navigation architecture
 
