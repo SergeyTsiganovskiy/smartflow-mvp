@@ -128,7 +128,8 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 - `Telegram.gs` — Telegram API helpers;
 - `Messages.gs` — localization;
 - `Settings.gs` — settings/cache;
-- `Utils.gs` — shared helpers;
+- `DateTimeUtils.gs`, `PhoneUtils.gs`, `IdUtils.gs`, `TextUtils.gs` — focused shared helpers;
+- `CalendarMetadata.gs`, `KeyboardUtils.gs`, `TelegramUpdateGuard.gs` — integration-specific helpers;
 - `AuditLog.gs`, `UserStates.gs` — audit and conversation state persistence;
 - `Locations.gs`, `Customers.gs`, `Requests.gs` — domain-specific Sheet access;
 - `Availability.gs`, `ProviderSchedules.gs` — slot availability and provider schedules.

@@ -139,3 +139,66 @@ function markAppointmentReminder24hSent(
   );
 }
 
+function getAppointmentsFor24hReminder() {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+
+  const statusIndex = headers.indexOf('status');
+  const reminderIndex = headers.indexOf('reminder_24h_sent_at');
+
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
+
+  const now = new Date();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const tomorrowString = Utilities.formatDate(
+    tomorrow,
+    timezone,
+    'yyyy-MM-dd'
+  );
+
+  const result = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const status = String(rows[i][statusIndex] || '').toLowerCase();
+    const reminderSentAt = rows[i][reminderIndex];
+
+    if (status !== 'confirmed') {
+      continue;
+    }
+
+    if (reminderSentAt) {
+      continue;
+    }
+
+    let appointment = {};
+
+    headers.forEach(function(header, index) {
+      appointment[header] = rows[i][index];
+    });
+
+    appointment = syncAppointmentWithCalendar(
+      appointment,
+      true
+    );
+
+    const appointmentDateString =
+      normalizeDateForStorage(
+        appointment.start_at
+      );
+
+    if (appointmentDateString !== tomorrowString) {
+      continue;
+    }
+
+    result.push(appointment);
+  }
+
+  return result;
+}
