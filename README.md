@@ -89,7 +89,7 @@ Implemented foundations include:
 - wizard state management;
 - appointment cancellation, rescheduling, reminders, and confirmation;
 - customer, provider, service, and location management;
-- calendar cache;
+- live Google Calendar-backed appointment views;
 - audit logging;
 - configurable admin request recipients.
 

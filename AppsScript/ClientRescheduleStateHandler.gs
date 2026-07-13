@@ -94,7 +94,7 @@ function handleClientRescheduleState(chatId, text, state, settings) {
     const provider = findProviderById(updatedAppointment.provider_id);
     const location = findLocationById(updatedAppointment.location_id);
 
-    sendAppointmentCard(chatId, settings, updatedAppointment, service, provider, location);
+    sendAppointmentCard(chatId, settings, updatedAppointment, service, provider, location, '', false);
 
     return;
   }

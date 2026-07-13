@@ -100,7 +100,7 @@ function getConflictAppointmentsForDate(customerPhone, dateValue) {
     return [];
   }
 
-  const appointments = getCachedAppointmentsByDate(normalizeDateForStorage(dateValue));
+  const appointments = getAppointmentsByDate(normalizeDateForStorage(dateValue));
 
   return appointments.filter(function (item) {
     const itemPhoneKey = getPhoneSearchKey(item.phone);

@@ -58,9 +58,9 @@ function buildAppointmentDateKeyboardRows(settings) {
 
   const rows = [];
 
-  const cacheDays = Number(settings.CalendarCacheDays || 30);
+  const bookingDays = Number(settings.BookingDaysAhead || 30);
 
-  for (let i = 0; i <= cacheDays; i++) {
+  for (let i = 0; i <= bookingDays; i++) {
     const date = new Date();
 
     date.setDate(date.getDate() + i);
@@ -94,7 +94,7 @@ function processAppointmentsDate(chatId, text, settings) {
 function showAppointmentsByProviderAdmin(chatId, settings, provider) {
   setUserSessionValue(chatId, 'admin_back_menu', ADMIN_MENUS.APPOINTMENTS);
 
-  const appointments = getCachedAppointmentsByProvider(provider.provider_id);
+  const appointments = getAppointmentsByProvider(provider.provider_id || provider.id);
 
   if (appointments.length === 0) {
     sendTelegramMessage(

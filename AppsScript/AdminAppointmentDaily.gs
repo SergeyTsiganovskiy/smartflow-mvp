@@ -3,7 +3,7 @@ function showTodayAppointmentsAdmin(chatId, settings) {
 
   const today = Utilities.formatDate(new Date(), settings.TimeZone || 'Europe/Kyiv', 'yyyy-MM-dd');
 
-  const appointments = getCachedAppointmentsByDate(today);
+  const appointments = getAppointmentsByDate(today);
 
   if (appointments.length === 0) {
     sendTelegramMessage(
@@ -65,7 +65,7 @@ function showTomorrowAppointments(chatId, settings) {
 
   const dateString = Utilities.formatDate(tomorrow, settings.TimeZone || 'Europe/Kyiv', 'yyyy-MM-dd');
 
-  const appointments = getCachedAppointmentsByDate(dateString);
+  const appointments = getAppointmentsByDate(dateString);
 
   if (appointments.length === 0) {
     sendTelegramMessage(
@@ -121,7 +121,7 @@ function showTomorrowAppointments(chatId, settings) {
 function showAppointmentsByDateAdmin(chatId, settings, dateValue) {
   setUserSessionValue(chatId, 'admin_back_menu', ADMIN_MENUS.APPOINTMENTS);
 
-  const appointments = getCachedAppointmentsByDate(dateValue);
+  const appointments = getAppointmentsByDate(dateValue);
 
   if (appointments.length === 0) {
     sendTelegramMessage(

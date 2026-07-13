@@ -13,21 +13,6 @@ function startConfigurationBookingDaysAhead(chatId, settings) {
   );
 }
 
-function startConfigurationCalendarCacheDays(chatId, settings) {
-  setUserState(chatId, ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS);
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS_PROMPT) +
-      '\n\n' +
-      getMessage(MESSAGE_KEYS.CONFIGURATION_CURRENT_VALUE) +
-      ': ' +
-      String(settings.CalendarCacheDays || 30),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
 function parseConfigurationDays(text) {
   const value = String(text || '').trim();
 
@@ -56,32 +41,7 @@ function processConfigurationBookingDaysAhead(chatId, text, settings) {
     return;
   }
 
-  const cacheDays = Number(settings.CalendarCacheDays || 30);
-
-  if (value > cacheDays) {
-    sendConfigurationDaysError(chatId, settings, MESSAGE_KEYS.CONFIGURATION_BOOKING_EXCEEDS_CACHE, cacheDays);
-    return;
-  }
-
   saveConfigurationDays(chatId, settings, 'BookingDaysAhead', value, MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS_UPDATED);
-}
-
-function processConfigurationCalendarCacheDays(chatId, text, settings) {
-  const value = parseConfigurationDays(text);
-
-  if (!isAllowedAdminConfigurationValue('CalendarCacheDays', value)) {
-    sendConfigurationDaysError(chatId, settings, MESSAGE_KEYS.CONFIGURATION_DAYS_INVALID);
-    return;
-  }
-
-  const bookingDays = Number(settings.BookingDaysAhead || 30);
-
-  if (value < bookingDays) {
-    sendConfigurationDaysError(chatId, settings, MESSAGE_KEYS.CONFIGURATION_CACHE_BELOW_BOOKING, bookingDays);
-    return;
-  }
-
-  saveConfigurationDays(chatId, settings, 'CalendarCacheDays', value, MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS_UPDATED);
 }
 
 function saveConfigurationDays(chatId, settings, settingKey, value, successMessageKey) {

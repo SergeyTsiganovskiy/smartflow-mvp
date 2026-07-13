@@ -79,9 +79,9 @@ function getNextWorkingDateForProvider(providerId) {
 
   const today = new Date();
 
-  const cacheDays = Number(settings.CalendarCacheDays || 30);
+  const bookingDays = Number(settings.BookingDaysAhead || 30);
 
-  for (let i = 1; i <= cacheDays; i++) {
+  for (let i = 1; i <= bookingDays; i++) {
     const date = new Date(today);
 
     date.setDate(date.getDate() + i);

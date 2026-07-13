@@ -17,7 +17,6 @@ const SHEET_NAMES = {
   REQUEST_OPTIONS: 'RequestOptions',
   REQUEST_RECIPIENTS: 'RequestRecipients',
   APPOINTMENTS: 'Appointments',
-  CALENDAR_CACHE: 'CalendarCache',
   AUDIT_LOG: 'AuditLog',
   WEEK_DAYS: 'WeekDays'
 };

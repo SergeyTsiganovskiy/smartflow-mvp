@@ -12,7 +12,6 @@ function handleAdminCommandMessage(chatId, text, state, settings) {
     state === ADMIN_STATES.WAITING_CONFIGURATION_ADMIN_DELETE ||
     state === ADMIN_STATES.WAITING_CONFIGURATION_REMINDER_DAY_BEFORE ||
     state === ADMIN_STATES.WAITING_CONFIGURATION_BOOKING_DAYS ||
-    state === ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS ||
     state === ADMIN_STATES.WAITING_CONFIGURATION_PAGE_SIZE
   ) {
     handleAdminConfigurationState(chatId, text, state, settings);

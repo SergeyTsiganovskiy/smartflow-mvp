@@ -109,22 +109,10 @@ function getConfigurationMessageMigrationRows() {
       '📅 Online booking horizon'
     ],
     [
-      'CONFIGURATION_CACHE_DAYS',
-      '🗓 Горизонт кешу календаря',
-      '🗓 Горизонт кеша календаря',
-      '🗓 Calendar cache horizon'
-    ],
-    [
       'CONFIGURATION_BOOKING_DAYS_PROMPT',
       'Введіть кількість днів наперед, доступних клієнту для запису (від 1 до 365)',
       'Введите количество дней вперёд, доступных клиенту для записи (от 1 до 365)',
       'Enter how many days ahead clients can book (1 to 365)'
-    ],
-    [
-      'CONFIGURATION_CACHE_DAYS_PROMPT',
-      'Введіть кількість днів для кешу календаря (від 1 до 365)',
-      'Введите количество дней для кеша календаря (от 1 до 365)',
-      'Enter the Calendar cache horizon in days (1 to 365)'
     ],
     ['CONFIGURATION_CURRENT_VALUE', 'Поточне значення', 'Текущее значение', 'Current value'],
     [
@@ -134,28 +122,10 @@ function getConfigurationMessageMigrationRows() {
       'Enter a whole number from 1 to 365'
     ],
     [
-      'CONFIGURATION_BOOKING_EXCEEDS_CACHE',
-      'Горизонт запису не може перевищувати горизонт кешу календаря. Введіть нове значення не більше',
-      'Горизонт записи не может превышать горизонт кеша календаря. Введите новое значение не больше',
-      'Booking horizon cannot exceed the Calendar cache horizon. Enter a new value no greater than'
-    ],
-    [
-      'CONFIGURATION_CACHE_BELOW_BOOKING',
-      'Горизонт кешу не може бути меншим за горизонт онлайн-запису. Введіть нове значення не менше',
-      'Горизонт кеша не может быть меньше горизонта онлайн-записи. Введите новое значение не меньше',
-      'Calendar cache horizon cannot be shorter than the booking horizon. Enter a new value no less than'
-    ],
-    [
       'CONFIGURATION_BOOKING_DAYS_UPDATED',
       'Горизонт онлайн-запису оновлено',
       'Горизонт онлайн-записи обновлён',
       'Online booking horizon updated'
-    ],
-    [
-      'CONFIGURATION_CACHE_DAYS_UPDATED',
-      'Горизонт кешу календаря оновлено',
-      'Горизонт кеша календаря обновлён',
-      'Calendar cache horizon updated'
     ],
     ['CONFIGURATION_PAGE_SIZE', '📄 Розмір сторінки', '📄 Размер страницы', '📄 Page size'],
     [
@@ -260,32 +230,6 @@ function migrateConfigurationReminderLabels() {
   };
 
   addAuditLog('CONFIGURATION_REMINDER_LABELS_MIGRATION', JSON.stringify(result));
-
-  Logger.log(JSON.stringify(result));
-  return result;
-}
-
-function migrateConfigurationHorizonPrompts() {
-  createOrUpdateMessageValues('CONFIGURATION_BOOKING_EXCEEDS_CACHE', {
-    uk: 'Горизонт запису не може перевищувати горизонт кешу календаря. Введіть нове значення не більше',
-    ru: 'Горизонт записи не может превышать горизонт кеша календаря. Введите новое значение не больше',
-    en: 'Booking horizon cannot exceed the Calendar cache horizon. Enter a new value no greater than'
-  });
-
-  createOrUpdateMessageValues('CONFIGURATION_CACHE_BELOW_BOOKING', {
-    uk: 'Горизонт кешу не може бути меншим за горизонт онлайн-запису. Введіть нове значення не менше',
-    ru: 'Горизонт кеша не может быть меньше горизонта онлайн-записи. Введите новое значение не меньше',
-    en: 'Calendar cache horizon cannot be shorter than the booking horizon. Enter a new value no less than'
-  });
-
-  resetMessagesCache();
-
-  const result = {
-    migration: 'configuration_horizon_prompts_v1',
-    updated: 2
-  };
-
-  addAuditLog('CONFIGURATION_HORIZON_PROMPTS_MIGRATION', JSON.stringify(result));
 
   Logger.log(JSON.stringify(result));
   return result;
@@ -452,6 +396,73 @@ function migrateSystemConfigurationSettings() {
 
   addAuditLog('SYSTEM_CONFIGURATION_SETTINGS_MIGRATED', JSON.stringify(result));
 
+  Logger.log(JSON.stringify(result));
+
+  return result;
+}
+
+function migrateRemoveCalendarCache() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const obsoleteMessageKeys = [
+    'CONFIGURATION_CACHE_DAYS',
+    'CONFIGURATION_CACHE_DAYS_PROMPT',
+    'CONFIGURATION_BOOKING_EXCEEDS_CACHE',
+    'CONFIGURATION_CACHE_BELOW_BOOKING',
+    'CONFIGURATION_CACHE_DAYS_UPDATED'
+  ];
+  const obsoleteTriggerHandlers = {
+    syncCalendarCacheNearDatesTrigger: true,
+    syncCalendarCacheLongRangeTrigger: true
+  };
+  const deletedTriggers = [];
+  let visitSyncTriggerExists = false;
+
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    const handler = trigger.getHandlerFunction();
+
+    if (obsoleteTriggerHandlers[handler]) {
+      ScriptApp.deleteTrigger(trigger);
+      deletedTriggers.push(handler);
+      return;
+    }
+
+    if (handler === 'syncCompletedCustomerVisitsTrigger') {
+      visitSyncTriggerExists = true;
+    }
+  });
+
+  if (!visitSyncTriggerExists) {
+    ScriptApp.newTrigger('syncCompletedCustomerVisitsTrigger').timeBased().everyHours(1).create();
+  }
+
+  const deletedSettings = deleteSheetRowsByFirstColumnValue(spreadsheet.getSheetByName(SHEET_NAMES.SETTINGS), [
+    'CalendarCacheDays'
+  ]);
+  const deletedMessages = deleteSheetRowsByFirstColumnValue(
+    spreadsheet.getSheetByName(SHEET_NAMES.MESSAGES),
+    obsoleteMessageKeys
+  );
+  const obsoleteSheetName = ['Calendar', 'Cache'].join('');
+  const calendarCacheSheet = spreadsheet.getSheetByName(obsoleteSheetName);
+  const deletedSheet = Boolean(calendarCacheSheet);
+
+  if (calendarCacheSheet) {
+    spreadsheet.deleteSheet(calendarCacheSheet);
+  }
+
+  resetSettingsCache();
+  resetMessagesCache();
+
+  const result = {
+    migration: 'remove_calendar_cache_v1',
+    deletedSettings: deletedSettings,
+    deletedMessages: deletedMessages,
+    deletedTriggers: deletedTriggers.sort(),
+    createdVisitSyncTrigger: !visitSyncTriggerExists,
+    deletedSheet: deletedSheet
+  };
+
+  addAuditLog('CALENDAR_CACHE_REMOVED', JSON.stringify(result));
   Logger.log(JSON.stringify(result));
 
   return result;

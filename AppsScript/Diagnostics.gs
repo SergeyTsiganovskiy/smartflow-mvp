@@ -38,11 +38,6 @@ function testActiveRequestRecipients() {
   Logger.log(JSON.stringify(getActiveRequestRecipients()));
 }
 
-function testGeneral() {
-  clearCalendarCacheForDate('2026-06-23');
-  syncCalendarCacheForDate('2026-06-23');
-}
-
 function testAppointmentsMenuMessages() {
   const keys = [
     'ADMIN_APPOINTMENTS',
@@ -102,29 +97,8 @@ function testSyncCustomerProfiles() {
   syncCustomerProfiles();
 }
 
-function testSyncYesterdayVisitHistory() {
-  const settings = getSettings();
-
-  const timezone = settings.TimeZone || 'Europe/Kyiv';
-
-  const yesterday = new Date();
-
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const dateString = Utilities.formatDate(yesterday, timezone, 'yyyy-MM-dd');
-
-  syncCalendarCacheForDate(dateString);
-
-  syncCustomerVisitHistoryFromCalendarCache();
-
-  syncCustomerProfiles();
-
-  Logger.log('DONE: ' + dateString);
-}
-
-function testSyncCalendarCache() {
-  //syncCalendarCacheLongRangeTrigger();
-  syncCalendarCacheNearDatesTrigger();
+function testSyncCompletedCustomerVisits() {
+  syncCompletedCustomerVisitsTrigger();
 }
 
 function testDeletedAppointmentEvent() {
@@ -186,16 +160,7 @@ function testProviderEventsForDate() {
   });
 }
 
-function testManualCalendarDuplicationRows() {
-  syncCalendarCacheForDate('2026-07-01');
-}
-
-function testSyncManualDate() {
-  syncCalendarCacheForDate('2026-07-04');
-}
-
 function testSendConfirmButton() {
-  syncCalendarCacheForDate('2026-07-08');
   //send24hAppointmentReminders();
 }
 

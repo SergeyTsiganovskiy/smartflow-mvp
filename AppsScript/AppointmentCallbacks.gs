@@ -28,6 +28,11 @@ function handleAppointmentCallback(callbackQuery) {
     const appointmentId = requestId;
     const appointment = getAppointmentById(appointmentId);
 
+    if (!appointment) {
+      editTelegramMessage(settings.ClientBotToken, adminChatId, messageId, getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND));
+      return;
+    }
+
     updateAppointmentStatus(appointmentId, 'cancelled');
     deleteCalendarEvent(appointment);
     notifyAdminsAboutCancellation(appointment);
@@ -38,6 +43,12 @@ function handleAppointmentCallback(callbackQuery) {
       messageId,
       getMessage(MESSAGE_KEYS.APPOINTMENT_CANCELLED)
     );
+
+    const service = findServiceById(appointment.service_id);
+    const provider = findProviderById(appointment.provider_id);
+    const location = findLocationById(appointment.location_id);
+
+    sendAppointmentCard(adminChatId, settings, appointment, service, provider, location, '', false);
 
     return;
   }

@@ -193,7 +193,7 @@ Security-sensitive configuration validators run before Settings writes. `AdminTe
 
 Boolean configuration values are persisted as native Sheet booleans. `send24hAppointmentReminders()` evaluates `ReminderDayBefore` before any appointment reads or Telegram calls and defaults to enabled when the setting is absent.
 
-Numeric configuration definitions declare inclusive minimum and maximum values in `ConfigurationRegistry`. Cross-setting validation additionally enforces `CalendarCacheDays >= BookingDaysAhead` before either value is written.
+Numeric configuration definitions declare inclusive minimum and maximum values in `ConfigurationRegistry`. `BookingDaysAhead` is the single scheduling horizon used by booking, rescheduling, admin date selection, and future Calendar reads.
 
 Default work hours are configured as a validated pair. Admin Bot accepts only `HH:MM-HH:MM`, requires both values to be valid 24-hour times, and requires the end to be later than the start. Both Settings values are validated before writes. The editor explicitly states that existing provider schedule rows are not changed.
 
@@ -216,8 +216,8 @@ to protect Telegram message length when the setting is absent or malformed.
 - `CalendarSynchronization.gs` — synchronization of linked appointments;
 - `CalendarEvents.gs`, `CalendarEventQueries.gs` — Calendar event commands and queries;
 - `ManualCalendarAppointments.gs` — manual Calendar events shown as occupied provider slots and admin appointments;
-- `CalendarCache.gs`, `CalendarCacheCommands.gs` — cache reads and mutations;
-- `CalendarCacheBuilders.gs`, `CalendarCacheQueries.gs`, `CalendarCacheSync.gs` — cache row construction, domain queries, and trigger orchestration;
+- `AppointmentListQueries.gs`, `ManualCalendarAppointments.gs` — live appointment and Calendar range queries;
+- `CustomerVisitHistorySync.gs` — independent completed-visit and profile synchronization;
 - `Diagnostics.gs` — manual test and deployment-check functions isolated from webhook routing.
 
 ### Refactoring safety checks
@@ -443,7 +443,7 @@ The target is zero hardcoded UI text.
 
 The in-memory cache is guarded by a shared `SETTINGS_CACHE_VERSION` value in Script Properties. Every runtime instance compares its local version before returning cached settings. Settings writes replace the shared version with a UUID, forcing all warm Apps Script instances to reload the Sheet on their next settings read.
 
-Settings keys are trimmed when read. A command that finds a key containing leading or trailing whitespace rewrites column A with the canonical key before updating its value. This prevents visually identical Sheet keys such as `CalendarCacheDays ` from silently falling back to defaults.
+Settings keys are trimmed when read. A command that finds a key containing leading or trailing whitespace rewrites column A with the canonical key before updating its value. This prevents visually identical keys from silently falling back to defaults.
 
 Typical settings:
 
@@ -458,7 +458,6 @@ DefaultCalendarId
 DefaultWorkStartTime
 DefaultWorkEndTime
 BookingDaysAhead
-CalendarCacheDays
 ReminderDayBefore
 ```
 
@@ -476,7 +475,6 @@ Known caches:
 SETTINGS_CACHE
 MESSAGES_CACHE
 LOCATIONS_CACHE
-CALENDAR_CACHE
 ```
 
 ### Location API
@@ -494,7 +492,7 @@ Writes must invalidate relevant caches:
 - location write → locations cache;
 - message write → messages cache;
 - setting write → settings cache;
-- appointment/calendar write → calendar cache.
+- appointment writes update Sheets and their linked Calendar event directly.
 
 ## 13. Calendar architecture
 
@@ -504,7 +502,6 @@ Writes must invalidate relevant caches:
 Approved request
 → Appointments row
 → Google Calendar event
-→ CalendarCache refresh
 ```
 
 ### Synchronization
@@ -527,11 +524,15 @@ Admin Bot extracts any available customer, phone, service, provider, location, a
 
 Manual events do not enter Client Bot confirmation, reminder, cancellation, or rescheduling flows.
 
-Planned synchronization will process an ended manual event with a valid phone number as a completed visit. It will upsert `CustomerProfiles` and visit history idempotently, even if other customer details are missing.
+The hourly `syncCompletedCustomerVisitsTrigger()` processes completed `Appointments` and the previous seven days of ended manual events with valid phone numbers. It updates visit history idempotently by `calendar_event_id` and then synchronizes `CustomerProfiles`.
+
+Existing deployments remove the former Calendar snapshot and its refresh triggers
+with the repeat-safe `migrateRemoveCalendarCache()` migration. This migration must
+be run immediately after deploying the corresponding source changes.
 
 ### Cancellation/rescheduling
 
-Flows update Sheets, Calendar, cache, session, and Telegram messages.
+Flows update Sheets, Calendar, session, and Telegram messages.
 
 ## 14. Request processing
 

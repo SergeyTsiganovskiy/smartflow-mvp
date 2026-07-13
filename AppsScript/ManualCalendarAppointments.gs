@@ -48,15 +48,20 @@ function getManualCalendarAppointmentsByDate(dateValue) {
 }
 
 function getManualCalendarAppointmentsByDateOptimized(dateValue) {
+  return getManualCalendarAppointmentsByRange(dateValue, dateValue);
+}
+
+function getManualCalendarAppointmentsByRange(startDateValue, endDateValue, providerIdFilter) {
   const providers = getProviders();
   const calendars = {};
   const result = [];
 
-  const dateString = normalizeDateForStorage(dateValue);
+  const startDateString = normalizeDateForStorage(startDateValue);
+  const endDateString = normalizeDateForStorage(endDateValue);
 
-  const dayStart = new Date(dateString + 'T00:00:00');
+  const rangeStart = new Date(startDateString + 'T00:00:00');
 
-  const dayEnd = new Date(dateString + 'T23:59:59');
+  const rangeEnd = new Date(endDateString + 'T23:59:59');
 
   providers.forEach(function (provider) {
     const providerId = provider.id || provider.provider_id;
@@ -93,7 +98,7 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
       return;
     }
 
-    const events = calendar.getEvents(dayStart, dayEnd);
+    const events = calendar.getEvents(rangeStart, rangeEnd);
 
     events.forEach(function (event) {
       const eventId = event.getId();
@@ -113,11 +118,16 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
         getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER)
       );
 
-      const matchedProvider = calendars[calendarId].find(function (provider) {
-        return normalizeTextForSearch(provider.provider_name) === normalizeTextForSearch(providerNameFromEvent);
-      });
+      const matchedProvider =
+        calendars[calendarId].find(function (provider) {
+          return normalizeTextForSearch(provider.provider_name) === normalizeTextForSearch(providerNameFromEvent);
+        }) || (calendars[calendarId].length === 1 ? calendars[calendarId][0] : null);
 
       if (!matchedProvider) {
+        return;
+      }
+
+      if (providerIdFilter && String(matchedProvider.provider_id) !== String(providerIdFilter)) {
         return;
       }
 
@@ -132,10 +142,6 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
       const locationName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_LOCATION));
 
       const commentText = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT));
-
-      if (!phone) {
-        return;
-      }
 
       result.push({
         source: 'calendar_manual',

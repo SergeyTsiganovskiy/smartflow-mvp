@@ -29,12 +29,17 @@ function getTodayAppointments() {
 }
 
 function getAppointmentsByDate(dateValue) {
+  return getAppointmentsByRange(dateValue, dateValue);
+}
+
+function getAppointmentsByRange(startDateValue, endDateValue, providerId) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const result = [];
 
-  const targetDate = normalizeDateForStorage(dateValue);
+  const startDate = normalizeDateForStorage(startDateValue);
+  const endDate = normalizeDateForStorage(endDateValue);
 
   if (rows.length >= 2) {
     const headers = rows[0].map(function (header) {
@@ -53,7 +58,7 @@ function getAppointmentsByDate(dateValue) {
 
       const appointmentDate = normalizeDateForStorage(rows[i][startAtIndex]);
 
-      if (appointmentDate !== targetDate) {
+      if (appointmentDate < startDate || appointmentDate > endDate) {
         continue;
       }
 
@@ -63,15 +68,19 @@ function getAppointmentsByDate(dateValue) {
         appointment[header] = rows[i][index];
       });
 
+      if (providerId && String(appointment.provider_id) !== String(providerId)) {
+        continue;
+      }
+
       if (!isAppointmentStillValid(appointment)) {
         continue;
       }
 
-      result.push(appointment);
+      result.push(enrichAppointmentForDisplay(appointment));
     }
   }
 
-  const manualAppointments = getManualCalendarAppointmentsByDateOptimized(dateValue);
+  const manualAppointments = getManualCalendarAppointmentsByRange(startDate, endDate, providerId);
 
   manualAppointments.forEach(function (appointment) {
     result.push(appointment);
@@ -82,6 +91,67 @@ function getAppointmentsByDate(dateValue) {
   });
 
   return result;
+}
+
+function getAppointmentsByProvider(providerId) {
+  const settings = getSettings();
+  const timezone = settings.TimeZone || 'Europe/Kyiv';
+  const bookingDays = Number(settings.BookingDaysAhead || 30);
+  const now = new Date();
+  const end = new Date(now);
+
+  end.setDate(end.getDate() + bookingDays);
+
+  const startDate = Utilities.formatDate(now, timezone, 'yyyy-MM-dd');
+  const endDate = Utilities.formatDate(end, timezone, 'yyyy-MM-dd');
+
+  return getAppointmentsByRange(startDate, endDate, providerId).filter(function (appointment) {
+    return new Date(appointment.end_at) >= now;
+  });
+}
+
+function enrichAppointmentForDisplay(appointment) {
+  if (appointment.source === 'calendar_manual') {
+    return appointment;
+  }
+
+  const customer = getCustomerById(appointment.customer_id);
+  const service = findServiceById(appointment.service_id);
+  const provider = findProviderById(appointment.provider_id);
+  const location = findLocationById(appointment.location_id);
+
+  appointment.source = appointment.source || 'appointment';
+  appointment.customer_name = customer ? customer.name : '';
+  appointment.phone = customer ? customer.phone : '';
+  appointment.service_name = service ? service.name : '';
+  appointment.provider_name = provider ? provider.name : '';
+  appointment.location_name = location ? location.name : '';
+
+  return appointment;
+}
+
+function getNextCustomerAppointment(phone) {
+  const now = new Date();
+  const appointments = getActiveAppointmentsByPhone(phone)
+    .map(function (appointment) {
+      return syncAppointmentWithCalendar(appointment);
+    })
+    .filter(function (appointment) {
+      return appointment && isCurrentOrFutureAppointment(appointment);
+    })
+    .map(enrichAppointmentForDisplay);
+
+  getCalendarAppointmentsByPhone(phone).forEach(function (appointment) {
+    if (new Date(appointment.end_at) >= now) {
+      appointments.push(appointment);
+    }
+  });
+
+  appointments.sort(function (a, b) {
+    return new Date(a.start_at) - new Date(b.start_at);
+  });
+
+  return appointments[0] || null;
 }
 
 function isAppointmentStillValid(appointment) {

@@ -4,7 +4,8 @@ import vm from 'node:vm';
 
 const root = path.resolve(import.meta.dirname, '..');
 const sourceDir = path.join(root, 'AppsScript');
-const files = fs.readdirSync(sourceDir)
+const files = fs
+  .readdirSync(sourceDir)
   .filter((name) => name.endsWith('.gs'))
   .sort();
 
@@ -73,16 +74,15 @@ for (const file of files) {
     errors.push(`Hardcoded sheet name in ${file}`);
   }
 
-  if (
-    file !== 'ConfigurationMigrations.gs' &&
-    /\bOwnerTelegramId\b|\bnotifyOwner|\bbuildOwner/.test(source)
-  ) {
+  if (file !== 'ConfigurationMigrations.gs' && /\bOwnerTelegramId\b|\bnotifyOwner|\bbuildOwner/.test(source)) {
     errors.push(`Legacy Owner runtime reference in ${file}`);
   }
 
   if (
     file !== 'ConfigurationMigrations.gs' &&
-    /\b(?:price_min|price_max|customer_service_price|service_price_min|service_price_max|BusinessName|Currency)\b/.test(source)
+    /\b(?:price_min|price_max|customer_service_price|service_price_min|service_price_max|BusinessName|Currency)\b/.test(
+      source
+    )
   ) {
     errors.push(`Financial runtime reference in ${file}`);
   }
@@ -95,9 +95,20 @@ for (const file of files) {
   }
 
   if (
-    /\b(?:reschedule_calendar_event|confirm_reschedule_calendar_event|cancel_calendar_event|confirm_cancel_calendar_event|pending_calendar_event_id|updateCalendarEventDateTimeById|deleteCalendarEventById)\b/.test(source)
+    /\b(?:reschedule_calendar_event|confirm_reschedule_calendar_event|cancel_calendar_event|confirm_cancel_calendar_event|pending_calendar_event_id|updateCalendarEventDateTimeById|deleteCalendarEventById)\b/.test(
+      source
+    )
   ) {
     errors.push(`Direct Calendar mutation flow in ${file}`);
+  }
+
+  if (
+    file !== 'ConfigurationMigrations.gs' &&
+    /\b(?:CalendarCache|CalendarCacheDays|CALENDAR_CACHE|getCachedAppointments|getCalendarCache|syncCalendarCache)\b/.test(
+      source
+    )
+  ) {
+    errors.push(`Legacy CalendarCache reference in ${file}`);
   }
 
   if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
@@ -108,17 +119,11 @@ for (const file of files) {
     sheetNamesSource = source;
   }
 
-  if (
-    /^const\s+STATES\s*=/m.test(source) &&
-    /^const\s+ADMIN_STATES\s*=/m.test(source)
-  ) {
+  if (/^const\s+STATES\s*=/m.test(source) && /^const\s+ADMIN_STATES\s*=/m.test(source)) {
     statesSource = source;
   }
 
-  if (
-    /^const\s+CLIENT_MENUS\s*=/m.test(source) &&
-    /^const\s+ADMIN_MENUS\s*=/m.test(source)
-  ) {
+  if (/^const\s+CLIENT_MENUS\s*=/m.test(source) && /^const\s+ADMIN_MENUS\s*=/m.test(source)) {
     menusSource = source;
   }
 }
@@ -130,24 +135,21 @@ for (const [name, locations] of functions) {
 }
 
 function getObjectKeys(source, objectName) {
-  const match = source.match(
-    new RegExp(`const\\s+${objectName}\\s*=\\s*\\{([\\s\\S]*?)\\n\\};`)
-  );
+  const match = source.match(new RegExp(`const\\s+${objectName}\\s*=\\s*\\{([\\s\\S]*?)\\n\\};`));
 
   if (!match) {
     errors.push(`Missing ${objectName} declaration`);
     return [];
   }
 
-  return [...match[1].matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
-    .map((item) => item[1]);
+  return [...match[1].matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)].map((item) => item[1]);
 }
 
 function validateConstantObject(source, objectName, usedKeys) {
   const keys = getObjectKeys(source, objectName);
   const definedKeys = new Set();
 
-  keys.forEach(function(key) {
+  keys.forEach(function (key) {
     if (definedKeys.has(key)) {
       errors.push(`Duplicate ${objectName}.${key}`);
     }
@@ -163,23 +165,17 @@ function validateConstantObject(source, objectName, usedKeys) {
   return definedKeys.size;
 }
 
-const messageKeyCount =
-  validateConstantObject(messageKeysSource, 'MESSAGE_KEYS', usedMessageKeys);
+const messageKeyCount = validateConstantObject(messageKeysSource, 'MESSAGE_KEYS', usedMessageKeys);
 
-const sheetNameCount =
-  validateConstantObject(sheetNamesSource, 'SHEET_NAMES', usedSheetNames);
+const sheetNameCount = validateConstantObject(sheetNamesSource, 'SHEET_NAMES', usedSheetNames);
 
-const clientStateCount =
-  validateConstantObject(statesSource, 'STATES', usedClientStates);
+const clientStateCount = validateConstantObject(statesSource, 'STATES', usedClientStates);
 
-const adminStateCount =
-  validateConstantObject(statesSource, 'ADMIN_STATES', usedAdminStates);
+const adminStateCount = validateConstantObject(statesSource, 'ADMIN_STATES', usedAdminStates);
 
-const clientMenuCount =
-  validateConstantObject(menusSource, 'CLIENT_MENUS', usedClientMenus);
+const clientMenuCount = validateConstantObject(menusSource, 'CLIENT_MENUS', usedClientMenus);
 
-const adminMenuCount =
-  validateConstantObject(menusSource, 'ADMIN_MENUS', usedAdminMenus);
+const adminMenuCount = validateConstantObject(menusSource, 'ADMIN_MENUS', usedAdminMenus);
 
 if (errors.length > 0) {
   console.error(errors.join('\n'));
@@ -188,8 +184,8 @@ if (errors.length > 0) {
 
 console.log(
   `Validation passed: ${files.length} files, ` +
-  `${functions.size} global functions, ${messageKeyCount} message keys, ` +
-  `${sheetNameCount} sheet names, ${clientStateCount} client states, ` +
-  `${adminStateCount} admin states, ${clientMenuCount} client menus, ` +
-  `${adminMenuCount} admin menus.`
+    `${functions.size} global functions, ${messageKeyCount} message keys, ` +
+    `${sheetNameCount} sheet names, ${clientStateCount} client states, ` +
+    `${adminStateCount} admin states, ${clientMenuCount} client menus, ` +
+    `${adminMenuCount} admin menus.`
 );

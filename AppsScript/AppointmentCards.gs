@@ -1,4 +1,4 @@
-function sendAppointmentCard(chatId, settings, appointment, service, provider, location, heading) {
+function sendAppointmentCard(chatId, settings, appointment, service, provider, location, heading, showActions) {
   const customerNote = String(appointment.customer_note || '').trim() || '-';
 
   const text =
@@ -18,6 +18,11 @@ function sendAppointmentCard(chatId, settings, appointment, service, provider, l
     getMessage(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT) +
     ': ' +
     customerNote;
+
+  if (showActions === false) {
+    sendTelegramMessage(settings.ClientBotToken, chatId, text);
+    return;
+  }
 
   const inlineKeyboard = [
     [

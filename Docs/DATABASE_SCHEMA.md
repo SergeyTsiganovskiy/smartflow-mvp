@@ -31,8 +31,7 @@ Customers
 └── CustomerServiceSettings
 
 Appointments
-├── Google Calendar
-└── CalendarCache
+└── Google Calendar
 
 UserStates + UserSessions
 └── Telegram interaction state
@@ -60,7 +59,6 @@ DefaultCalendarId
 DefaultWorkStartTime
 DefaultWorkEndTime
 ReminderDayBefore
-CalendarCacheDays
 BookingDaysAhead
 PaginationPageSize
 
@@ -399,43 +397,7 @@ Purpose: confirmed bookings.
 The reminder and customer-confirmation fields are cleared whenever `start_at` or
 `end_at` changes, including client rescheduling and Calendar synchronization.
 
-## 17. CalendarCache
-
-Purpose: normalized appointment/calendar records for fast admin views.
-
-Current logical columns:
-
-```text
-cache_id
-cache_date
-source
-appointment_id
-calendar_event_id
-customer_id
-customer_name
-phone
-service_id
-service_name
-provider_id
-provider_name
-location_id
-location_name
-start_at
-end_at
-status
-title
-description
-customer_note
-synced_at
-created_at
-updated_at
-customer_confirmed
-customer_confirmed_at
-```
-
-`source` is typically `appointment` or `calendar_manual`.
-
-## 18. CustomerConflicts
+## 17. CustomerConflicts
 
 Purpose: duplicate/related customer identity conflicts.
 
@@ -454,7 +416,7 @@ Typical columns:
 
 Exact columns should be verified.
 
-## 19. RequestRecipients
+## 18. RequestRecipients
 
 Purpose: admin notification routing.
 
@@ -475,7 +437,7 @@ receive_new_requests = TRUE
 telegram_id exists
 ```
 
-## 20. AuditLog
+## 19. AuditLog
 
 Purpose: operational/debug logging.
 
@@ -496,7 +458,7 @@ APPROVE_OPTION_DEBUG
 ADMIN_BACK_STACK_DEBUG
 ```
 
-## 21. DuplicateUpdates
+## 20. DuplicateUpdates
 
 Purpose: processed Telegram update tracking, if sheet-backed.
 
@@ -508,7 +470,7 @@ Typical columns:
 | `bot_type` | String | CLIENT/ADMIN |
 | `processed_at` | DateTime | Processed |
 
-## 22. Schema conventions
+## 21. Schema conventions
 
 ### IDs
 
@@ -549,7 +511,7 @@ addresses directly in `Locations`, `Providers`, and `Services`.
 
 Google Sheets has no indexes. Use batch reads, maps keyed by ID, and caches for frequently accessed data.
 
-## 23. Items to verify before release
+## 22. Items to verify before release
 
 - exact Requests column order;
 - exact RequestOptions date/time names;

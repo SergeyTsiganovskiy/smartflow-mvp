@@ -43,9 +43,9 @@ function getCalendarAppointmentsByPhone(phone) {
 
   const settings = getSettings();
 
-  const cacheDays = Number(settings.CalendarCacheDays || 30);
+  const bookingDays = Number(settings.BookingDaysAhead || 30);
 
-  future.setDate(future.getDate() + cacheDays);
+  future.setDate(future.getDate() + bookingDays);
 
   providers.forEach(function (provider) {
     const providerId = provider.provider_id;

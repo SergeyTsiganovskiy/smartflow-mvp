@@ -13,7 +13,6 @@ function sendConfigurationMenu(chatId, settings, language) {
         [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_IDS, language) }],
         [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_REMINDER_DAY_BEFORE, language) }],
         [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS, language) }],
-        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS, language) }],
         [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE, language) }],
         [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_DEFAULT_WORK_HOURS, language) }]
       ],
@@ -326,11 +325,6 @@ function handleAdminConfigurationState(chatId, text, state, settings) {
       return;
     }
 
-    if (text === getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS)) {
-      startConfigurationCalendarCacheDays(chatId, settings);
-      return;
-    }
-
     if (text === getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE)) {
       startConfigurationPageSize(chatId, settings);
       return;
@@ -381,11 +375,6 @@ function handleAdminConfigurationState(chatId, text, state, settings) {
 
   if (state === ADMIN_STATES.WAITING_CONFIGURATION_BOOKING_DAYS) {
     processConfigurationBookingDaysAhead(chatId, text, settings);
-    return;
-  }
-
-  if (state === ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS) {
-    processConfigurationCalendarCacheDays(chatId, text, settings);
     return;
   }
 

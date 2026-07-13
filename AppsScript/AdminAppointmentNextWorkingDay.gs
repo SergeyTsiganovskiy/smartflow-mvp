@@ -56,7 +56,7 @@ function showNextWorkingDayAppointmentsAdmin(chatId, settings, provider) {
     return;
   }
 
-  const appointments = getCachedAppointmentsByDate(nextWorkingDate).filter(function (appointment) {
+  const appointments = getAppointmentsByDate(nextWorkingDate).filter(function (appointment) {
     return String(appointment.provider_id) === String(providerId);
   });
 

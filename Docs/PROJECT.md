@@ -266,8 +266,10 @@ Cards can show time, customer, phone, confirmation status, service, provider, lo
 
 After a successful client reschedule, Client Bot replaces the time-slot keyboard
 with normal navigation and shows only the updated appointment card with its new
-date/time, service, provider, location, note, and available reschedule/cancel
-actions. Admin notification remains unchanged.
+date/time, service, provider, location, and note. The informational card has no
+reschedule or cancel actions. A successful cancellation likewise sends the client
+the cancelled appointment card without action buttons. Regular My Appointments
+cards retain both actions. Admin notification remains unchanged.
 When the card originates from a linked Google Calendar event, these actions still
 operate on the authoritative `Appointments` row; Calendar is updated only through
 the normal appointment synchronization path.
@@ -431,7 +433,7 @@ Actual labels are localized through message keys. The containing provider calend
 
 Missing description fields do not stop the event from occupying its provider's time or appearing in Admin Bot.
 
-After a manual event has ended, a valid phone number should allow the customer to be added to `CustomerProfiles` and the visit to be recorded. This synchronization is planned work. It must normalize phones, avoid duplicate profiles and visits, and work even when other customer information is absent.
+After a manual event has ended, the hourly completed-visit synchronization records events from the previous seven days when a valid phone number is available. It normalizes phones, avoids duplicate visits by Calendar event ID, and updates `CustomerProfiles` even when optional customer information is absent.
 
 ### Customer data roles
 
@@ -455,7 +457,7 @@ The Administrators menu also provides a read-only list action that displays ever
 
 The Configuration menu controls the `ReminderDayBefore` setting. When disabled, the 24-hour reminder trigger exits before selecting or notifying appointments. Missing settings default to enabled to preserve existing installations.
 
-`BookingDaysAhead` and `CalendarCacheDays` are editable integer horizons from 1 to 365 days. The cache horizon must be greater than or equal to the booking horizon so every client-selectable date is covered by Calendar synchronization.
+`BookingDaysAhead` is the single editable horizon from 1 to 365 days. It controls client booking, rescheduling, admin date selection, future Calendar reads, and next-working-day searches.
 
 `PaginationPageSize` is a shared page size for every paginated Admin Bot view.
 It accepts values from 1 to 10 and defaults to 5 when the setting is missing or
@@ -492,6 +494,13 @@ service name using the currently selected interface language (with safe language
 fallbacks), renames the corresponding columns, and then deletes only the migrated
 dynamic rows from `Messages`. The migration is safe to repeat.
 
+Immediately after deploying the Calendar-cache removal, run
+`migrateRemoveCalendarCache()` once from the Apps Script editor. It removes the
+obsolete cache sheet, setting, localization rows, and cache refresh triggers, then
+creates the hourly `syncCompletedCustomerVisitsTrigger` if it is missing. The
+migration is safe to repeat. Appointment views read live `Appointments` and Google
+Calendar data after this deployment, so they no longer wait for a refresh trigger.
+
 ### Parallel work
 
 The architecture can support businesses where a provider serves multiple clients in parallel. Strict slot exclusion is therefore configurable rather than universally assumed.
@@ -518,8 +527,9 @@ The architecture can support businesses where a provider serves multiple clients
 ### Performance
 
 - settings/messages/entities are cached;
-- CalendarCache avoids repeated calendar reads;
 - Sheets are read in batches.
+- appointment views read current `Appointments` and Google Calendar data directly;
+- provider-range views query each unique Calendar once for the requested range.
 
 ### Security
 
@@ -563,7 +573,7 @@ A client installation requires:
 - Calendar integration;
 - cancellation/rescheduling;
 - reminders and confirmation;
-- CalendarCache;
+- live Calendar-backed admin appointment views;
 - audit logging;
 - location CRUD;
 - compact admin menu.
