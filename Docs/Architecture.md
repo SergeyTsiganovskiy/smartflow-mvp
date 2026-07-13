@@ -130,7 +130,7 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 - `TelegramWebhooks.gs` — webhook setup, inspection, deletion, and manual polling;
 - `Messages.gs`, `MessageCommands.gs` — localized message reads and writes;
 - `AuditLog.gs` — persistent diagnostic and operational audit entries;
-- `DateTimeUtils.gs`, `PhoneUtils.gs`, `IdUtils.gs`, `TextUtils.gs` — focused shared helpers;
+- `DateUtils.gs`, `TimeUtils.gs`, `DateTimeUtils.gs`, `BookingDateTimeUtils.gs`, `ScheduleDateTimeUtils.gs`, `PhoneUtils.gs`, `IdUtils.gs`, `TextUtils.gs` — focused shared helpers, separating date-only, time-only, combined date-time, booking, and schedule concerns;
 - `CalendarMetadata.gs`, `KeyboardUtils.gs`, `TelegramUpdateGuard.gs` — integration-specific helpers.
 
 ### Bot and callback modules
@@ -156,8 +156,8 @@ Large admin sections are split by operation while preserving global Apps Script 
 - locations: `AdminLocations.gs`, `AdminLocationCreation.gs`, `AdminLocationEditing.gs`, `AdminLocationActivation.gs`;
 - services: `AdminServices.gs`, `AdminServiceCreation.gs`, `AdminServiceEditing.gs`, `AdminServiceActivation.gs`;
 - providers: `AdminProviders.gs`, `AdminProviderCreation.gs`, `AdminProviderEditing.gs`, `AdminProviderActivation.gs`;
-- provider schedules: `AdminProviderScheduleView.gs`, `AdminProviderSchedules.gs`;
-- schedule overrides: `AdminProviderOverrideCreation.gs`, `AdminProviderOverrideList.gs`, `AdminProviderOverrideDeletion.gs`.
+- provider schedules: `AdminProviderScheduleView.gs`, `AdminProviderSchedules.gs`, `AdminProviderScheduleTimeEditing.gs`;
+- schedule overrides: `AdminProviderOverrideSelection.gs`, `AdminProviderOverrideCreation.gs`, `AdminProviderOverrideList.gs`, `AdminProviderOverrideDeletion.gs`.
 
 ### Navigation
 
@@ -181,7 +181,7 @@ Sheet-backed domains use an explicit query/command split where useful:
 - services: `Services.gs`, `ServiceCommands.gs`;
 - locations: `Locations.gs`, `LocationCommands.gs`;
 - requests: `Requests.gs`, `RequestCommands.gs`;
-- appointments: `AppointmentQueries.gs`, `Appointments.gs`;
+- appointments: `AppointmentQueries.gs`, `AppointmentListQueries.gs`, `Appointments.gs`;
 - conversation state: `UserStates.gs`, `UserStateCommands.gs`, `Sessions.gs`, `SessionCommands.gs`.
 
 Query modules own reads and caches. Command modules own Sheet mutations. This separation is organizational only: Apps Script still exposes all top-level functions globally.
