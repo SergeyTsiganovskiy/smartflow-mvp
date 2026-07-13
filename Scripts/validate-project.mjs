@@ -12,8 +12,14 @@ const errors = [];
 const functions = new Map();
 const usedMessageKeys = new Set();
 const usedSheetNames = new Set();
+const usedClientStates = new Set();
+const usedAdminStates = new Set();
+const usedClientMenus = new Set();
+const usedAdminMenus = new Set();
 let messageKeysSource = '';
 let sheetNamesSource = '';
+let statesSource = '';
+let menusSource = '';
 
 for (const file of files) {
   const fullPath = path.join(sourceDir, file);
@@ -40,6 +46,29 @@ for (const file of files) {
     usedSheetNames.add(match[1]);
   }
 
+  for (const match of source.matchAll(/\bSTATES\.([A-Z][A-Z0-9_]*)/g)) {
+    usedClientStates.add(match[1]);
+  }
+
+  for (const match of source.matchAll(/\bADMIN_STATES\.([A-Z][A-Z0-9_]*)/g)) {
+    usedAdminStates.add(match[1]);
+  }
+
+  for (const match of source.matchAll(/\bCLIENT_MENUS\.([A-Z][A-Z0-9_]*)/g)) {
+    usedClientMenus.add(match[1]);
+  }
+
+  for (const match of source.matchAll(/\bADMIN_MENUS\.([A-Z][A-Z0-9_]*)/g)) {
+    usedAdminMenus.add(match[1]);
+  }
+
+  if (
+    file !== 'States.gs' &&
+    /(?:state\s*===|setUserState\([\s\S]{0,120}?)\s*['"](?:ADMIN_)?WAITING_[A-Z0-9_]+['"]/.test(source)
+  ) {
+    errors.push(`Hardcoded conversation state in ${file}`);
+  }
+
   if (/getSheetByName\(\s*['"]/.test(source)) {
     errors.push(`Hardcoded sheet name in ${file}`);
   }
@@ -55,6 +84,20 @@ for (const file of files) {
   if (/^const\s+SHEET_NAMES\s*=/m.test(source)) {
     sheetNamesSource = source;
   }
+
+  if (
+    /^const\s+STATES\s*=/m.test(source) &&
+    /^const\s+ADMIN_STATES\s*=/m.test(source)
+  ) {
+    statesSource = source;
+  }
+
+  if (
+    /^const\s+CLIENT_MENUS\s*=/m.test(source) &&
+    /^const\s+ADMIN_MENUS\s*=/m.test(source)
+  ) {
+    menusSource = source;
+  }
 }
 
 for (const [name, locations] of functions) {
@@ -63,27 +106,57 @@ for (const [name, locations] of functions) {
   }
 }
 
-const definedMessageKeys = new Set(
-  [...messageKeysSource.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
-    .map((match) => match[1])
-);
+function getObjectKeys(source, objectName) {
+  const match = source.match(
+    new RegExp(`const\\s+${objectName}\\s*=\\s*\\{([\\s\\S]*?)\\n\\};`)
+  );
 
-for (const key of [...usedMessageKeys].sort()) {
-  if (!definedMessageKeys.has(key)) {
-    errors.push(`Undefined MESSAGE_KEYS.${key}`);
+  if (!match) {
+    errors.push(`Missing ${objectName} declaration`);
+    return [];
   }
+
+  return [...match[1].matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
+    .map((item) => item[1]);
 }
 
-const definedSheetNames = new Set(
-  [...sheetNamesSource.matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)]
-    .map((match) => match[1])
-);
+function validateConstantObject(source, objectName, usedKeys) {
+  const keys = getObjectKeys(source, objectName);
+  const definedKeys = new Set();
 
-for (const key of [...usedSheetNames].sort()) {
-  if (!definedSheetNames.has(key)) {
-    errors.push(`Undefined SHEET_NAMES.${key}`);
+  keys.forEach(function(key) {
+    if (definedKeys.has(key)) {
+      errors.push(`Duplicate ${objectName}.${key}`);
+    }
+    definedKeys.add(key);
+  });
+
+  for (const key of [...usedKeys].sort()) {
+    if (!definedKeys.has(key)) {
+      errors.push(`Undefined ${objectName}.${key}`);
+    }
   }
+
+  return definedKeys.size;
 }
+
+const messageKeyCount =
+  validateConstantObject(messageKeysSource, 'MESSAGE_KEYS', usedMessageKeys);
+
+const sheetNameCount =
+  validateConstantObject(sheetNamesSource, 'SHEET_NAMES', usedSheetNames);
+
+const clientStateCount =
+  validateConstantObject(statesSource, 'STATES', usedClientStates);
+
+const adminStateCount =
+  validateConstantObject(statesSource, 'ADMIN_STATES', usedAdminStates);
+
+const clientMenuCount =
+  validateConstantObject(menusSource, 'CLIENT_MENUS', usedClientMenus);
+
+const adminMenuCount =
+  validateConstantObject(menusSource, 'ADMIN_MENUS', usedAdminMenus);
 
 if (errors.length > 0) {
   console.error(errors.join('\n'));
@@ -92,6 +165,8 @@ if (errors.length > 0) {
 
 console.log(
   `Validation passed: ${files.length} files, ` +
-  `${functions.size} global functions, ${usedMessageKeys.size} message keys, ` +
-  `${usedSheetNames.size} sheet names.`
+  `${functions.size} global functions, ${messageKeyCount} message keys, ` +
+  `${sheetNameCount} sheet names, ${clientStateCount} client states, ` +
+  `${adminStateCount} admin states, ${clientMenuCount} client menus, ` +
+  `${adminMenuCount} admin menus.`
 );

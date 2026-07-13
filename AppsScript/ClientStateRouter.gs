@@ -38,7 +38,7 @@ function handleClientStateMessage(
   }
 
   if (
-    state === 'WAITING_RESCHEDULE_CUSTOM_DATE' ||
+    state === STATES.WAITING_RESCHEDULE_CUSTOM_DATE ||
     state === STATES.WAITING_RESCHEDULE_DATE ||
     state === STATES.WAITING_RESCHEDULE_TIME
   ) {

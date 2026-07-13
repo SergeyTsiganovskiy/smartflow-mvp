@@ -4,7 +4,7 @@ function handleClientRescheduleState(
   state,
   settings
 ) {
-  if (state === 'WAITING_RESCHEDULE_CUSTOM_DATE') {
+  if (state === STATES.WAITING_RESCHEDULE_CUSTOM_DATE) {
       addAuditLog('RESCHEDULE_CUSTOM_DATE_BLOCK', text);
   
       const selectedDate = parseCustomDateButton(text);

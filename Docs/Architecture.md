@@ -199,7 +199,7 @@ Query modules own reads and caches. Command modules own Sheet mutations. This se
 
 ### Refactoring safety checks
 
-- `Scripts/validate-project.mjs` checks syntax, duplicate global functions, message keys, sheet-name constants, hardcoded sheet names, and legacy Owner references;
+- `Scripts/validate-project.mjs` checks syntax, duplicate global functions, undefined or duplicated message, sheet-name, state, and menu constants, hardcoded runtime states, hardcoded sheet names, and legacy Owner references;
 - `Scripts/verify-function-moves.mjs` compares all global function bodies and top-level `const`, `let`, and `var` declarations with a Git reference;
 - mechanical file moves must pass both checks and `git diff --check` before deployment;
 - behavior-changing work is isolated from mechanical moves and requires targeted regression after `clasp push`.

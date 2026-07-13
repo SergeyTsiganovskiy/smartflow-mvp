@@ -144,7 +144,7 @@ function showRescheduleTimeOptions(chatId, settings) {
 
   setUserState(
     chatId,
-    'WAITING_RESCHEDULE_TIME'
+    STATES.WAITING_RESCHEDULE_TIME
   );
 
   sendTelegramMessage(
@@ -161,7 +161,7 @@ function showRescheduleCustomDateOptions(
 ) {
   setUserState(
     chatId,
-    'WAITING_RESCHEDULE_CUSTOM_DATE'
+    STATES.WAITING_RESCHEDULE_CUSTOM_DATE
   );
 
   const keyboardRows = [];
