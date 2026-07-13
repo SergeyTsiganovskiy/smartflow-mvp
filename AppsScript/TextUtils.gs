@@ -1,10 +1,7 @@
 function extractFieldFromText(text, fieldName) {
   const value = String(text || '');
 
-  const regex = new RegExp(
-    fieldName + '\\s*[:\\-]\\s*(.+)',
-    'i'
-  );
+  const regex = new RegExp(fieldName + '\\s*[:\\-]\\s*(.+)', 'i');
 
   const match = value.match(regex);
 
@@ -23,86 +20,59 @@ function normalizeTextForSearch(value) {
     .trim();
 }
 
-function extractValueByLabel(
-  text,
-  labels
-) {
-  const source =
-    String(text || '');
+function extractValueByLabel(text, labels) {
+  const source = String(text || '');
 
   if (!source) {
     return '';
   }
 
-  const allLabels =
-    getCalendarLabelValues();
+  const allLabels = getCalendarLabelValues();
 
   for (let i = 0; i < labels.length; i++) {
-    const label =
-      String(labels[i] || '').trim();
+    const label = String(labels[i] || '').trim();
 
     if (!label) {
       continue;
     }
 
-    const startMarker =
-      label + ':';
+    const startMarker = label + ':';
 
-    const startIndex =
-      source.indexOf(startMarker);
+    const startIndex = source.indexOf(startMarker);
 
     if (startIndex === -1) {
       continue;
     }
 
-    const valueStart =
-      startIndex + startMarker.length;
+    const valueStart = startIndex + startMarker.length;
 
-    let valueEnd =
-      source.length;
+    let valueEnd = source.length;
 
-    allLabels.forEach(function(nextLabel) {
-      const nextMarker =
-        String(nextLabel || '').trim() + ':';
+    allLabels.forEach(function (nextLabel) {
+      const nextMarker = String(nextLabel || '').trim() + ':';
 
       if (!nextMarker || nextMarker === startMarker) {
         return;
       }
 
-      const nextIndex =
-        source.indexOf(
-          nextMarker,
-          valueStart
-        );
+      const nextIndex = source.indexOf(nextMarker, valueStart);
 
-      if (
-        nextIndex !== -1 &&
-        nextIndex < valueEnd
-      ) {
+      if (nextIndex !== -1 && nextIndex < valueEnd) {
         valueEnd = nextIndex;
       }
     });
 
-    return source
-      .substring(
-        valueStart,
-        valueEnd
-      )
-      .trim();
+    return source.substring(valueStart, valueEnd).trim();
   }
 
   return '';
 }
 
 function findItemByName(items, name) {
-  const searchName =
-    String(name || '').trim();
+  const searchName = String(name || '').trim();
 
   for (let i = 0; i < items.length; i++) {
-    if (
-      String(items[i].name || '').trim() ===
-      searchName
-    ) {
+    if (String(items[i].name || '').trim() === searchName) {
       return items[i];
     }
   }

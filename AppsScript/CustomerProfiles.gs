@@ -1,6 +1,3 @@
-// =========================
-// CUSTOMER PROFILES
-// =========================
 let CUSTOMER_PROFILES_CACHE = null;
 
 function getCustomerProfiles() {
@@ -8,12 +5,9 @@ function getCustomerProfiles() {
     return CUSTOMER_PROFILES_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_PROFILES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_PROFILES);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   const result = [];
 
@@ -22,14 +16,14 @@ function getCustomerProfiles() {
     return result;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -41,20 +35,14 @@ function getCustomerProfiles() {
 }
 
 function findCustomerProfileByPhone(phone) {
-  const profiles =
-    getCustomerProfiles();
+  const profiles = getCustomerProfiles();
 
-  const phoneKey =
-    getPhoneSearchKey(phone);
+  const phoneKey = getPhoneSearchKey(phone);
 
   for (let i = 0; i < profiles.length; i++) {
-    const profile =
-      profiles[i];
+    const profile = profiles[i];
 
-    if (
-      String(profile.phone_key) ===
-      String(phoneKey)
-    ) {
+    if (String(profile.phone_key) === String(phoneKey)) {
       return profile;
     }
   }
@@ -66,16 +54,11 @@ function resetCustomerProfilesCache() {
   CUSTOMER_PROFILES_CACHE = null;
 }
 
-
 function getCustomerProfileById(profileId) {
-  const profiles =
-    getCustomerProfiles();
+  const profiles = getCustomerProfiles();
 
   for (let i = 0; i < profiles.length; i++) {
-    if (
-      String(profiles[i].profile_id) ===
-      String(profileId)
-    ) {
+    if (String(profiles[i].profile_id) === String(profileId)) {
       return profiles[i];
     }
   }

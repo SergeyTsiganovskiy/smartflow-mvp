@@ -1,10 +1,4 @@
-function handleAdminStateMessage(
-  chatId,
-  text,
-  state,
-  settings
-) {
-
+function handleAdminStateMessage(chatId, text, state, settings) {
   if (
     state === ADMIN_STATES.WAITING_CONFIGURATION_ACTION ||
     state === ADMIN_STATES.WAITING_CONFIGURATION_LANGUAGE ||
@@ -37,12 +31,7 @@ function handleAdminStateMessage(
     state === ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_DELETE ||
     text === getMessage(MESSAGE_KEYS.DELETE_CUSTOMER_SERVICE)
   ) {
-    handleAdminServiceState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminServiceState(chatId, text, state, settings);
     return;
   }
 
@@ -51,12 +40,7 @@ function handleAdminStateMessage(
     state === ADMIN_STATES.WAITING_APPOINTMENTS_DATE ||
     state === ADMIN_STATES.WAITING_NEXT_WORKING_DAY_PROVIDER
   ) {
-    handleAdminAppointmentState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminAppointmentState(chatId, text, state, settings);
     return;
   }
 
@@ -75,12 +59,7 @@ function handleAdminStateMessage(
     state === ADMIN_STATES.WAITING_CUSTOMER_CONFLICT_DELETE_MAIN_PHONE ||
     state === ADMIN_STATES.WAITING_CUSTOMER_CONFLICT_DELETE_PHONE
   ) {
-    handleAdminCustomerState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminCustomerState(chatId, text, state, settings);
     return;
   }
 
@@ -94,12 +73,7 @@ function handleAdminStateMessage(
     state === ADMIN_STATES.WAITING_LOCATION_FIELD_TO_EDIT ||
     state === ADMIN_STATES.WAITING_LOCATION_NEW_VALUE
   ) {
-    handleAdminLocationState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminLocationState(chatId, text, state, settings);
     return;
   }
 
@@ -113,12 +87,7 @@ function handleAdminStateMessage(
     state === ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE ||
     state === ADMIN_STATES.WAITING_PROVIDER_TO_ENABLE
   ) {
-    handleAdminProviderState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminProviderState(chatId, text, state, settings);
     return;
   }
 
@@ -129,12 +98,7 @@ function handleAdminStateMessage(
     state === ADMIN_STATES.WAITING_SCHEDULE_START_TIME ||
     state === ADMIN_STATES.WAITING_SCHEDULE_END_TIME
   ) {
-    handleAdminScheduleState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminScheduleState(chatId, text, state, settings);
     return;
   }
 
@@ -147,18 +111,9 @@ function handleAdminStateMessage(
     state === ADMIN_STATES.WAITING_OVERRIDE_END_TIME ||
     state === ADMIN_STATES.WAITING_OVERRIDE_TO_DELETE
   ) {
-    handleAdminOverrideState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminOverrideState(chatId, text, state, settings);
     return;
   }
-
-  // =========================
-  // FALLBACK
-  // =========================
 
   sendAdminMainMenu(chatId, settings);
 }

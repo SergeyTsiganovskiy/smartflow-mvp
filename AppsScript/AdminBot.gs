@@ -5,23 +5,11 @@ function handleAdminMessage(message) {
   const text = message.text || '';
   const state = String(getUserState(chatId) || '').trim();
 
-  // =========================
-  // ACCESS CHECK
-  // =========================
-
   if (!isAdminUser(chatId)) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ADMIN_ACCESS_DENIED)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.ADMIN_ACCESS_DENIED));
 
     return;
   }
-
-  // =========================
-  // GLOBAL COMMANDS
-  // =========================
 
   if (text === '/start') {
     clearUserSession(chatId);
@@ -30,10 +18,5 @@ function handleAdminMessage(message) {
     sendAdminMainMenu(chatId, settings);
     return;
   }
-  handleAdminCommandMessage(
-    chatId,
-    text,
-    state,
-    settings
-  );
+  handleAdminCommandMessage(chatId, text, state, settings);
 }

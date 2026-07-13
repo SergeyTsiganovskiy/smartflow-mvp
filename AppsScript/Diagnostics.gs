@@ -1,13 +1,10 @@
-
 function testMessages() {
   const text = getMessage('START');
   Logger.log(text);
 }
 
 function testSendAdminNotification() {
-  sendAdminNotification(
-    'SmartFlow admin notification test successful ✅'
-  );
+  sendAdminNotification('SmartFlow admin notification test successful ✅');
 }
 
 function testSelectPeriodMessage() {
@@ -16,20 +13,13 @@ function testSelectPeriodMessage() {
 }
 
 function testAvailableSlotsWithSchedule() {
-  const slots = getAvailableTimeSlots(
-    'prov_003',
-    '2026-06-16',
-    180
-  );
+  const slots = getAvailableTimeSlots('prov_003', '2026-06-16', 180);
 
   Logger.log(slots);
 }
 
 function testCalendarBusy() {
-  const busy = getCalendarBusyIntervals(
-    'prov_003',
-    '2026-06-13'
-  );
+  const busy = getCalendarBusyIntervals('prov_003', '2026-06-13');
 
   Logger.log(JSON.stringify(busy));
 }
@@ -45,16 +35,12 @@ function testFindAppointmentsByPhone() {
 }
 
 function testActiveRequestRecipients() {
-  Logger.log(
-    JSON.stringify(
-      getActiveRequestRecipients()
-    )
-  );
+  Logger.log(JSON.stringify(getActiveRequestRecipients()));
 }
 
 function testGeneral() {
   clearCalendarCacheForDate('2026-06-23');
-  syncCalendarCacheForDate('2026-06-23')
+  syncCalendarCacheForDate('2026-06-23');
 }
 
 function testAppointmentsMenuMessages() {
@@ -69,79 +55,47 @@ function testAppointmentsMenuMessages() {
     'APPOINTMENTS_BY_DATE_TITLE'
   ];
 
-  keys.forEach(key => {
+  keys.forEach((key) => {
     const value = getMessage(MESSAGE_KEYS[key]);
 
-    Logger.log(
-      key + ' = ' + (value || '❌ NOT FOUND')
-    );
+    Logger.log(key + ' = ' + (value || '❌ NOT FOUND'));
   });
 }
 
 function testAppointmentsMenuKeyboard() {
-  const keyboard =
-    buildAppointmentsMenuKeyboard();
+  const keyboard = buildAppointmentsMenuKeyboard();
 
-  Logger.log(
-    JSON.stringify(
-      keyboard,
-      null,
-      2
-    )
-  );
+  Logger.log(JSON.stringify(keyboard, null, 2));
 }
 
 function testAppointmentsMenuKeyboard1() {
-  const keyboard =
-    buildAppointmentsMenuKeyboard();
+  const keyboard = buildAppointmentsMenuKeyboard();
 
   Logger.log('=== APPOINTMENTS MENU ===');
 
   keyboard.keyboard.forEach((row, rowIndex) => {
     row.forEach((button, buttonIndex) => {
-      Logger.log(
-        'Row ' +
-          rowIndex +
-          ', Button ' +
-          buttonIndex +
-          ': ' +
-          (button.text || '❌ EMPTY')
-      );
+      Logger.log('Row ' + rowIndex + ', Button ' + buttonIndex + ': ' + (button.text || '❌ EMPTY'));
     });
   });
 
-  Logger.log(
-    JSON.stringify(
-      keyboard,
-      null,
-      2
-    )
-  );
+  Logger.log(JSON.stringify(keyboard, null, 2));
 }
 
 function testCustomerProfiles() {
-  const profile =
-    createCustomerProfile({
-      phone: '+380501112233',
-      name: 'Тест',
-      active: true
-    });
+  const profile = createCustomerProfile({
+    phone: '+380501112233',
+    name: 'Тест',
+    active: true
+  });
 
   Logger.log(profile);
 
-  updateCustomerProfile(
-    profile.profile_id,
-    {
-      sales_hint:
-        'Хочу заказать уход'
-    }
-  );
+  updateCustomerProfile(profile.profile_id, {
+    sales_hint: 'Хочу заказать уход'
+  });
 
-  Logger.log(
-    findCustomerProfileByPhone(
-      '+380501112233'
-    )
-  );
+  Logger.log(findCustomerProfileByPhone('+380501112233'));
 }
 
 function testSyncCustomerProfiles() {
@@ -149,37 +103,23 @@ function testSyncCustomerProfiles() {
 }
 
 function testSyncYesterdayVisitHistory() {
-  const settings =
-    getSettings();
+  const settings = getSettings();
 
-  const timezone =
-    settings.TimeZone || 'Europe/Kyiv';
+  const timezone = settings.TimeZone || 'Europe/Kyiv';
 
-  const yesterday =
-    new Date();
+  const yesterday = new Date();
 
-  yesterday.setDate(
-    yesterday.getDate() - 1
-  );
+  yesterday.setDate(yesterday.getDate() - 1);
 
-  const dateString =
-    Utilities.formatDate(
-      yesterday,
-      timezone,
-      'yyyy-MM-dd'
-    );
+  const dateString = Utilities.formatDate(yesterday, timezone, 'yyyy-MM-dd');
 
-  syncCalendarCacheForDate(
-    dateString
-  );
+  syncCalendarCacheForDate(dateString);
 
   syncCustomerVisitHistoryFromCalendarCache();
 
   syncCustomerProfiles();
 
-  Logger.log(
-    'DONE: ' + dateString
-  );
+  Logger.log('DONE: ' + dateString);
 }
 
 function testSyncCalendarCache() {
@@ -188,15 +128,9 @@ function testSyncCalendarCache() {
 }
 
 function testDeletedAppointmentEvent() {
-  const appointment =
-    getAppointmentById(
-      'appt_1782736987763'
-    );
+  const appointment = getAppointmentById('appt_1782736987763');
 
-  const event =
-    getCalendarEventByAppointment(
-      appointment
-    );
+  const event = getCalendarEventByAppointment(appointment);
 
   if (!event) {
     Logger.log('EVENT NOT FOUND');
@@ -215,11 +149,9 @@ function testDeletedAppointmentEvent() {
 }
 
 function testProviderCalendarId() {
-  const calendarId =
-    getProviderCalendarId('prov_001');
+  const calendarId = getProviderCalendarId('prov_001');
 
-  const calendar =
-    CalendarApp.getCalendarById(calendarId);
+  const calendar = CalendarApp.getCalendarById(calendarId);
 
   Logger.log(
     JSON.stringify({
@@ -231,22 +163,17 @@ function testProviderCalendarId() {
 }
 
 function testProviderEventsForDate() {
-  const calendarId =
-    getProviderCalendarId('prov_001');
+  const calendarId = getProviderCalendarId('prov_001');
 
-  const calendar =
-    CalendarApp.getCalendarById(calendarId);
+  const calendar = CalendarApp.getCalendarById(calendarId);
 
-  const start =
-    new Date('2026-06-30T00:00:00');
+  const start = new Date('2026-06-30T00:00:00');
 
-  const end =
-    new Date('2026-06-30T23:59:59');
+  const end = new Date('2026-06-30T23:59:59');
 
-  const events =
-    calendar.getEvents(start, end);
+  const events = calendar.getEvents(start, end);
 
-  events.forEach(function(event) {
+  events.forEach(function (event) {
     Logger.log(
       JSON.stringify({
         id: event.getId(),
@@ -260,13 +187,11 @@ function testProviderEventsForDate() {
 }
 
 function testManualCalendarDuplicationRows() {
-syncCalendarCacheForDate('2026-07-01');
+  syncCalendarCacheForDate('2026-07-01');
 }
 
 function testSyncManualDate() {
-  syncCalendarCacheForDate(
-    '2026-07-04'
-  );
+  syncCalendarCacheForDate('2026-07-04');
 }
 
 function testSendConfirmButton() {
@@ -277,28 +202,17 @@ function testSendConfirmButton() {
 function checkAdminWebhook() {
   const settings = getSettings();
 
-  const url =
-    'https://api.telegram.org/bot' +
-    settings.AdminBotToken +
-    '/getWebhookInfo';
+  const url = 'https://api.telegram.org/bot' + settings.AdminBotToken + '/getWebhookInfo';
 
-  Logger.log(
-    UrlFetchApp.fetch(url).getContentText()
-  );
+  Logger.log(UrlFetchApp.fetch(url).getContentText());
 }
 
 function checkAdminBotIdentity() {
-
   const settings = getSettings();
 
-  const url =
-    'https://api.telegram.org/bot' +
-    settings.AdminBotToken +
-    '/getMe';
+  const url = 'https://api.telegram.org/bot' + settings.AdminBotToken + '/getMe';
 
-  Logger.log(
-    UrlFetchApp.fetch(url).getContentText()
-  );
+  Logger.log(UrlFetchApp.fetch(url).getContentText());
 }
 
 function testGetMessageAccess() {
@@ -309,8 +223,5 @@ function testGetMessageAccess() {
 function testSendAdminMainMenu() {
   const settings = getSettings();
 
-  sendAdminMainMenu(
-    726107007,
-    settings
-  );
+  sendAdminMainMenu(726107007, settings);
 }

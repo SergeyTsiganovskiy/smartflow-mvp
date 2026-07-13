@@ -1,101 +1,49 @@
-function processDisableLocation(
-  chatId,
-  text,
-  settings
-) {
-  processLocationActiveChange(
-    chatId,
-    text,
-    settings,
-    {
-      includeInactive: false,
-      activate: false,
-      successMessage: MESSAGE_KEYS.LOCATION_DISABLED
-    }
-  );
+function processDisableLocation(chatId, text, settings) {
+  processLocationActiveChange(chatId, text, settings, {
+    includeInactive: false,
+    activate: false,
+    successMessage: MESSAGE_KEYS.LOCATION_DISABLED
+  });
 }
 
-function startDisableLocation(
-  chatId,
-  settings
-) {
-  startLocationSelection(
-    chatId,
-    settings,
-    {
-      state:
-        ADMIN_STATES.WAITING_LOCATION_TO_DISABLE,
+function startDisableLocation(chatId, settings) {
+  startLocationSelection(chatId, settings, {
+    state: ADMIN_STATES.WAITING_LOCATION_TO_DISABLE,
 
-      locations:
-        getActiveLocations(),
+    locations: getActiveLocations(),
 
-      emptyMessageKey:
-        MESSAGE_KEYS.NO_ACTIVE_LOCATIONS
-    }
-  );
+    emptyMessageKey: MESSAGE_KEYS.NO_ACTIVE_LOCATIONS
+  });
 }
 
-function startEnableLocation(
-  chatId,
-  settings
-) {
-  startLocationSelection(
-    chatId,
-    settings,
-    {
-      state:
-        ADMIN_STATES.WAITING_LOCATION_TO_ENABLE,
+function startEnableLocation(chatId, settings) {
+  startLocationSelection(chatId, settings, {
+    state: ADMIN_STATES.WAITING_LOCATION_TO_ENABLE,
 
-      locations:
-        getAllLocations().filter(function(location) {
-          return (
-            String(location.active)
-              .toUpperCase() !== 'TRUE'
-          );
-        }),
+    locations: getAllLocations().filter(function (location) {
+      return String(location.active).toUpperCase() !== 'TRUE';
+    }),
 
-      emptyMessageKey:
-        MESSAGE_KEYS.NO_DISABLED_LOCATIONS
-    }
-  );
+    emptyMessageKey: MESSAGE_KEYS.NO_DISABLED_LOCATIONS
+  });
 }
 
-function processEnableLocation(
-  chatId,
-  text,
-  settings
-) {
-  processLocationActiveChange(
-    chatId,
-    text,
-    settings,
-    {
-      includeInactive: true,
-      activate: true,
-      successMessage: MESSAGE_KEYS.LOCATION_ENABLED
-    }
-  );
+function processEnableLocation(chatId, text, settings) {
+  processLocationActiveChange(chatId, text, settings, {
+    includeInactive: true,
+    activate: true,
+    successMessage: MESSAGE_KEYS.LOCATION_ENABLED
+  });
 }
 
-function startLocationSelection(
-  chatId,
-  settings,
-  options
-) {
-  setUserState(
-    chatId,
-    options.state
-  );
+function startLocationSelection(chatId, settings, options) {
+  setUserState(chatId, options.state);
 
-  setUserSessionValue(
-    chatId,
-    'admin_back_menu',
-    ADMIN_MENUS.LOCATIONS
-  );
+  setUserSessionValue(chatId, 'admin_back_menu', ADMIN_MENUS.LOCATIONS);
 
   const keyboardRows = [];
 
-  options.locations.forEach(function(location) {
+  options.locations.forEach(function (location) {
     keyboardRows.push([
       {
         text: location.name
@@ -107,9 +55,7 @@ function startLocationSelection(
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      getMessage(
-        options.emptyMessageKey
-      ),
+      getMessage(options.emptyMessageKey),
       buildKeyboardWithMainMenu([])
     );
 
@@ -119,54 +65,26 @@ function startLocationSelection(
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.SELECT_LOCATION
-    ),
-    buildKeyboardWithMainMenu(
-      keyboardRows
-    )
+    getMessage(MESSAGE_KEYS.SELECT_LOCATION),
+    buildKeyboardWithMainMenu(keyboardRows)
   );
 }
 
-function processLocationActiveChange(
-  chatId,
-  text,
-  settings,
-  options
-) {
-  const location =
-    findLocationByName(
-      text,
-      options.includeInactive
-    );
+function processLocationActiveChange(chatId, text, settings, options) {
+  const location = findLocationByName(text, options.includeInactive);
 
-  if (
-    !location ||
-    String(location.active).toUpperCase() ===
-      String(options.activate).toUpperCase()
-  ) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.LOCATION_SELECT_FROM_LIST)
-    );
+  if (!location || String(location.active).toUpperCase() === String(options.activate).toUpperCase()) {
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.LOCATION_SELECT_FROM_LIST));
 
     return;
   }
 
-  setLocationActive(
-    location.id,
-    options.activate
-  );
+  setLocationActive(location.id, options.activate);
 
   clearUserSession(chatId);
   setUserState(chatId, '');
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(options.successMessage)
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(options.successMessage));
 
   sendLocationsMenu(chatId, settings);
 }

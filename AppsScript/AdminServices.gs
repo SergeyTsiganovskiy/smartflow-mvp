@@ -1,4 +1,3 @@
-
 function sendServicesMenu(chatId, settings) {
   navigateAdmin(chatId, ADMIN_MENUS.SERVICES);
 
@@ -21,41 +20,16 @@ function buildServicesMenuKeyboard() {
   ]);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function resetServiceWizardSession(chatId) {
-  setUserSessionValues(
-    chatId,
-    {
-      service_name: '',
-      service_location_id: '',
-      service_duration_min: '',
-      service_duration_max: '',
+  setUserSessionValues(chatId, {
+    service_name: '',
+    service_location_id: '',
+    service_duration_min: '',
+    service_duration_max: '',
 
-      edit_service_id: '',
-      edit_service_field: ''
-    }
-  );
+    edit_service_id: '',
+    edit_service_field: ''
+  });
 
-  setUserState(
-    chatId,
-    ''
-  );
+  setUserState(chatId, '');
 }

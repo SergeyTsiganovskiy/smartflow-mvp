@@ -1,11 +1,5 @@
-function generateNextEntityId(
-  sheetName,
-  idColumnName,
-  prefix
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(sheetName);
+function generateNextEntityId(sheetName, idColumnName, prefix) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -13,16 +7,14 @@ function generateNextEntityId(
     return prefix + '_001';
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
   const idIndex = headers.indexOf(idColumnName);
 
   if (idIndex === -1) {
-    throw new Error(
-      'Column not found: ' + idColumnName
-    );
+    throw new Error('Column not found: ' + idColumnName);
   }
 
   let maxNumber = 0;
@@ -30,9 +22,7 @@ function generateNextEntityId(
   for (let i = 1; i < rows.length; i++) {
     const value = String(rows[i][idIndex] || '').trim();
 
-    const regex = new RegExp(
-      '^' + prefix + '_(\\d+)$'
-    );
+    const regex = new RegExp('^' + prefix + '_(\\d+)$');
 
     const match = value.match(regex);
 
@@ -47,59 +37,31 @@ function generateNextEntityId(
     }
   }
 
-  return (
-    prefix +
-    '_' +
-    String(maxNumber + 1).padStart(3, '0')
-  );
+  return prefix + '_' + String(maxNumber + 1).padStart(3, '0');
 }
 
 function generateLocationId() {
-  return generateNextEntityId(
-    'Locations',
-    'location_id',
-    'loc'
-  );
+  return generateNextEntityId('Locations', 'location_id', 'loc');
 }
 
 function generateProviderId() {
-  return generateNextEntityId(
-    'Providers',
-    'provider_id',
-    'prov'
-  );
+  return generateNextEntityId('Providers', 'provider_id', 'prov');
 }
 
 function generateServiceId() {
-  return generateNextEntityId(
-    'Services',
-    'service_id',
-    'serv'
-  );
+  return generateNextEntityId('Services', 'service_id', 'serv');
 }
 
 function generateCustomerId() {
-  return generateNextEntityId(
-    'Customers',
-    'customer_id',
-    'cust'
-  );
+  return generateNextEntityId('Customers', 'customer_id', 'cust');
 }
 
 function generateRequestId() {
-  return generateNextEntityId(
-    'Requests',
-    'request_id',
-    'req'
-  );
+  return generateNextEntityId('Requests', 'request_id', 'req');
 }
 
 function generateAppointmentId() {
-  return generateNextEntityId(
-    'Appointments',
-    'appointment_id',
-    'appt'
-  );
+  return generateNextEntityId('Appointments', 'appointment_id', 'appt');
 }
 
 function generateId(prefix) {

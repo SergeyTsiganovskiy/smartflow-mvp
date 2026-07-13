@@ -4,9 +4,7 @@ function getWeekDays() {
   if (WEEK_DAYS_CACHE) {
     return WEEK_DAYS_CACHE;
   }
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.WEEK_DAYS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.WEEK_DAYS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -14,7 +12,7 @@ function getWeekDays() {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -23,7 +21,7 @@ function getWeekDays() {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -39,7 +37,7 @@ function getWeekDays() {
     });
   }
 
-  result.sort(function(a, b) {
+  result.sort(function (a, b) {
     return a.sort_order - b.sort_order;
   });
 
@@ -47,11 +45,8 @@ function getWeekDays() {
   return result;
 }
 
-
 function getProviderSchedule(providerId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -59,7 +54,7 @@ function getProviderSchedule(providerId) {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -68,7 +63,7 @@ function getProviderSchedule(providerId) {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -87,36 +82,26 @@ function getProviderSchedule(providerId) {
 
   const weekDays = getWeekDays();
 
-  result.sort(function(a, b) {
-    const dayA = weekDays.find(function(day) {
+  result.sort(function (a, b) {
+    const dayA = weekDays.find(function (day) {
       return day.day_code === a.day_of_week;
     });
 
-    const dayB = weekDays.find(function(day) {
+    const dayB = weekDays.find(function (day) {
       return day.day_code === b.day_of_week;
     });
 
-    return (
-      Number(dayA ? dayA.sort_order : 99) -
-      Number(dayB ? dayB.sort_order : 99)
-    );
+    return Number(dayA ? dayA.sort_order : 99) - Number(dayB ? dayB.sort_order : 99);
   });
 
   return result;
 }
 
-function getProviderScheduleDay(
-  providerId,
-  dayCode
-) {
-  const schedule =
-    getProviderSchedule(providerId);
+function getProviderScheduleDay(providerId, dayCode) {
+  const schedule = getProviderSchedule(providerId);
 
   for (let i = 0; i < schedule.length; i++) {
-    if (
-      String(schedule[i].day_of_week) ===
-      String(dayCode)
-    ) {
+    if (String(schedule[i].day_of_week) === String(dayCode)) {
       return schedule[i];
     }
   }

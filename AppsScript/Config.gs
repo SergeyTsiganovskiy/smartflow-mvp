@@ -26,27 +26,17 @@ let SETTINGS_CACHE = null;
 let SETTINGS_CACHE_VERSION = null;
 
 function getSettingsCacheVersion() {
-  return (
-    PropertiesService
-      .getScriptProperties()
-      .getProperty('SETTINGS_CACHE_VERSION') ||
-    '0'
-  );
+  return PropertiesService.getScriptProperties().getProperty('SETTINGS_CACHE_VERSION') || '0';
 }
 
 function getSettings() {
   const currentVersion = getSettingsCacheVersion();
 
-  if (
-    SETTINGS_CACHE &&
-    SETTINGS_CACHE_VERSION === currentVersion
-  ) {
+  if (SETTINGS_CACHE && SETTINGS_CACHE_VERSION === currentVersion) {
     return SETTINGS_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.SETTINGS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SETTINGS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -71,12 +61,7 @@ function resetSettingsCache() {
   SETTINGS_CACHE = null;
   SETTINGS_CACHE_VERSION = null;
 
-  PropertiesService
-    .getScriptProperties()
-    .setProperty(
-      'SETTINGS_CACHE_VERSION',
-      Utilities.getUuid()
-    );
+  PropertiesService.getScriptProperties().setProperty('SETTINGS_CACHE_VERSION', Utilities.getUuid());
 }
 
 function isSettingEnabled(value, defaultValue) {

@@ -1,25 +1,19 @@
 let CUSTOMERS_CACHE = null;
 
 function findCustomerByPhone(phone) {
-  const targetPhone =
-    normalizePhone(phone);
+  const targetPhone = normalizePhone(phone);
 
-  const customers =
-    getCustomers();
+  const customers = getCustomers();
 
-  return customers.find(function(customer) {
-    return normalizePhone(customer.phone) === targetPhone;
-  }) || null;
+  return (
+    customers.find(function (customer) {
+      return normalizePhone(customer.phone) === targetPhone;
+    }) || null
+  );
 }
 
-// =========================
-// CUSTOMERS: READ
-// =========================
-
 function getCustomerById(customerId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMERS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -27,7 +21,7 @@ function getCustomerById(customerId) {
     return null;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -37,7 +31,7 @@ function getCustomerById(customerId) {
     if (String(rows[i][idIndex]) === String(customerId)) {
       const result = {};
 
-      headers.forEach(function(header, index) {
+      headers.forEach(function (header, index) {
         result[header] = rows[i][index];
       });
 
@@ -49,9 +43,7 @@ function getCustomerById(customerId) {
 }
 
 function getCustomerByPhone(phone) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMERS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -59,7 +51,7 @@ function getCustomerByPhone(phone) {
     return null;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -72,7 +64,7 @@ function getCustomerByPhone(phone) {
     if (getPhoneSearchKey(rowPhone) === searchKey) {
       const result = {};
 
-      headers.forEach(function(header, index) {
+      headers.forEach(function (header, index) {
         result[header] = rows[i][index];
       });
 
@@ -88,12 +80,9 @@ function getCustomers() {
     return CUSTOMERS_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMERS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   const result = [];
 
@@ -102,15 +91,14 @@ function getCustomers() {
     return result;
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 

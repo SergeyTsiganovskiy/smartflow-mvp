@@ -1,23 +1,20 @@
 function startDeleteCustomerService(chatId, settings) {
   const session = getUserSession(chatId);
 
-  const customerId =
-    session.customer_service_customer_id;
+  const customerId = session.customer_service_customer_id;
 
   if (!customerId) {
     startCustomerServices(chatId, settings);
     return;
   }
 
-  const phone =
-    session.customer_service_phone;
+  const phone = session.customer_service_phone;
 
-  const settingsList =
-    getCustomerServiceSettingsByPhone(phone);
+  const settingsList = getCustomerServiceSettingsByPhone(phone);
 
   const keyboardRows = [];
 
-  settingsList.forEach(function(item) {
+  settingsList.forEach(function (item) {
     keyboardRows.push([
       {
         text: item.service_name || item.service_id
@@ -25,10 +22,7 @@ function startDeleteCustomerService(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_DELETE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_DELETE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -39,20 +33,15 @@ function startDeleteCustomerService(chatId, settings) {
 }
 
 function processCustomerServiceToDelete(chatId, text, settings) {
-  const session =
-    getUserSession(chatId);
+  const session = getUserSession(chatId);
 
-  const phone =
-    session.customer_service_phone;
+  const phone = session.customer_service_phone;
 
-  const settingsList =
-    getCustomerServiceSettingsByPhone(phone);
+  const settingsList = getCustomerServiceSettingsByPhone(phone);
 
-  const selected =
-    settingsList.find(function(item) {
-      return String(item.service_name || item.service_id).trim() ===
-        String(text || '').trim();
-    });
+  const selected = settingsList.find(function (item) {
+    return String(item.service_name || item.service_id).trim() === String(text || '').trim();
+  });
 
   if (!selected) {
     sendTelegramMessage(
@@ -65,23 +54,11 @@ function processCustomerServiceToDelete(chatId, text, settings) {
     return;
   }
 
-  deleteCustomerServiceSettingByPhone(
-    phone,
-    selected.service_id
-  );
+  deleteCustomerServiceSettingByPhone(phone, selected.service_id);
 
-  const profile =
-    findCustomerProfileByPhone(phone);
+  const profile = findCustomerProfileByPhone(phone);
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.CUSTOMER_SERVICE_DELETED)
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CUSTOMER_SERVICE_DELETED));
 
-  showCustomerServices(
-    chatId,
-    profile,
-    settings
-  );
+  showCustomerServices(chatId, profile, settings);
 }

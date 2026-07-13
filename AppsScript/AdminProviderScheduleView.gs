@@ -1,11 +1,10 @@
 function startProviderSchedule(chatId, settings) {
-
   setPreviousMenu(chatId, 'PROVIDERS_MENU');
 
   const providers = getProviders();
   const keyboardRows = [];
 
-  providers.forEach(function(provider) {
+  providers.forEach(function (provider) {
     keyboardRows.push([
       {
         text: provider.name
@@ -13,10 +12,7 @@ function startProviderSchedule(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_FOR_SCHEDULE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_FOR_SCHEDULE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -39,88 +35,44 @@ function processProviderForSchedule(chatId, text, settings) {
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'schedule_provider_id',
-    provider.id
-  );
+  setUserSessionValue(chatId, 'schedule_provider_id', provider.id);
 
-  showProviderScheduleAdmin(
-    chatId,
-    provider.id,
-    settings
-  );
+  showProviderScheduleAdmin(chatId, provider.id, settings);
 }
 
-function showProviderScheduleAdmin(
-  chatId,
-  providerId,
-  settings
-) {
+function showProviderScheduleAdmin(chatId, providerId, settings) {
+  const provider = findProviderById(providerId);
 
-  const provider =
-    findProviderById(providerId);
+  const schedule = getProviderSchedule(providerId);
 
-  const schedule =
-    getProviderSchedule(providerId);
+  let text = '<b>' + getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_SCHEDULE) + '</b>\n\n';
 
-  let text =
-    '<b>' +
-    getMessage(MESSAGE_KEYS.ADMIN_PROVIDER_SCHEDULE) +
-    '</b>\n\n';
+  text += provider.name + '\n\n';
 
-  text +=
-    provider.name +
-    '\n\n';
+  schedule.forEach(function (item) {
+    const day = getWeekDayByCode(item.day_of_week);
 
-  schedule.forEach(function(item) {
+    const dayName = day ? getMessage(day.message_key) : item.day_of_week;
 
-    const day =
-      getWeekDayByCode(
-        item.day_of_week
-      );
-
-    const dayName =
-      day
-        ? getMessage(day.message_key)
-        : item.day_of_week;
-
-    text +=
-      '<b>' +
-      dayName +
-      '</b> ';
+    text += '<b>' + dayName + '</b> ';
 
     if (String(item.is_working).toUpperCase() === 'TRUE') {
-      text +=
-        formatScheduleTime(item.start_time) +
-        '-' +
-        formatScheduleTime(item.end_time) +
-        '\n';
+      text += formatScheduleTime(item.start_time) + '-' + formatScheduleTime(item.end_time) + '\n';
     } else {
-      text +=
-        getMessage(MESSAGE_KEYS.DAY_OFF) +
-        '\n';
+      text += getMessage(MESSAGE_KEYS.DAY_OFF) + '\n';
     }
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SCHEDULE_DAY
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SCHEDULE_DAY);
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    text,
-    buildScheduleDaysKeyboard()
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, text, buildScheduleDaysKeyboard());
 }
 
 function buildScheduleDaysKeyboard() {
   const weekDays = getWeekDays();
   const keyboardRows = [];
 
-  weekDays.forEach(function(day) {
+  weekDays.forEach(function (day) {
     keyboardRows.push([
       {
         text: getMessage(day.message_key)

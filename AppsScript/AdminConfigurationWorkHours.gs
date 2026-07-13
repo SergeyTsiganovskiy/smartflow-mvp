@@ -1,15 +1,8 @@
 function startConfigurationDefaultWorkHours(chatId, settings) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CONFIGURATION_DEFAULT_WORK_HOURS
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CONFIGURATION_DEFAULT_WORK_HOURS);
 
-  const startTime = formatScheduleTime(
-    settings.DefaultWorkStartTime || '09:00'
-  );
-  const endTime = formatScheduleTime(
-    settings.DefaultWorkEndTime || '20:00'
-  );
+  const startTime = formatScheduleTime(settings.DefaultWorkStartTime || '09:00');
+  const endTime = formatScheduleTime(settings.DefaultWorkEndTime || '20:00');
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -17,7 +10,10 @@ function startConfigurationDefaultWorkHours(chatId, settings) {
     getMessage(MESSAGE_KEYS.CONFIGURATION_DEFAULT_WORK_HOURS_PROMPT) +
       '\n\n' +
       getMessage(MESSAGE_KEYS.CONFIGURATION_CURRENT_VALUE) +
-      ': ' + startTime + '-' + endTime,
+      ': ' +
+      startTime +
+      '-' +
+      endTime,
     buildKeyboardWithMainMenu([])
   );
 }

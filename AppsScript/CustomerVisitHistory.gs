@@ -1,7 +1,3 @@
-// =========================
-// CUSTOMER VISIT HISTORY
-// =========================
-
 let CUSTOMER_VISIT_HISTORY_CACHE = null;
 
 function resetCustomerVisitHistoryCache() {
@@ -13,12 +9,9 @@ function getCustomerVisitHistoryRows() {
     return CUSTOMER_VISIT_HISTORY_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_VISIT_HISTORY);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_VISIT_HISTORY);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   const result = [];
 
@@ -27,15 +20,14 @@ function getCustomerVisitHistoryRows() {
     return result;
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -47,17 +39,11 @@ function getCustomerVisitHistoryRows() {
   return result;
 }
 
-function findCustomerVisitByCalendarEventId(
-  calendarEventId
-) {
-  const visits =
-    getCustomerVisitHistoryRows();
+function findCustomerVisitByCalendarEventId(calendarEventId) {
+  const visits = getCustomerVisitHistoryRows();
 
   for (let i = 0; i < visits.length; i++) {
-    if (
-      String(visits[i].calendar_event_id) ===
-      String(calendarEventId)
-    ) {
+    if (String(visits[i].calendar_event_id) === String(calendarEventId)) {
       return visits[i];
     }
   }
@@ -65,19 +51,14 @@ function findCustomerVisitByCalendarEventId(
   return null;
 }
 
-
-
 function getCustomerVisitHistoryByPhone(phone) {
-  const phoneKey =
-    getPhoneSearchKey(phone);
+  const phoneKey = getPhoneSearchKey(phone);
 
-  const result =
-    getCustomerVisitHistoryRows()
-      .filter(function(visit) {
-        return String(visit.phone_key) === String(phoneKey);
-      });
+  const result = getCustomerVisitHistoryRows().filter(function (visit) {
+    return String(visit.phone_key) === String(phoneKey);
+  });
 
-  result.sort(function(a, b) {
+  result.sort(function (a, b) {
     return new Date(b.start_at) - new Date(a.start_at);
   });
 

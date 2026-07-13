@@ -1,14 +1,7 @@
-function createCustomerVisitHistory(
-  data
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(
-      SHEET_NAMES.CUSTOMER_VISIT_HISTORY
-    );
+function createCustomerVisitHistory(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_VISIT_HISTORY);
 
-  const now =
-    new Date();
+  const now = new Date();
 
   sheet.appendRow([
     'visit_' + now.getTime(),
@@ -47,69 +40,43 @@ function createCustomerVisitHistory(
   resetCustomerVisitHistoryCache();
 }
 
-function updateCustomerVisitHistory(
-  visitId,
-  updates
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(
-      SHEET_NAMES.CUSTOMER_VISIT_HISTORY
-    );
+function updateCustomerVisitHistory(visitId, updates) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_VISIT_HISTORY);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return false;
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
-  const visitIdIndex =
-    headers.indexOf('visit_id');
+  const visitIdIndex = headers.indexOf('visit_id');
 
   for (let i = 1; i < rows.length; i++) {
-    if (
-      String(rows[i][visitIdIndex]) !==
-      String(visitId)
-    ) {
+    if (String(rows[i][visitIdIndex]) !== String(visitId)) {
       continue;
     }
 
-    Object.keys(updates).forEach(function(key) {
-      const columnIndex =
-        headers.indexOf(key);
+    Object.keys(updates).forEach(function (key) {
+      const columnIndex = headers.indexOf(key);
 
       if (columnIndex === -1) {
         return;
       }
 
-      rows[i][columnIndex] =
-        updates[key];
+      rows[i][columnIndex] = updates[key];
     });
 
-    const updatedAtIndex =
-      headers.indexOf('updated_at');
+    const updatedAtIndex = headers.indexOf('updated_at');
 
     if (updatedAtIndex !== -1) {
-      rows[i][updatedAtIndex] =
-        new Date();
+      rows[i][updatedAtIndex] = new Date();
     }
 
-    sheet
-      .getRange(
-        i + 1,
-        1,
-        1,
-        headers.length
-      )
-      .setValues([
-        rows[i]
-      ]);
+    sheet.getRange(i + 1, 1, 1, headers.length).setValues([rows[i]]);
 
     resetCustomerVisitHistoryCache();
 

@@ -1,7 +1,5 @@
 function createRequest(customerId, session) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUESTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUESTS);
 
   const headers = sheet.getDataRange().getValues()[0];
 
@@ -18,8 +16,7 @@ function createRequest(customerId, session) {
   newRow[headers.indexOf('status')] = 'pending';
   newRow[headers.indexOf('created_at')] = now;
   if (headers.indexOf('customer_note') !== -1) {
-    newRow[headers.indexOf('customer_note')] =
-      session.customer_note || '';
+    newRow[headers.indexOf('customer_note')] = session.customer_note || '';
   }
   sheet.appendRow(newRow);
 
@@ -42,9 +39,7 @@ function finalizeRequestFromSession(session) {
 }
 
 function updateRequestOptionsAfterApproval(requestId, approvedPriority) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -55,10 +50,7 @@ function updateRequestOptionsAfterApproval(requestId, approvedPriority) {
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][requestIdIndex]) === String(requestId)) {
-      const status =
-        Number(rows[i][priorityIndex]) === Number(approvedPriority)
-          ? 'approved'
-          : 'rejected';
+      const status = Number(rows[i][priorityIndex]) === Number(approvedPriority) ? 'approved' : 'rejected';
 
       sheet.getRange(i + 1, statusIndex + 1).setValue(status);
     }
@@ -66,9 +58,7 @@ function updateRequestOptionsAfterApproval(requestId, approvedPriority) {
 }
 
 function createRequestOptions(requestId, session) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const headers = sheet.getDataRange().getValues()[0];
   const now = new Date();
@@ -97,9 +87,7 @@ function createRequestOptions(requestId, session) {
 }
 
 function updateRequestStatus(requestId, status) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUESTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUESTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -109,9 +97,7 @@ function updateRequestStatus(requestId, status) {
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][requestIdIndex]) === String(requestId)) {
-      sheet
-        .getRange(i + 1, statusIndex + 1)
-        .setValue(status);
+      sheet.getRange(i + 1, statusIndex + 1).setValue(status);
 
       return;
     }

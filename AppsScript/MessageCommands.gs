@@ -1,7 +1,5 @@
 function createOrUpdateMessageValues(messageKey, valuesByLang) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.MESSAGES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.MESSAGES);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -18,7 +16,7 @@ function createOrUpdateMessageValues(messageKey, valuesByLang) {
   }
 
   if (rowIndex === -1) {
-    const newRow = headers.map(function(header) {
+    const newRow = headers.map(function (header) {
       if (header === 'key') {
         return messageKey;
       }
@@ -30,15 +28,13 @@ function createOrUpdateMessageValues(messageKey, valuesByLang) {
     return;
   }
 
-  headers.forEach(function(header, index) {
+  headers.forEach(function (header, index) {
     if (header === 'key') {
       return;
     }
 
     if (valuesByLang[header] !== undefined) {
-      sheet
-        .getRange(rowIndex, index + 1)
-        .setValue(valuesByLang[header]);
+      sheet.getRange(rowIndex, index + 1).setValue(valuesByLang[header]);
     }
   });
 }

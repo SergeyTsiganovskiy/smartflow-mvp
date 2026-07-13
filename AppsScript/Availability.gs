@@ -1,7 +1,5 @@
 function getProviderScheduleOverrideForDate(providerId, normalizedDate) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -15,10 +13,7 @@ function getProviderScheduleOverrideForDate(providerId, normalizedDate) {
   for (let i = 1; i < rows.length; i++) {
     const rowDate = normalizeDateForStorage(rows[i][dateIndex]);
 
-    if (
-      String(rows[i][providerIdIndex]) === String(providerId) &&
-      rowDate === normalizedDate
-    ) {
+    if (String(rows[i][providerIdIndex]) === String(providerId) && rowDate === normalizedDate) {
       return {
         isWorking: String(rows[i][workingIndex]).toUpperCase() === 'TRUE',
         startTime: normalizeTimeForStorage(rows[i][startIndex]),
@@ -31,9 +26,7 @@ function getProviderScheduleOverrideForDate(providerId, normalizedDate) {
 }
 
 function getProviderWeeklySchedule(providerId, dayOfWeek) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -64,25 +57,10 @@ function getProviderWeeklySchedule(providerId, dayOfWeek) {
   };
 }
 
-function getAvailableTimeSlots(
-  providerId,
-  dateValue,
-  durationMinutes,
-  customerId
-) {
-  const schedule =
-    getProviderScheduleForDate(
-      providerId,
-      dateValue
-    );
+function getAvailableTimeSlots(providerId, dateValue, durationMinutes, customerId) {
+  const schedule = getProviderScheduleForDate(providerId, dateValue);
 
-  if (
-    !schedule ||
-    (
-      String(schedule.is_working).toUpperCase() !== 'TRUE' &&
-      schedule.is_working !== true
-    )
-  ) {
+  if (!schedule || (String(schedule.is_working).toUpperCase() !== 'TRUE' && schedule.is_working !== true)) {
     return [];
   }
 
@@ -90,111 +68,65 @@ function getAvailableTimeSlots(
     return [];
   }
 
-  let startMinutes =
-    timeToMinutes(schedule.start_time);
+  let startMinutes = timeToMinutes(schedule.start_time);
 
-  const endMinutes =
-    timeToMinutes(schedule.end_time);
+  const endMinutes = timeToMinutes(schedule.end_time);
 
   if (isSameDate(dateValue, new Date())) {
     const bufferMinutes = 30;
     const stepMinutes = 30;
 
-    const earliestMinutes =
-      getCurrentTimeMinutes() + bufferMinutes;
+    const earliestMinutes = getCurrentTimeMinutes() + bufferMinutes;
 
-    const roundedEarliestMinutes =
-      roundMinutesUpToStep(
-        earliestMinutes,
-        stepMinutes
-      );
+    const roundedEarliestMinutes = roundMinutesUpToStep(earliestMinutes, stepMinutes);
 
     if (roundedEarliestMinutes > startMinutes) {
       startMinutes = roundedEarliestMinutes;
     }
   }
 
-  const providerAppointments =
-    getProviderAppointmentsForDate(
-      providerId,
-      dateValue
-    );
+  const providerAppointments = getProviderAppointmentsForDate(providerId, dateValue);
 
-  const customer =
-    customerId
-      ? getCustomerById(customerId)
-      : null;
+  const customer = customerId ? getCustomerById(customerId) : null;
 
-  const conflictAppointments =
-    customer
-      ? getConflictAppointmentsForDate(
-          customer.phone,
-          dateValue
-        )
-      : [];
+  const conflictAppointments = customer ? getConflictAppointmentsForDate(customer.phone, dateValue) : [];
 
-  const allBlockingAppointments =
-    providerAppointments.concat(
-      conflictAppointments
-    );
+  const allBlockingAppointments = providerAppointments.concat(conflictAppointments);
 
-  const busyIntervals =
-    allBlockingAppointments
-      .map(function(item) {
-        const startTime =
-          item.startTime ||
-          extractTimeFromDateTime(
-            item.start_at
-          );
+  const busyIntervals = allBlockingAppointments
+    .map(function (item) {
+      const startTime = item.startTime || extractTimeFromDateTime(item.start_at);
 
-        const endTime =
-          item.endTime ||
-          extractTimeFromDateTime(
-            item.end_at
-          );
+      const endTime = item.endTime || extractTimeFromDateTime(item.end_at);
 
-        if (!startTime || !endTime) {
-          return null;
-        }
+      if (!startTime || !endTime) {
+        return null;
+      }
 
-        return {
-          start:
-            timeToMinutes(startTime),
+      return {
+        start: timeToMinutes(startTime),
 
-          end:
-            timeToMinutes(endTime)
-        };
-      })
-      .filter(function(item) {
-        return item !== null;
-      });
+        end: timeToMinutes(endTime)
+      };
+    })
+    .filter(function (item) {
+      return item !== null;
+    });
 
   const stepMinutes = 30;
   const result = [];
 
-  for (
-    let current = startMinutes;
-    current + Number(durationMinutes) <= endMinutes;
-    current += stepMinutes
-  ) {
-    const slotStart =
-      current;
+  for (let current = startMinutes; current + Number(durationMinutes) <= endMinutes; current += stepMinutes) {
+    const slotStart = current;
 
-    const slotEnd =
-      current + Number(durationMinutes);
+    const slotEnd = current + Number(durationMinutes);
 
-    const hasConflict =
-      busyIntervals.some(function(interval) {
-        return (
-          slotStart < interval.end &&
-          slotEnd > interval.start
-        );
-      });
+    const hasConflict = busyIntervals.some(function (interval) {
+      return slotStart < interval.end && slotEnd > interval.start;
+    });
 
     if (!hasConflict) {
-      result.push(
-        minutesToTime(current)
-      );
+      result.push(minutesToTime(current));
     }
   }
 

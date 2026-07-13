@@ -5,11 +5,5 @@ function handleClientMessage(message) {
   const text = message.text || '';
   const state = String(getUserState(chatId) || '').trim();
 
-  handleClientCommandMessage(
-    chatId,
-    text,
-    state,
-    settings
-  );
+  handleClientCommandMessage(chatId, text, state, settings);
 }
-

@@ -1,10 +1,5 @@
-function getCustomerServiceSetting(
-  customerId,
-  serviceId
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
+function getCustomerServiceSetting(customerId, serviceId) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -12,7 +7,7 @@ function getCustomerServiceSetting(
     return null;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -34,14 +29,8 @@ function getCustomerServiceSetting(
   return null;
 }
 
-function getCustomerServiceDurationMinutes(
-  customerId,
-  serviceId
-) {
-  const setting = getCustomerServiceSetting(
-    customerId,
-    serviceId
-  );
+function getCustomerServiceDurationMinutes(customerId, serviceId) {
+  const setting = getCustomerServiceSetting(customerId, serviceId);
 
   if (setting && setting.duration_minutes > 0) {
     return setting.duration_minutes;
@@ -50,13 +39,8 @@ function getCustomerServiceDurationMinutes(
   return null;
 }
 
-function getCustomerServiceSettingForService(
-  customerId,
-  serviceId
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
+function getCustomerServiceSettingForService(customerId, serviceId) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -64,7 +48,7 @@ function getCustomerServiceSettingForService(
     return null;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -78,7 +62,7 @@ function getCustomerServiceSettingForService(
     ) {
       const result = {};
 
-      headers.forEach(function(header, index) {
+      headers.forEach(function (header, index) {
         result[header] = rows[i][index];
       });
 
@@ -90,27 +74,21 @@ function getCustomerServiceSettingForService(
 }
 
 function getCustomerServiceSettingsByPhone(phone) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return [];
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
-  const phoneKeyIndex =
-    headers.indexOf('phone_key');
+  const phoneKeyIndex = headers.indexOf('phone_key');
 
-  const targetPhoneKey =
-    getPhoneSearchKey(phone);
+  const targetPhoneKey = getPhoneSearchKey(phone);
 
   const result = [];
 
@@ -121,7 +99,7 @@ function getCustomerServiceSettingsByPhone(phone) {
 
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -131,16 +109,8 @@ function getCustomerServiceSettingsByPhone(phone) {
   return result;
 }
 
-
-
-
-
-function getCustomerServiceSettingByPhoneAndService(
-  phone,
-  serviceId
-) {
-  const settings =
-    getCustomerServiceSettingsByPhone(phone);
+function getCustomerServiceSettingByPhoneAndService(phone, serviceId) {
+  const settings = getCustomerServiceSettingsByPhone(phone);
 
   for (let i = 0; i < settings.length; i++) {
     if (String(settings[i].service_id) === String(serviceId)) {

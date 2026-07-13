@@ -1,9 +1,5 @@
 function showServicesListAdmin(chatId, settings) {
-  setUserSessionValue(
-    chatId,
-    'admin_back_menu',
-    ADMIN_MENUS.SERVICES
-  );
+  setUserSessionValue(chatId, 'admin_back_menu', ADMIN_MENUS.SERVICES);
 
   const services = getServices();
 
@@ -18,25 +14,14 @@ function showServicesListAdmin(chatId, settings) {
     return;
   }
 
-  let text =
-    '<b>' +
-    getMessage(MESSAGE_KEYS.SERVICES_LIST_TITLE) +
-    '</b>\n\n';
+  let text = '<b>' + getMessage(MESSAGE_KEYS.SERVICES_LIST_TITLE) + '</b>\n\n';
 
-  services.forEach(function(service, index) {
-    const location =
-      findLocationById(service.location_id);
+  services.forEach(function (service, index) {
+    const location = findLocationById(service.location_id);
 
-    text +=
-      String(index + 1) +
-      '. <b>' +
-      service.name +
-      '</b>\n';
+    text += String(index + 1) + '. <b>' + service.name + '</b>\n';
 
-    text +=
-      '📍 ' +
-      (location ? location.name : service.location_id) +
-      '\n';
+    text += '📍 ' + (location ? location.name : service.location_id) + '\n';
 
     text +=
       getMessage(MESSAGE_KEYS.SERVICE_DURATION_LABEL) +
@@ -49,12 +34,7 @@ function showServicesListAdmin(chatId, settings) {
       '\n\n';
   });
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    text,
-    buildKeyboardWithMainMenu([])
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, text, buildKeyboardWithMainMenu([]));
 }
 
 function startEditService(chatId, settings) {
@@ -63,7 +43,7 @@ function startEditService(chatId, settings) {
   const services = getServices();
   const keyboardRows = [];
 
-  services.forEach(function(service) {
+  services.forEach(function (service) {
     keyboardRows.push([
       {
         text: service.name
@@ -71,10 +51,7 @@ function startEditService(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_TO_EDIT
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_TO_EDIT);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -98,11 +75,7 @@ function processServiceToEdit(chatId, text, settings) {
     return;
   }
 
-  showServiceEditFields(
-    chatId,
-    service.id,
-    settings
-  );
+  showServiceEditFields(chatId, service.id, settings);
 }
 
 function showServiceEditFields(chatId, serviceId, settings) {
@@ -116,17 +89,9 @@ function showServiceEditFields(chatId, serviceId, settings) {
     [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_DURATION_MAX) }]
   ]);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_FIELD_TO_EDIT
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_FIELD_TO_EDIT);
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.SELECT_SERVICE_FIELD),
-    keyboard
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.SELECT_SERVICE_FIELD), keyboard);
 }
 
 function processServiceFieldToEdit(chatId, text, settings) {
@@ -159,10 +124,7 @@ function processServiceFieldToEdit(chatId, text, settings) {
     return;
   }
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_NEW_VALUE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_NEW_VALUE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -176,7 +138,7 @@ function showServiceEditLocations(chatId, settings) {
   const locations = getLocations();
   const keyboardRows = [];
 
-  locations.forEach(function(location) {
+  locations.forEach(function (location) {
     keyboardRows.push([
       {
         text: location.name
@@ -184,10 +146,7 @@ function showServiceEditLocations(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_NEW_VALUE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_NEW_VALUE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -233,10 +192,7 @@ function processServiceNewValue(chatId, text, settings) {
     value = location.id;
   }
 
-  if (
-    field === 'duration_min' ||
-    field === 'duration_max'
-  ) {
+  if (field === 'duration_min' || field === 'duration_max') {
     value = Number(value);
 
     if (!value || value < 0) {
@@ -251,23 +207,11 @@ function processServiceNewValue(chatId, text, settings) {
     }
   }
 
-  updateServiceField(
-    serviceId,
-    field,
-    value
-  );
+  updateServiceField(serviceId, field, value);
 
   setUserSessionValue(chatId, 'edit_service_field', '');
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.SERVICE_UPDATED)
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.SERVICE_UPDATED));
 
-  showServiceEditFields(
-    chatId,
-    serviceId,
-    settings
-  );
+  showServiceEditFields(chatId, serviceId, settings);
 }

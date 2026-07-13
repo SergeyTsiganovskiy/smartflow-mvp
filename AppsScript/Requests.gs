@@ -1,9 +1,5 @@
-
-
 function getRequestById(requestId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUESTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUESTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -26,9 +22,7 @@ function getRequestById(requestId) {
 }
 
 function getRequestOptionByPriority(requestId, priority) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -37,10 +31,7 @@ function getRequestOptionByPriority(requestId, priority) {
   const priorityIndex = headers.indexOf('priority');
 
   for (let i = 1; i < rows.length; i++) {
-    if (
-      String(rows[i][requestIdIndex]) === String(requestId) &&
-      Number(rows[i][priorityIndex]) === Number(priority)
-    ) {
+    if (String(rows[i][requestIdIndex]) === String(requestId) && Number(rows[i][priorityIndex]) === Number(priority)) {
       const result = {};
 
       headers.forEach((header, index) => {
@@ -55,9 +46,7 @@ function getRequestOptionByPriority(requestId, priority) {
 }
 
 function getRequestOptionsByRequestId(requestId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUEST_OPTIONS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -67,26 +56,21 @@ function getRequestOptionsByRequestId(requestId) {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
-    if (
-      String(item.request_id) ===
-      String(requestId)
-    ) {
+    if (String(item.request_id) === String(requestId)) {
       result.push(item);
     }
   }
 
-  result.sort(function(a, b) {
+  result.sort(function (a, b) {
     return Number(a.priority) - Number(b.priority);
   });
 
   return result;
 }
-
-
 
 function isRequestAlreadyProcessed(requestId) {
   const request = getRequestById(requestId);
@@ -98,11 +82,8 @@ function isRequestAlreadyProcessed(requestId) {
   return request.status !== 'pending';
 }
 
-
 function getActiveRequestRecipients() {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.REQUEST_RECIPIENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.REQUEST_RECIPIENTS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -117,22 +98,15 @@ function getActiveRequestRecipients() {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
-    const active =
-      String(item.active).toUpperCase();
+    const active = String(item.active).toUpperCase();
 
-    const receiveRequests =
-      String(item.receive_new_requests)
-        .toUpperCase();
+    const receiveRequests = String(item.receive_new_requests).toUpperCase();
 
-    if (
-      active === 'TRUE' &&
-      receiveRequests === 'TRUE' &&
-      item.telegram_id
-    ) {
+    if (active === 'TRUE' && receiveRequests === 'TRUE' && item.telegram_id) {
       result.push(item);
     }
   }

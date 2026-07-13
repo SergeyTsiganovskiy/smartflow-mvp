@@ -1,7 +1,5 @@
 function getAllAppointmentCalendarEventIds() {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -25,32 +23,21 @@ function getTodayAppointments() {
   const settings = getSettings();
   const timezone = settings.TimeZone || 'Europe/Kyiv';
 
-  const today = Utilities.formatDate(
-    new Date(),
-    timezone,
-    'yyyy-MM-dd'
-  );
+  const today = Utilities.formatDate(new Date(), timezone, 'yyyy-MM-dd');
 
   return getAppointmentsByDate(today);
 }
 
 function getAppointmentsByDate(dateValue) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const result = [];
 
-  const targetDate =
-    normalizeDateForStorage(dateValue);
-
-  // =========================
-  // Appointments sheet records
-  // =========================
+  const targetDate = normalizeDateForStorage(dateValue);
 
   if (rows.length >= 2) {
-    const headers = rows[0].map(function(header) {
+    const headers = rows[0].map(function (header) {
       return String(header).trim();
     });
 
@@ -58,15 +45,13 @@ function getAppointmentsByDate(dateValue) {
     const statusIndex = headers.indexOf('status');
 
     for (let i = 1; i < rows.length; i++) {
-      const status =
-        String(rows[i][statusIndex] || '').toLowerCase();
+      const status = String(rows[i][statusIndex] || '').toLowerCase();
 
       if (status !== 'confirmed') {
         continue;
       }
 
-      const appointmentDate =
-        normalizeDateForStorage(rows[i][startAtIndex]);
+      const appointmentDate = normalizeDateForStorage(rows[i][startAtIndex]);
 
       if (appointmentDate !== targetDate) {
         continue;
@@ -74,7 +59,7 @@ function getAppointmentsByDate(dateValue) {
 
       const appointment = {};
 
-      headers.forEach(function(header, index) {
+      headers.forEach(function (header, index) {
         appointment[header] = rows[i][index];
       });
 
@@ -86,22 +71,13 @@ function getAppointmentsByDate(dateValue) {
     }
   }
 
-  // =========================
-  // Manual Google Calendar records
-  // =========================
+  const manualAppointments = getManualCalendarAppointmentsByDateOptimized(dateValue);
 
-  const manualAppointments =
-    getManualCalendarAppointmentsByDateOptimized(dateValue);
-
-  manualAppointments.forEach(function(appointment) {
+  manualAppointments.forEach(function (appointment) {
     result.push(appointment);
   });
 
-  // =========================
-  // Sort and return
-  // =========================
-
-  result.sort(function(a, b) {
+  result.sort(function (a, b) {
     return new Date(a.start_at) - new Date(b.start_at);
   });
 
@@ -109,24 +85,19 @@ function getAppointmentsByDate(dateValue) {
 }
 
 function isAppointmentStillValid(appointment) {
-  const calendarEventId =
-    String(appointment.calendar_event_id || '').trim();
+  const calendarEventId = String(appointment.calendar_event_id || '').trim();
 
   if (!calendarEventId) {
     return true;
   }
 
-  const calendarEvent =
-    getCalendarEventByAppointment(appointment);
+  const calendarEvent = getCalendarEventByAppointment(appointment);
 
   if (calendarEvent) {
     return true;
   }
 
-  updateAppointmentStatus(
-    appointment.appointment_id,
-    'cancelled'
-  );
+  updateAppointmentStatus(appointment.appointment_id, 'cancelled');
 
   return false;
 }
@@ -134,9 +105,7 @@ function isAppointmentStillValid(appointment) {
 function getActiveAppointmentsByPhone(phone) {
   const searchPhoneKey = getPhoneSearchKey(phone);
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMERS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];

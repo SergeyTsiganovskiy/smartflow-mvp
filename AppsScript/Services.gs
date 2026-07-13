@@ -1,19 +1,12 @@
 let SERVICES_CACHE = null;
 let SERVICES_INCLUDING_INACTIVE_CACHE = null;
 
-// =========================
-// SERVICES: READ
-// =========================
-
 function getServices() {
-
   if (SERVICES_CACHE) {
     return SERVICES_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.SERVICES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SERVICES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -21,7 +14,7 @@ function getServices() {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -30,7 +23,7 @@ function getServices() {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -55,28 +48,22 @@ function getServices() {
 }
 
 function findServiceById(serviceId) {
-  return getServices().find(function(service) {
-    return String(service.id) === String(serviceId);
-  }) || null;
+  return (
+    getServices().find(function (service) {
+      return String(service.id) === String(serviceId);
+    }) || null
+  );
 }
 
 function findServiceByName(serviceName) {
   const targetName = String(serviceName || '').trim();
 
-  return getServices().find(function(service) {
-    return String(service.name || '').trim() === targetName;
-  }) || null;
+  return (
+    getServices().find(function (service) {
+      return String(service.name || '').trim() === targetName;
+    }) || null
+  );
 }
-
-// =========================
-// CUSTOMER SERVICE SETTINGS
-// =========================
-
-
-
-// =========================
-// SERVICE DURATION RESOLUTION
-// =========================
 
 function getDefaultServiceDurationMinutes(serviceId) {
   const service = findServiceById(serviceId);
@@ -111,14 +98,8 @@ function getDefaultServiceDurationMinutes(serviceId) {
   return 60;
 }
 
-function getServiceDurationMinutes(
-  customerId,
-  serviceId
-) {
-  const duration = getCustomerServiceDurationMinutes(
-    customerId,
-    serviceId
-  );
+function getServiceDurationMinutes(customerId, serviceId) {
+  const duration = getCustomerServiceDurationMinutes(customerId, serviceId);
 
   if (duration) {
     return duration;
@@ -128,21 +109,11 @@ function getServiceDurationMinutes(
 }
 
 function getServiceDurationMinutesForSession(session) {
-  if (
-    session.customer_phone &&
-    session.service_id
-  ) {
-    const setting =
-      getCustomerServiceSettingByPhoneAndService(
-        session.customer_phone,
-        session.service_id
-      );
+  if (session.customer_phone && session.service_id) {
+    const setting = getCustomerServiceSettingByPhoneAndService(session.customer_phone, session.service_id);
 
     if (setting) {
-      const customDuration =
-        Number(
-          setting.duration_minutes
-        );
+      const customDuration = Number(setting.duration_minutes);
 
       if (customDuration > 0) {
         return customDuration;
@@ -150,24 +121,15 @@ function getServiceDurationMinutesForSession(session) {
     }
   }
 
-  return getDefaultServiceDurationMinutes(
-    session.service_id
-  );
+  return getDefaultServiceDurationMinutes(session.service_id);
 }
 
-
-
-
-
 function getServicesIncludingInactive() {
-
   if (SERVICES_INCLUDING_INACTIVE_CACHE) {
     return SERVICES_INCLUDING_INACTIVE_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.SERVICES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SERVICES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -175,7 +137,7 @@ function getServicesIncludingInactive() {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -184,7 +146,7 @@ function getServicesIncludingInactive() {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -205,16 +167,17 @@ function getServicesIncludingInactive() {
 }
 
 function getInactiveServices() {
-  return getServicesIncludingInactive()
-    .filter(function(service) {
-      return service.active !== true;
-    });
+  return getServicesIncludingInactive().filter(function (service) {
+    return service.active !== true;
+  });
 }
 
 function findInactiveServiceByName(serviceName) {
   const targetName = String(serviceName || '').trim();
 
-  return getInactiveServices().find(function(service) {
-    return String(service.name || '').trim() === targetName;
-  }) || null;
+  return (
+    getInactiveServices().find(function (service) {
+      return String(service.name || '').trim() === targetName;
+    }) || null
+  );
 }

@@ -1,58 +1,41 @@
-function handleAdminProviderState(
-  chatId,
-  text,
-  state,
-  settings
-) {
-  // =========================
-  // CREATE PROVIDER STATES
-  // =========================
-  
+function handleAdminProviderState(chatId, text, state, settings) {
   if (state === ADMIN_STATES.WAITING_PROVIDER_NAME) {
-  processProviderName(chatId, text, settings);
-  return;
+    processProviderName(chatId, text, settings);
+    return;
   }
-  
+
   if (state === ADMIN_STATES.WAITING_PROVIDER_LOCATION) {
-  processProviderLocation(chatId, text, settings);
-  return;
+    processProviderLocation(chatId, text, settings);
+    return;
   }
-  
+
   if (state === ADMIN_STATES.WAITING_PROVIDER_PHONE) {
-  processProviderPhone(chatId, text, settings);
-  return;
+    processProviderPhone(chatId, text, settings);
+    return;
   }
-  
-  // =========================
-  // EDIT PROVIDER STATES
-  // =========================
-  
+
   if (state === ADMIN_STATES.WAITING_PROVIDER_TO_EDIT) {
-  processProviderToEdit(chatId, text, settings);
-  return;
+    processProviderToEdit(chatId, text, settings);
+    return;
   }
-  
+
   if (state === ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT) {
-  processProviderFieldToEdit(chatId, text, settings);
-  return;
+    processProviderFieldToEdit(chatId, text, settings);
+    return;
   }
-  
+
   if (state === ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE) {
-  processProviderNewValue(chatId, text, settings);
-  return;
+    processProviderNewValue(chatId, text, settings);
+    return;
   }
-  
-  // =========================
-  // DISABLE PROVIDER STATES
-  // =========================
-  
+
   if (state === ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE) {
-  processProviderToDisable(chatId, text, settings);
-  return;
+    processProviderToDisable(chatId, text, settings);
+    return;
   }
-  
+
   if (state === ADMIN_STATES.WAITING_PROVIDER_TO_ENABLE) {
-  processProviderToEnable(chatId, text, settings);
-  return;
+    processProviderToEnable(chatId, text, settings);
+    return;
   }
 }

@@ -56,11 +56,7 @@ function isAllowedAdminConfigurationValue(settingKey, value) {
   }
 
   if (definition.type === 'integer') {
-    return (
-      Number.isInteger(value) &&
-      value >= definition.min &&
-      value <= definition.max
-    );
+    return Number.isInteger(value) && value >= definition.min && value <= definition.max;
   }
 
   if (definition.type === 'time') {

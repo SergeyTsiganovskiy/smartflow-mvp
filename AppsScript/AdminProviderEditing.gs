@@ -1,15 +1,11 @@
-function startEditProvider(
-  chatId,
-  settings
-) {
+function startEditProvider(chatId, settings) {
   setPreviousMenu(chatId, 'PROVIDERS_MENU');
 
-  const providers =
-    getProviders();
+  const providers = getProviders();
 
   const keyboardRows = [];
 
-  providers.forEach(function(provider) {
+  providers.forEach(function (provider) {
     keyboardRows.push([
       {
         text: provider.name
@@ -17,15 +13,9 @@ function startEditProvider(
     ]);
   });
 
-  const keyboard =
-    buildKeyboardWithMainMenu(
-      keyboardRows
-    );
+  const keyboard = buildKeyboardWithMainMenu(keyboardRows);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_TO_EDIT
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_TO_EDIT);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -35,13 +25,8 @@ function startEditProvider(
   );
 }
 
-function processProviderToEdit(
-  chatId,
-  text,
-  settings
-) {
-  const provider =
-    findProviderByName(text);
+function processProviderToEdit(chatId, text, settings) {
+  const provider = findProviderByName(text);
 
   if (!provider) {
     sendTelegramMessage(
@@ -54,11 +39,7 @@ function processProviderToEdit(
     return;
   }
 
-  showProviderEditFields(
-    chatId,
-    provider.id,
-    settings
-  );
+  showProviderEditFields(chatId, provider.id, settings);
 }
 
 function processProviderFieldToEdit(chatId, text, settings) {
@@ -66,21 +47,13 @@ function processProviderFieldToEdit(chatId, text, settings) {
 
   const allowedFields = {};
 
-  allowedFields[
-    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_NAME)
-  ] = 'name';
+  allowedFields[getMessage(MESSAGE_KEYS.PROVIDER_FIELD_NAME)] = 'name';
 
-  allowedFields[
-    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_LOCATION)
-  ] = 'location_id';
+  allowedFields[getMessage(MESSAGE_KEYS.PROVIDER_FIELD_LOCATION)] = 'location_id';
 
-  allowedFields[
-    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_PHONE)
-  ] = 'phone';
+  allowedFields[getMessage(MESSAGE_KEYS.PROVIDER_FIELD_PHONE)] = 'phone';
 
-  allowedFields[
-    getMessage(MESSAGE_KEYS.PROVIDER_FIELD_TELEGRAM_ID)
-  ] = 'telegram_id';
+  allowedFields[getMessage(MESSAGE_KEYS.PROVIDER_FIELD_TELEGRAM_ID)] = 'telegram_id';
 
   const field = allowedFields[fieldText];
 
@@ -94,21 +67,14 @@ function processProviderFieldToEdit(chatId, text, settings) {
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'edit_provider_field',
-    field
-  );
+  setUserSessionValue(chatId, 'edit_provider_field', field);
 
   if (field === 'location_id') {
     showProviderEditLocations(chatId, settings);
     return;
   }
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -118,16 +84,12 @@ function processProviderFieldToEdit(chatId, text, settings) {
   );
 }
 
-function showProviderEditLocations(
-  chatId,
-  settings
-) {
-  const locations =
-    getLocations();
+function showProviderEditLocations(chatId, settings) {
+  const locations = getLocations();
 
   const keyboardRows = [];
 
-  locations.forEach(function(location) {
+  locations.forEach(function (location) {
     keyboardRows.push([
       {
         text: location.name
@@ -135,36 +97,22 @@ function showProviderEditLocations(
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_NEW_VALUE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.SELECT_NEW_VALUE
-    ),
-    buildKeyboardWithMainMenu(
-      keyboardRows
-    )
+    getMessage(MESSAGE_KEYS.SELECT_NEW_VALUE),
+    buildKeyboardWithMainMenu(keyboardRows)
   );
 }
 
-function processProviderNewValue(
-  chatId,
-  text,
-  settings
-) {
-  const session =
-    getUserSession(chatId);
+function processProviderNewValue(chatId, text, settings) {
+  const session = getUserSession(chatId);
 
-  const providerId =
-    session.edit_provider_id;
+  const providerId = session.edit_provider_id;
 
-  const field =
-    session.edit_provider_field;
+  const field = session.edit_provider_field;
 
   if (!providerId || !field) {
     sendTelegramMessage(
@@ -180,8 +128,7 @@ function processProviderNewValue(
   let value = String(text || '').trim();
 
   if (field === 'location_id') {
-    const location =
-      findLocationByName(value);
+    const location = findLocationByName(value);
 
     if (!location) {
       sendTelegramMessage(
@@ -197,58 +144,26 @@ function processProviderNewValue(
     value = location.id;
   }
 
-  updateProviderField(
-    providerId,
-    field,
-    value
-  );
+  updateProviderField(providerId, field, value);
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.CHANGES_SAVED)
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CHANGES_SAVED));
 
-  showProviderEditFields(
-    chatId,
-    providerId,
-    settings
-  );
+  showProviderEditFields(chatId, providerId, settings);
 }
 
-function showProviderEditFields(
-  chatId,
-  providerId,
-  settings
-) {
-  setUserSessionValue(
-    chatId,
-    'edit_provider_id',
-    providerId
-  );
+function showProviderEditFields(chatId, providerId, settings) {
+  setUserSessionValue(chatId, 'edit_provider_id', providerId);
 
-  setPreviousMenu(
-    chatId,
-    'PROVIDER_EDIT_FIELDS'
-  );
+  setPreviousMenu(chatId, 'PROVIDER_EDIT_FIELDS');
 
-  const keyboard =
-    buildKeyboardWithMainMenu([
-      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_NAME) }],
-      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_LOCATION) }],
-      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_PHONE) }],
-      [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_TELEGRAM_ID) }]
-    ]);
+  const keyboard = buildKeyboardWithMainMenu([
+    [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_NAME) }],
+    [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_LOCATION) }],
+    [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_PHONE) }],
+    [{ text: getMessage(MESSAGE_KEYS.PROVIDER_FIELD_TELEGRAM_ID) }]
+  ]);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_FIELD_TO_EDIT);
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.SELECT_FIELD_FROM_LIST),
-    keyboard
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.SELECT_FIELD_FROM_LIST), keyboard);
 }

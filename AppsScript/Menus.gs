@@ -1,7 +1,5 @@
 function getPaginationPageSize(settings) {
-  const value = Number(
-    (settings || getSettings()).PaginationPageSize || 5
-  );
+  const value = Number((settings || getSettings()).PaginationPageSize || 5);
 
   if (!Number.isInteger(value) || value < 1 || value > 10) {
     return 5;

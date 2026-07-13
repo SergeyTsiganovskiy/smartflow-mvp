@@ -1,7 +1,5 @@
 function updateSettingValue(settingKey, value) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.SETTINGS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SETTINGS);
 
   const rows = sheet.getDataRange().getValues();
 

@@ -5,7 +5,7 @@ function startDeleteOverride(chatId, settings) {
   const overrides = getProviderOverrides(providerId);
   const keyboardRows = [];
 
-  overrides.forEach(function(item, index) {
+  overrides.forEach(function (item, index) {
     keyboardRows.push([
       {
         text: buildOverrideLabel(item, index)
@@ -13,10 +13,7 @@ function startDeleteOverride(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_OVERRIDE_TO_DELETE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_OVERRIDE_TO_DELETE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -32,7 +29,7 @@ function processOverrideToDelete(chatId, text, settings) {
 
   const overrides = getProviderOverrides(providerId);
 
-  const selectedOverride = overrides.find(function(item, index) {
+  const selectedOverride = overrides.find(function (item, index) {
     return buildOverrideLabel(item, index) === String(text || '').trim();
   });
 
@@ -49,11 +46,7 @@ function processOverrideToDelete(chatId, text, settings) {
 
   disableProviderOverride(selectedOverride.override_id);
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.OVERRIDE_DELETED)
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.OVERRIDE_DELETED));
 
   showOverrideActions(chatId, settings);
 }

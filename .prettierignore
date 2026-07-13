@@ -1,0 +1,6 @@
+.git/
+.agents/
+.clasp.json
+node_modules/
+tmp/
+Docs/*.xlsx

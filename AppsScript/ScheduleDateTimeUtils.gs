@@ -8,11 +8,7 @@ function formatScheduleTime(value) {
   }
 
   if (Object.prototype.toString.call(value) === '[object Date]') {
-    return Utilities.formatDate(
-      value,
-      Session.getScriptTimeZone(),
-      'HH:mm'
-    );
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'HH:mm');
   }
 
   return String(value).trim();
@@ -21,7 +17,7 @@ function formatScheduleTime(value) {
 function getWeekDayByCode(dayCode) {
   const days = getWeekDays();
 
-  return days.find(function(day) {
+  return days.find(function (day) {
     return day.day_code === dayCode;
   });
 }
@@ -75,18 +71,9 @@ function parseDateFromDisplayText(text, settings) {
 }
 
 function getWeekDayCode(date) {
-  const day =
-    date.getDay();
+  const day = date.getDay();
 
-  const codes = [
-    'SUN',
-    'MON',
-    'TUE',
-    'WED',
-    'THU',
-    'FRI',
-    'SAT'
-  ];
+  const codes = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   return codes[day];
 }

@@ -6,9 +6,7 @@ function getProviderScheduleOverrides() {
     return PROVIDER_SCHEDULE_OVERRIDES_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const rows = sheet.getDataRange().getValues();
   const result = [];
@@ -18,14 +16,14 @@ function getProviderScheduleOverrides() {
     return result;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -36,16 +34,8 @@ function getProviderScheduleOverrides() {
   return result;
 }
 
-
-
-
-
-
-
 function getProviderOverrides(providerId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE_OVERRIDES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -53,7 +43,7 @@ function getProviderOverrides(providerId) {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -62,7 +52,7 @@ function getProviderOverrides(providerId) {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -87,7 +77,7 @@ function getProviderOverrides(providerId) {
     });
   }
 
-  result.sort(function(a, b) {
+  result.sort(function (a, b) {
     return new Date(a.date) - new Date(b.date);
   });
 
@@ -95,58 +85,30 @@ function getProviderOverrides(providerId) {
 }
 
 function buildOverrideLabel(item, index) {
-  let label =
-    String(index + 1) +
-    '. ' +
-    formatDateForDisplay(item.date) +
-    ' — ' +
-    getMessage(item.reason_key);
+  let label = String(index + 1) + '. ' + formatDateForDisplay(item.date) + ' — ' + getMessage(item.reason_key);
 
   if (String(item.is_working).toUpperCase() === 'TRUE') {
-    label +=
-      ' ' +
-      formatScheduleTime(item.start_time) +
-      '-' +
-      formatScheduleTime(item.end_time);
+    label += ' ' + formatScheduleTime(item.start_time) + '-' + formatScheduleTime(item.end_time);
   }
 
   return label;
 }
 
-
-function getProviderOverrideForDate(
-  providerId,
-  dateValue
-) {
-  const overrides =
-    getProviderScheduleOverrides();
+function getProviderOverrideForDate(providerId, dateValue) {
+  const overrides = getProviderScheduleOverrides();
 
   for (let i = 0; i < overrides.length; i++) {
-    const override =
-      overrides[i];
+    const override = overrides[i];
 
-    if (
-      String(override.provider_id) !==
-      String(providerId)
-    ) {
+    if (String(override.provider_id) !== String(providerId)) {
       continue;
     }
 
-    if (
-      normalizeDateForStorage(
-        override.date
-      ) !== dateValue
-    ) {
+    if (normalizeDateForStorage(override.date) !== dateValue) {
       continue;
     }
 
-    if (
-      String(
-        override.active
-      ).toUpperCase() !== 'TRUE'
-      &&
-      override.active !== true
-    ) {
+    if (String(override.active).toUpperCase() !== 'TRUE' && override.active !== true) {
       continue;
     }
 

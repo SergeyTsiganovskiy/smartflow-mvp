@@ -1,12 +1,9 @@
 function createProviderFromAdminSession(session) {
-  const providerName =
-    String(session.provider_name || '').trim();
+  const providerName = String(session.provider_name || '').trim();
 
-  const locationId =
-    String(session.provider_location_id || '').trim();
+  const locationId = String(session.provider_location_id || '').trim();
 
-  const phone =
-    String(session.provider_phone || '').trim();
+  const phone = String(session.provider_phone || '').trim();
 
   return createProvider({
     name: providerName,
@@ -18,31 +15,20 @@ function createProviderFromAdminSession(session) {
 }
 
 function createProvider(providerData) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDERS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDERS);
 
-  const providerId =
-    generateProviderId();
+  const providerId = generateProviderId();
 
   const headers = sheet
     .getRange(1, 1, 1, sheet.getLastColumn())
     .getValues()[0]
-    .map(function(header) {
+    .map(function (header) {
       return String(header || '').trim();
     });
   const newRow = new Array(headers.length).fill('');
-  const requiredHeaders = [
-    'provider_id',
-    'location_id',
-    'name',
-    'phone',
-    'telegram_id',
-    'calendar_id',
-    'active'
-  ];
+  const requiredHeaders = ['provider_id', 'location_id', 'name', 'phone', 'telegram_id', 'calendar_id', 'active'];
 
-  requiredHeaders.forEach(function(header) {
+  requiredHeaders.forEach(function (header) {
     if (headers.indexOf(header) === -1) {
       throw new Error('Providers sheet is missing column: ' + header);
     }
@@ -66,47 +52,27 @@ function createProvider(providerData) {
   return providerId;
 }
 
-function updateProviderField(
-  providerId,
-  field,
-  value
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDERS);
+function updateProviderField(providerId, field, value) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDERS);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   const headers = rows[0];
 
-  const providerIdIndex =
-    headers.indexOf('provider_id');
+  const providerIdIndex = headers.indexOf('provider_id');
 
   for (let i = 1; i < rows.length; i++) {
-    if (
-      String(rows[i][providerIdIndex]) !==
-      String(providerId)
-    ) {
+    if (String(rows[i][providerIdIndex]) !== String(providerId)) {
       continue;
     }
 
-    const fieldIndex =
-      headers.indexOf(field);
+    const fieldIndex = headers.indexOf(field);
 
     if (fieldIndex === -1) {
-      throw new Error(
-        'Field not found: ' +
-        field
-      );
+      throw new Error('Field not found: ' + field);
     }
 
-    sheet
-      .getRange(
-        i + 1,
-        fieldIndex + 1
-      )
-      .setValue(value);
+    sheet.getRange(i + 1, fieldIndex + 1).setValue(value);
 
     PROVIDERS_CACHE = null;
     PROVIDERS_INCLUDING_INACTIVE_CACHE = null;
@@ -114,8 +80,5 @@ function updateProviderField(
     return;
   }
 
-  throw new Error(
-    'Provider not found: ' +
-    providerId
-  );
+  throw new Error('Provider not found: ' + providerId);
 }

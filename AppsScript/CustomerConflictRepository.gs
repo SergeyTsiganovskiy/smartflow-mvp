@@ -1,32 +1,24 @@
+function getCustomerConflictsByPhone(phone) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
-function getCustomerConflictsByPhone(
-  phone
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
-
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return [];
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
-  const phoneKey =
-    getPhoneSearchKey(phone);
+  const phoneKey = getPhoneSearchKey(phone);
 
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -34,27 +26,19 @@ function getCustomerConflictsByPhone(
       continue;
     }
 
-    if (
-      String(item.phone_key) ===
-      String(phoneKey)
-    ) {
+    if (String(item.phone_key) === String(phoneKey)) {
       result.push({
         phone: item.conflict_phone,
-        customer_name:
-          item.conflict_customer_name
+        customer_name: item.conflict_customer_name
       });
 
       continue;
     }
 
-    if (
-      String(item.conflict_phone_key) ===
-      String(phoneKey)
-    ) {
+    if (String(item.conflict_phone_key) === String(phoneKey)) {
       result.push({
         phone: item.phone,
-        customer_name:
-          item.customer_name
+        customer_name: item.customer_name
       });
     }
   }
@@ -63,49 +47,38 @@ function getCustomerConflictsByPhone(
 }
 
 function getCustomerConflictPhoneKeys(phone) {
-  const phoneKey =
-    getPhoneSearchKey(phone);
+  const phoneKey = getPhoneSearchKey(phone);
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return [];
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
-  const phoneKeyIndex =
-    headers.indexOf('phone_key');
+  const phoneKeyIndex = headers.indexOf('phone_key');
 
-  const conflictPhoneKeyIndex =
-    headers.indexOf('conflict_phone_key');
+  const conflictPhoneKeyIndex = headers.indexOf('conflict_phone_key');
 
-  const activeIndex =
-    headers.indexOf('active');
+  const activeIndex = headers.indexOf('active');
 
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const active =
-      String(rows[i][activeIndex]).toUpperCase() !== 'FALSE';
+    const active = String(rows[i][activeIndex]).toUpperCase() !== 'FALSE';
 
     if (!active) {
       continue;
     }
 
-    const rowPhoneKey =
-      String(rows[i][phoneKeyIndex] || '');
+    const rowPhoneKey = String(rows[i][phoneKeyIndex] || '');
 
-    const rowConflictPhoneKey =
-      String(rows[i][conflictPhoneKeyIndex] || '');
+    const rowConflictPhoneKey = String(rows[i][conflictPhoneKeyIndex] || '');
 
     if (rowPhoneKey === String(phoneKey)) {
       result.push(rowConflictPhoneKey);
@@ -120,72 +93,45 @@ function getCustomerConflictPhoneKeys(phone) {
   return result;
 }
 
-function getConflictAppointmentsForDate(
-  customerPhone,
-  dateValue
-) {
-  const phoneKeys =
-    getCustomerConflictPhoneKeys(
-      customerPhone
-    );
+function getConflictAppointmentsForDate(customerPhone, dateValue) {
+  const phoneKeys = getCustomerConflictPhoneKeys(customerPhone);
 
   if (phoneKeys.length === 0) {
     return [];
   }
 
-  const appointments =
-    getCachedAppointmentsByDate(
-      normalizeDateForStorage(dateValue)
-    );
+  const appointments = getCachedAppointmentsByDate(normalizeDateForStorage(dateValue));
 
-  return appointments.filter(function(item) {
-    const itemPhoneKey =
-      getPhoneSearchKey(
-        item.phone
-      );
+  return appointments.filter(function (item) {
+    const itemPhoneKey = getPhoneSearchKey(item.phone);
 
-    return phoneKeys.indexOf(
-      String(itemPhoneKey)
-    ) !== -1;
+    return phoneKeys.indexOf(String(itemPhoneKey)) !== -1;
   });
 }
 
-
 function getConflictingCustomerIds(customerId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
 
-  const customerIdIndex =
-    headers.indexOf('customer_id');
+  const customerIdIndex = headers.indexOf('customer_id');
 
-  const conflictCustomerIdIndex =
-    headers.indexOf('conflict_customer_id');
+  const conflictCustomerIdIndex = headers.indexOf('conflict_customer_id');
 
-  const activeIndex =
-    headers.indexOf('active');
+  const activeIndex = headers.indexOf('active');
 
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const active =
-      String(rows[i][activeIndex])
-        .toUpperCase();
+    const active = String(rows[i][activeIndex]).toUpperCase();
 
     if (active !== 'TRUE') {
       continue;
     }
 
-    if (
-      String(rows[i][customerIdIndex]) ===
-      String(customerId)
-    ) {
-      result.push(
-        rows[i][conflictCustomerIdIndex]
-      );
+    if (String(rows[i][customerIdIndex]) === String(customerId)) {
+      result.push(rows[i][conflictCustomerIdIndex]);
     }
   }
 

@@ -1,8 +1,5 @@
 function setWebhook(botToken, webhookUrl) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/setWebhook';
+  const url = 'https://api.telegram.org/bot' + botToken + '/setWebhook';
 
   const payload = {
     url: webhookUrl,
@@ -24,10 +21,7 @@ function setWebhook(botToken, webhookUrl) {
 }
 
 function deleteWebhook(botToken) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/deleteWebhook?drop_pending_updates=true';
+  const url = 'https://api.telegram.org/bot' + botToken + '/deleteWebhook?drop_pending_updates=true';
 
   const response = UrlFetchApp.fetch(url, {
     method: 'get',
@@ -42,10 +36,7 @@ function deleteWebhook(botToken) {
 }
 
 function getWebhookInfo(botToken) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/getWebhookInfo';
+  const url = 'https://api.telegram.org/bot' + botToken + '/getWebhookInfo';
 
   const response = UrlFetchApp.fetch(url, {
     method: 'get',
@@ -62,95 +53,64 @@ function getWebhookInfo(botToken) {
 function setClientWebhook() {
   const settings = getSettings();
 
-  return setWebhook(
-    settings.ClientBotToken,
-    settings.AppsScriptUrl + '?bot=client'
-  );
+  return setWebhook(settings.ClientBotToken, settings.AppsScriptUrl + '?bot=client');
 }
 
 function setAdminWebhook() {
   const settings = getSettings();
 
-  return setWebhook(
-    settings.AdminBotToken,
-    settings.AppsScriptUrl + '?bot=admin'
-  );
+  return setWebhook(settings.AdminBotToken, settings.AppsScriptUrl + '?bot=admin');
 }
 
 function deleteClientWebhook() {
   const settings = getSettings();
 
-  return deleteWebhook(
-    settings.ClientBotToken
-  );
+  return deleteWebhook(settings.ClientBotToken);
 }
 
 function deleteAdminWebhook() {
   const settings = getSettings();
 
-  return deleteWebhook(
-    settings.AdminBotToken
-  );
+  return deleteWebhook(settings.AdminBotToken);
 }
 
 function getClientWebhookInfo() {
   const settings = getSettings();
 
-  return getWebhookInfo(
-    settings.ClientBotToken
-  );
+  return getWebhookInfo(settings.ClientBotToken);
 }
 
 function getAdminWebhookInfo() {
   const settings = getSettings();
 
-  return getWebhookInfo(
-    settings.AdminBotToken
-  );
+  return getWebhookInfo(settings.AdminBotToken);
 }
 
 function pollClientBot() {
   const settings = getSettings();
   const botToken = settings.ClientBotToken;
 
-  const offset = Number(
-    PropertiesService
-      .getScriptProperties()
-      .getProperty('CLIENT_OFFSET') || 0
-  );
+  const offset = Number(PropertiesService.getScriptProperties().getProperty('CLIENT_OFFSET') || 0);
 
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/getUpdates?offset=' +
-    offset +
-    '&timeout=10';
+  const url = 'https://api.telegram.org/bot' + botToken + '/getUpdates?offset=' + offset + '&timeout=10';
 
   const response = UrlFetchApp.fetch(url, {
     method: 'get',
     muteHttpExceptions: true
   });
 
-  const data =
-    JSON.parse(
-      response.getContentText()
-    );
+  const data = JSON.parse(response.getContentText());
 
   if (!data.ok) {
     Logger.log(data);
     return;
   }
 
-  data.result.forEach(function(update) {
+  data.result.forEach(function (update) {
     if (update.message) {
       handleClientMessage(update.message);
     }
 
-    PropertiesService
-      .getScriptProperties()
-      .setProperty(
-        'CLIENT_OFFSET',
-        String(update.update_id + 1)
-      );
+    PropertiesService.getScriptProperties().setProperty('CLIENT_OFFSET', String(update.update_id + 1));
   });
 }

@@ -1,4 +1,3 @@
-
 function sendAppointmentsMenu(chatId, settings) {
   navigateAdmin(chatId, ADMIN_MENUS.APPOINTMENTS);
 

@@ -1,66 +1,37 @@
-function processProviderName(
-  chatId,
-  text,
-  settings
-) {
-  const providerName =
-    String(text || '').trim();
+function processProviderName(chatId, text, settings) {
+  const providerName = String(text || '').trim();
 
   if (!providerName) {
-    startCreateProvider(
-      chatId,
-      settings
-    );
+    startCreateProvider(chatId, settings);
 
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'provider_name',
-    providerName
-  );
+  setUserSessionValue(chatId, 'provider_name', providerName);
 
-  showProviderLocations(
-    chatId,
-    settings
-  );
+  showProviderLocations(chatId, settings);
 }
 
-function startCreateProvider(
-  chatId,
-  settings
-) {
-  setPreviousMenu(
-    chatId,
-    'PROVIDERS_MENU'
-  );
+function startCreateProvider(chatId, settings) {
+  setPreviousMenu(chatId, 'PROVIDERS_MENU');
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_NAME
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_NAME);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.ENTER_PROVIDER_NAME
-    ),
+    getMessage(MESSAGE_KEYS.ENTER_PROVIDER_NAME),
     buildKeyboardWithMainMenu([])
   );
 }
 
 function showProviderLocations(chatId, settings) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_LOCATION
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_LOCATION);
 
   const locations = getLocations();
   const keyboardRows = [];
 
-  locations.forEach(function(location) {
+  locations.forEach(function (location) {
     keyboardRows.push([
       {
         text: location.name
@@ -73,51 +44,26 @@ function showProviderLocations(chatId, settings) {
     resize_keyboard: true
   };
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.SELECT_PROVIDER_LOCATION),
-    keyboard
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.SELECT_PROVIDER_LOCATION), keyboard);
 }
 
-function processProviderLocation(
-  chatId,
-  text,
-  settings
-) {
-  const location =
-    findLocationByName(
-      text,
-      false
-    );
+function processProviderLocation(chatId, text, settings) {
+  const location = findLocationByName(text, false);
 
   if (!location) {
-    showProviderLocations(
-      chatId,
-      settings
-    );
+    showProviderLocations(chatId, settings);
 
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'provider_location_id',
-    location.id
-  );
+  setUserSessionValue(chatId, 'provider_location_id', location.id);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_PHONE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_PHONE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.ENTER_PROVIDER_PHONE
-    ),
+    getMessage(MESSAGE_KEYS.ENTER_PROVIDER_PHONE),
     buildKeyboardWithMainMenu([])
   );
 }
@@ -126,52 +72,26 @@ function processProviderPhone(chatId, text, settings) {
   const phone = normalizePhone(text);
 
   if (!isValidPhone(phone)) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.PHONE_INVALID)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.PHONE_INVALID));
 
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ENTER_PROVIDER_PHONE)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.ENTER_PROVIDER_PHONE));
 
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'provider_phone',
-    phone
-  );
+  setUserSessionValue(chatId, 'provider_phone', phone);
 
-  const session =
-    getUserSession(chatId);
+  const session = getUserSession(chatId);
 
-  const providerId =
-    createProviderFromAdminSession(
-      session
-    );
+  const providerId = createProviderFromAdminSession(session);
 
-  resetProviderWizardSession(
-    chatId
-  );
+  resetProviderWizardSession(chatId);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.PROVIDER_CREATED
-    ) +
-      '\n\nID: ' +
-      providerId
+    getMessage(MESSAGE_KEYS.PROVIDER_CREATED) + '\n\nID: ' + providerId
   );
 
-  backToAdminMenu(
-    chatId,
-    settings,
-    ADMIN_MENUS.PROVIDERS
-  );
+  backToAdminMenu(chatId, settings, ADMIN_MENUS.PROVIDERS);
 }

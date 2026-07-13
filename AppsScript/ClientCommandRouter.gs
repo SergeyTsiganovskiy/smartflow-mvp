@@ -1,33 +1,11 @@
-function handleClientCommandMessage(
-  chatId,
-  text,
-  state,
-  settings
-) {
-  if (
-    handleClientNavigationCommand(
-      chatId,
-      text,
-      settings
-    )
-  ) {
+function handleClientCommandMessage(chatId, text, state, settings) {
+  if (handleClientNavigationCommand(chatId, text, settings)) {
     return;
   }
 
-  if (
-    handleClientMenuCommand(
-      chatId,
-      text,
-      settings
-    )
-  ) {
+  if (handleClientMenuCommand(chatId, text, settings)) {
     return;
   }
 
-  handleClientStateMessage(
-    chatId,
-    text,
-    state,
-    settings
-  );
+  handleClientStateMessage(chatId, text, state, settings);
 }

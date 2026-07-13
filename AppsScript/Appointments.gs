@@ -1,14 +1,5 @@
-// =========================
-// APPOINTMENTS: READ
-// =========================
-
-
-
-
 function createAppointmentFromRequest(request, option) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const headers = sheet.getDataRange().getValues()[0];
 
@@ -16,29 +7,17 @@ function createAppointmentFromRequest(request, option) {
 
   const appointmentId = generateId('appt');
 
-  const startAt = buildDateTime(
-    option.preferred_date,
-    option.preferred_time
-  );
+  const startAt = buildDateTime(option.preferred_date, option.preferred_time);
 
-  const customer =
-    getCustomerById(
-      request.customer_id
-    );
+  const customer = getCustomerById(request.customer_id);
 
-  const durationMinutes =
-    getServiceDurationMinutesForSession({
-      customer_phone:
-        customer ? customer.phone : '',
+  const durationMinutes = getServiceDurationMinutesForSession({
+    customer_phone: customer ? customer.phone : '',
 
-      service_id:
-        request.service_id
-    });
+    service_id: request.service_id
+  });
 
-  const endAt = addMinutesToDateTime(
-    startAt,
-    durationMinutes
-  );
+  const endAt = addMinutesToDateTime(startAt, durationMinutes);
 
   const newRow = new Array(headers.length).fill('');
 
@@ -55,20 +34,15 @@ function createAppointmentFromRequest(request, option) {
   newRow[headers.indexOf('created_at')] = now;
   newRow[headers.indexOf('updated_at')] = now;
   if (headers.indexOf('customer_note') !== -1) {
-    newRow[headers.indexOf('customer_note')] =
-      request.customer_note || '';
+    newRow[headers.indexOf('customer_note')] = request.customer_note || '';
   }
   sheet.appendRow(newRow);
 
   return appointmentId;
 }
 
-
-
 function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -79,14 +53,10 @@ function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
-      sheet
-        .getRange(i + 1, calendarEventIdIndex + 1)
-        .setValue(calendarEventId);
+      sheet.getRange(i + 1, calendarEventIdIndex + 1).setValue(calendarEventId);
 
       if (updatedAtIndex !== -1) {
-        sheet
-          .getRange(i + 1, updatedAtIndex + 1)
-          .setValue(new Date());
+        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(new Date());
       }
 
       return;
@@ -94,9 +64,7 @@ function updateAppointmentCalendarEventId(appointmentId, calendarEventId) {
   }
 }
 function updateAppointmentStatus(appointmentId, status) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -107,14 +75,10 @@ function updateAppointmentStatus(appointmentId, status) {
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
-      sheet
-        .getRange(i + 1, statusIndex + 1)
-        .setValue(status);
+      sheet.getRange(i + 1, statusIndex + 1).setValue(status);
 
       if (updatedAtIndex !== -1) {
-        sheet
-          .getRange(i + 1, updatedAtIndex + 1)
-          .setValue(new Date());
+        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(new Date());
       }
 
       return;
@@ -122,12 +86,8 @@ function updateAppointmentStatus(appointmentId, status) {
   }
 }
 
-
-
 function updateAppointmentField(appointmentId, fieldName, value) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -142,14 +102,10 @@ function updateAppointmentField(appointmentId, fieldName, value) {
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
-      sheet
-        .getRange(i + 1, fieldIndex + 1)
-        .setValue(value);
+      sheet.getRange(i + 1, fieldIndex + 1).setValue(value);
 
       if (updatedAtIndex !== -1) {
-        sheet
-          .getRange(i + 1, updatedAtIndex + 1)
-          .setValue(new Date());
+        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(new Date());
       }
 
       return;
@@ -157,83 +113,52 @@ function updateAppointmentField(appointmentId, fieldName, value) {
   }
 }
 
-function updateAppointmentDateTime(
-  appointmentId,
-  startAt,
-  endAt
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+function updateAppointmentDateTime(appointmentId, startAt, endAt) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
 
-  const appointmentIdIndex =
-    headers.indexOf('appointment_id');
+  const appointmentIdIndex = headers.indexOf('appointment_id');
 
-  const startAtIndex =
-    headers.indexOf('start_at');
+  const startAtIndex = headers.indexOf('start_at');
 
-  const endAtIndex =
-    headers.indexOf('end_at');
+  const endAtIndex = headers.indexOf('end_at');
 
-  const updatedAtIndex =
-    headers.indexOf('updated_at');
+  const updatedAtIndex = headers.indexOf('updated_at');
 
-  const reminder24hIndex =
-    headers.indexOf('reminder_24h_sent_at');
+  const reminder24hIndex = headers.indexOf('reminder_24h_sent_at');
 
-  const reminder2hIndex =
-    headers.indexOf('reminder_2h_sent_at');
+  const reminder2hIndex = headers.indexOf('reminder_2h_sent_at');
 
-  const customerConfirmedIndex =
-    headers.indexOf('customer_confirmed');
+  const customerConfirmedIndex = headers.indexOf('customer_confirmed');
 
-  const customerConfirmedAtIndex =
-    headers.indexOf('customer_confirmed_at');
+  const customerConfirmedAtIndex = headers.indexOf('customer_confirmed_at');
 
   for (let i = 1; i < rows.length; i++) {
-    if (
-      String(rows[i][appointmentIdIndex]) ===
-      String(appointmentId)
-    ) {
-      sheet
-        .getRange(i + 1, startAtIndex + 1)
-        .setValue(startAt);
+    if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
+      sheet.getRange(i + 1, startAtIndex + 1).setValue(startAt);
 
-      sheet
-        .getRange(i + 1, endAtIndex + 1)
-        .setValue(endAt);
+      sheet.getRange(i + 1, endAtIndex + 1).setValue(endAt);
 
       if (reminder24hIndex !== -1) {
-        sheet
-          .getRange(i + 1, reminder24hIndex + 1)
-          .setValue('');
+        sheet.getRange(i + 1, reminder24hIndex + 1).setValue('');
       }
 
       if (reminder2hIndex !== -1) {
-        sheet
-          .getRange(i + 1, reminder2hIndex + 1)
-          .setValue('');
+        sheet.getRange(i + 1, reminder2hIndex + 1).setValue('');
       }
 
       if (customerConfirmedIndex !== -1) {
-        sheet
-          .getRange(i + 1, customerConfirmedIndex + 1)
-          .setValue('');
+        sheet.getRange(i + 1, customerConfirmedIndex + 1).setValue('');
       }
 
       if (customerConfirmedAtIndex !== -1) {
-        sheet
-          .getRange(i + 1, customerConfirmedAtIndex + 1)
-          .setValue('');
+        sheet.getRange(i + 1, customerConfirmedAtIndex + 1).setValue('');
       }
 
       if (updatedAtIndex !== -1) {
-        sheet
-          .getRange(i + 1, updatedAtIndex + 1)
-          .setValue(new Date());
+        sheet.getRange(i + 1, updatedAtIndex + 1).setValue(new Date());
       }
 
       return;

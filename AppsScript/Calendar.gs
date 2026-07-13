@@ -19,7 +19,7 @@ function getCalendarBusyIntervals(providerId, dateValue) {
 
   const events = calendar.getEvents(start, end);
 
-  return events.map(event => {
+  return events.map((event) => {
     return {
       startTime: Utilities.formatDate(event.getStartTime(), timezone, 'HH:mm'),
       endTime: Utilities.formatDate(event.getEndTime(), timezone, 'HH:mm')
@@ -27,50 +27,34 @@ function getCalendarBusyIntervals(providerId, dateValue) {
   });
 }
 
-
-
-
 function getCalendarAppointmentsByPhone(phone) {
-  const phoneKey =
-    getPhoneSearchKey(phone);
+  const phoneKey = getPhoneSearchKey(phone);
 
-  const knownEventIds =
-    getAllAppointmentCalendarEventIds();
+  const knownEventIds = getAllAppointmentCalendarEventIds();
 
-  const providers =
-    getProviders();
+  const providers = getProviders();
 
   const checkedCalendarIds = {};
   const result = [];
 
-  const now =
-    new Date();
+  const now = new Date();
 
-  const future =
-    new Date();
+  const future = new Date();
 
-  const settings =
-    getSettings();
+  const settings = getSettings();
 
-  const cacheDays =
-    Number(
-      settings.CalendarCacheDays || 30
-    );
+  const cacheDays = Number(settings.CalendarCacheDays || 30);
 
-  future.setDate(
-    future.getDate() + cacheDays
-  );
+  future.setDate(future.getDate() + cacheDays);
 
-  providers.forEach(function(provider) {
-    const providerId =
-      provider.provider_id;
+  providers.forEach(function (provider) {
+    const providerId = provider.provider_id;
 
     if (!providerId) {
       return;
     }
 
-    const calendarId =
-      getProviderCalendarId(providerId);
+    const calendarId = getProviderCalendarId(providerId);
 
     if (!calendarId) {
       return;
@@ -82,43 +66,29 @@ function getCalendarAppointmentsByPhone(phone) {
 
     checkedCalendarIds[calendarId] = true;
 
-    const calendar =
-      CalendarApp.getCalendarById(calendarId);
+    const calendar = CalendarApp.getCalendarById(calendarId);
 
     if (!calendar) {
       return;
     }
 
-    const events =
-      calendar.getEvents(
-        now,
-        future
-      );
+    const events = calendar.getEvents(now, future);
 
-    events.forEach(function(event) {
-      const eventId =
-        event.getId();
+    events.forEach(function (event) {
+      const eventId = event.getId();
 
       if (knownEventIds.indexOf(eventId) !== -1) {
         return;
       }
 
-      const title =
-        event.getTitle() || '';
+      const title = event.getTitle() || '';
 
-      const description =
-        event.getDescription() || '';
+      const description = event.getDescription() || '';
 
-      const fullText =
-        title + '\n' + description;
+      const fullText = title + '\n' + description;
 
       const eventPhone =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_PHONE
-          )
-        ) ||
+        extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PHONE)) ||
         extractPhoneFromText(fullText);
 
       if (!eventPhone) {
@@ -129,45 +99,15 @@ function getCalendarAppointmentsByPhone(phone) {
         return;
       }
 
-      const serviceName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_SERVICE
-          )
-        );
+      const serviceName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_SERVICE));
 
-      const providerName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER
-          )
-        );
+      const providerName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER));
 
-      const customerName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER
-          )
-        );
+      const customerName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER));
 
-      const locationName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_LOCATION
-          )
-        );
+      const locationName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_LOCATION));
 
-      const commentText =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_COMMENT
-          )
-        );
+      const commentText = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT));
 
       result.push({
         source: 'calendar_manual',
@@ -186,17 +126,12 @@ function getCalendarAppointmentsByPhone(phone) {
     });
   });
 
-  result.sort(function(a, b) {
+  result.sort(function (a, b) {
     return new Date(a.start_at) - new Date(b.start_at);
   });
 
   return result;
 }
-
-
-
-
-
 
 function calendarEventMatchesProvider(event, providerId) {
   const provider = findProviderById(providerId);
@@ -205,20 +140,9 @@ function calendarEventMatchesProvider(event, providerId) {
     return false;
   }
 
-  const fullText =
-    String(event.getTitle() || '') +
-    '\n' +
-    String(event.getDescription() || '');
+  const fullText = String(event.getTitle() || '') + '\n' + String(event.getDescription() || '');
 
-  const providerNameFromEvent =
-    extractValueByLabel(
-      fullText,
-      getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER)
-    );
+  const providerNameFromEvent = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER));
 
-  return (
-    normalizeTextForSearch(providerNameFromEvent) ===
-    normalizeTextForSearch(provider.name)
-  );
+  return normalizeTextForSearch(providerNameFromEvent) === normalizeTextForSearch(provider.name);
 }
-

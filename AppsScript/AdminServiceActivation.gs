@@ -12,10 +12,7 @@ function processServiceToDisable(chatId, text, settings) {
     return;
   }
 
-  setServiceActive(
-    service.id,
-    false
-  );
+  setServiceActive(service.id, false);
 
   clearUserSession(chatId);
   setUserState(chatId, '');
@@ -27,28 +24,17 @@ function processServiceToDisable(chatId, text, settings) {
     buildKeyboardWithMainMenu([])
   );
 
-  backToAdminMenu(
-    chatId,
-    settings,
-    ADMIN_MENUS.SERVICES
-  );
+  backToAdminMenu(chatId, settings, ADMIN_MENUS.SERVICES);
 }
 
-function startDisableService(
-  chatId,
-  settings
-) {
-  setPreviousMenu(
-    chatId,
-    'SERVICES_MENU'
-  );
+function startDisableService(chatId, settings) {
+  setPreviousMenu(chatId, 'SERVICES_MENU');
 
-  const services =
-    getServices();
+  const services = getServices();
 
   const keyboardRows = [];
 
-  services.forEach(function(service) {
+  services.forEach(function (service) {
     keyboardRows.push([
       {
         text: service.name
@@ -56,20 +42,13 @@ function startDisableService(
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_TO_DISABLE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_TO_DISABLE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.SELECT_SERVICE_FROM_LIST
-    ),
-    buildKeyboardWithMainMenu(
-      keyboardRows
-    )
+    getMessage(MESSAGE_KEYS.SELECT_SERVICE_FROM_LIST),
+    buildKeyboardWithMainMenu(keyboardRows)
   );
 }
 
@@ -79,7 +58,7 @@ function startEnableService(chatId, settings) {
   const services = getInactiveServices();
   const keyboardRows = [];
 
-  services.forEach(function(service) {
+  services.forEach(function (service) {
     keyboardRows.push([
       {
         text: service.name
@@ -87,10 +66,7 @@ function startEnableService(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_TO_ENABLE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_TO_ENABLE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -114,10 +90,7 @@ function processServiceToEnable(chatId, text, settings) {
     return;
   }
 
-  setServiceActive(
-    service.id,
-    true
-  );
+  setServiceActive(service.id, true);
 
   clearUserSession(chatId);
   setUserState(chatId, '');
@@ -129,9 +102,5 @@ function processServiceToEnable(chatId, text, settings) {
     buildKeyboardWithMainMenu([])
   );
 
-  backToAdminMenu(
-    chatId,
-    settings,
-    ADMIN_MENUS.SERVICES
-  );
+  backToAdminMenu(chatId, settings, ADMIN_MENUS.SERVICES);
 }

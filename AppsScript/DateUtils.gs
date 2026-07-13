@@ -1,9 +1,5 @@
 function formatDateForStorage(date) {
-  return Utilities.formatDate(
-    date,
-    getSettings().TimeZone || 'Europe/Kyiv',
-    'yyyy-MM-dd'
-  );
+  return Utilities.formatDate(date, getSettings().TimeZone || 'Europe/Kyiv', 'yyyy-MM-dd');
 }
 
 function formatDateForDisplay(value) {
@@ -53,11 +49,7 @@ function normalizeDateForStorage(value) {
 
   let match = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if (match) {
-    return (
-      match[3] + '-' +
-      String(match[2]).padStart(2, '0') + '-' +
-      String(match[1]).padStart(2, '0')
-    );
+    return match[3] + '-' + String(match[2]).padStart(2, '0') + '-' + String(match[1]).padStart(2, '0');
   }
 
   match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -68,18 +60,10 @@ function normalizeDateForStorage(value) {
     // If first number is > 12, assume DD/MM/YYYY.
     // Otherwise assume MM/DD/YYYY.
     if (first > 12) {
-      return (
-        match[3] + '-' +
-        String(second).padStart(2, '0') + '-' +
-        String(first).padStart(2, '0')
-      );
+      return match[3] + '-' + String(second).padStart(2, '0') + '-' + String(first).padStart(2, '0');
     }
 
-    return (
-      match[3] + '-' +
-      String(first).padStart(2, '0') + '-' +
-      String(second).padStart(2, '0')
-    );
+    return match[3] + '-' + String(first).padStart(2, '0') + '-' + String(second).padStart(2, '0');
   }
 
   const parsed = new Date(text);
@@ -97,9 +81,7 @@ function getDayOfWeekCode(dateValue) {
 
   const date = new Date(normalizedDate + 'T12:00:00');
 
-  const dayIndex = Number(
-    Utilities.formatDate(date, timezone, 'u')
-  );
+  const dayIndex = Number(Utilities.formatDate(date, timezone, 'u'));
 
   const codes = {
     1: 'MON',

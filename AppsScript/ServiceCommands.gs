@@ -1,28 +1,18 @@
 function createService(serviceData) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.SERVICES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SERVICES);
 
   const serviceId = generateServiceId();
 
   const headers = sheet
     .getRange(1, 1, 1, sheet.getLastColumn())
     .getValues()[0]
-    .map(function(header) {
+    .map(function (header) {
       return String(header || '').trim();
     });
   const newRow = new Array(headers.length).fill('');
-  const requiredHeaders = [
-    'service_id',
-    'location_id',
-    'name',
-    'duration_min',
-    'duration_max',
-    'active',
-    'created_at'
-  ];
+  const requiredHeaders = ['service_id', 'location_id', 'name', 'duration_min', 'duration_max', 'active', 'created_at'];
 
-  requiredHeaders.forEach(function(header) {
+  requiredHeaders.forEach(function (header) {
     if (headers.indexOf(header) === -1) {
       throw new Error('Services sheet is missing column: ' + header);
     }
@@ -44,17 +34,11 @@ function createService(serviceData) {
   return serviceId;
 }
 
-function updateServiceField(
-  serviceId,
-  field,
-  value
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.SERVICES);
+function updateServiceField(serviceId, field, value) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SERVICES);
 
   const rows = sheet.getDataRange().getValues();
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -71,9 +55,7 @@ function updateServiceField(
       throw new Error('Field not found in Services: ' + field);
     }
 
-    sheet
-      .getRange(i + 1, fieldIndex + 1)
-      .setValue(value);
+    sheet.getRange(i + 1, fieldIndex + 1).setValue(value);
 
     SERVICES_CACHE = null;
     SERVICES_INCLUDING_INACTIVE_CACHE = null;
@@ -84,13 +66,6 @@ function updateServiceField(
   return false;
 }
 
-function setServiceActive(
-  serviceId,
-  active
-) {
-  return updateServiceField(
-    serviceId,
-    'active',
-    active
-  );
+function setServiceActive(serviceId, active) {
+  return updateServiceField(serviceId, 'active', active);
 }

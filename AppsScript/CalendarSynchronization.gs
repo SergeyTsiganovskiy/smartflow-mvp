@@ -3,9 +3,7 @@ function syncAppointmentWithCalendar(appointment) {
     return appointment;
   }
 
-  const calendarId = getProviderCalendarId(
-    appointment.provider_id
-  );
+  const calendarId = getProviderCalendarId(appointment.provider_id);
 
   if (!calendarId) {
     return appointment;
@@ -17,52 +15,29 @@ function syncAppointmentWithCalendar(appointment) {
     return appointment;
   }
 
-  const event = calendar.getEventById(
-    appointment.calendar_event_id
-  );
+  const event = calendar.getEventById(appointment.calendar_event_id);
 
   if (!event) {
     return appointment;
   }
 
-  const timezone =
-    getSettings().TimeZone || 'Europe/Kyiv';
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
 
-  const calendarStartAt = Utilities.formatDate(
-    event.getStartTime(),
-    timezone,
-    'yyyy-MM-dd HH:mm'
-  );
+  const calendarStartAt = Utilities.formatDate(event.getStartTime(), timezone, 'yyyy-MM-dd HH:mm');
 
-  const calendarEndAt = Utilities.formatDate(
-    event.getEndTime(),
-    timezone,
-    'yyyy-MM-dd HH:mm'
-  );
+  const calendarEndAt = Utilities.formatDate(event.getEndTime(), timezone, 'yyyy-MM-dd HH:mm');
 
-  const currentStartAt =
-    formatDateTimeForStorage(
-      appointment.start_at
-    );
+  const currentStartAt = formatDateTimeForStorage(appointment.start_at);
 
-  const currentEndAt =
-    formatDateTimeForStorage(
-      appointment.end_at
-    );
+  const currentEndAt = formatDateTimeForStorage(appointment.end_at);
 
-  const changed =
-    currentStartAt !== calendarStartAt ||
-    currentEndAt !== calendarEndAt;
+  const changed = currentStartAt !== calendarStartAt || currentEndAt !== calendarEndAt;
 
   if (!changed) {
     return appointment;
   }
 
-  updateAppointmentDateTime(
-    appointment.appointment_id,
-    calendarStartAt,
-    calendarEndAt
-  );
+  updateAppointmentDateTime(appointment.appointment_id, calendarStartAt, calendarEndAt);
 
   appointment.start_at = calendarStartAt;
   appointment.end_at = calendarEndAt;

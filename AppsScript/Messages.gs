@@ -9,14 +9,9 @@ function getMessage(messageKey, language) {
     MESSAGES_CACHE = loadMessagesCache();
   }
 
-  const lang = String(
-    language || getSettings().Language || 'ru'
-  ).trim();
+  const lang = String(language || getSettings().Language || 'ru').trim();
 
-  if (
-    MESSAGES_CACHE[messageKey] &&
-    MESSAGES_CACHE[messageKey][lang]
-  ) {
+  if (MESSAGES_CACHE[messageKey] && MESSAGES_CACHE[messageKey][lang]) {
     return MESSAGES_CACHE[messageKey][lang];
   }
 
@@ -24,9 +19,7 @@ function getMessage(messageKey, language) {
 }
 
 function loadMessagesCache() {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.MESSAGES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.MESSAGES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -36,7 +29,7 @@ function loadMessagesCache() {
     return cache;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -51,13 +44,12 @@ function loadMessagesCache() {
 
     cache[key] = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       if (header === 'key') {
         return;
       }
 
-      cache[key][header] =
-        rows[i][index] || '';
+      cache[key][header] = rows[i][index] || '';
     });
   }
 
@@ -74,8 +66,7 @@ function getMessageKeyByText(text) {
   const targetText = String(text || '').trim();
 
   for (const key in MESSAGES_CACHE) {
-    const messageText =
-      String(MESSAGES_CACHE[key][lang] || '').trim();
+    const messageText = String(MESSAGES_CACHE[key][lang] || '').trim();
 
     if (messageText === targetText) {
       return key;
@@ -86,9 +77,7 @@ function getMessageKeyByText(text) {
 }
 
 function getMessageValues(messageKey) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.MESSAGES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.MESSAGES);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -96,7 +85,7 @@ function getMessageValues(messageKey) {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -105,13 +94,13 @@ function getMessageValues(messageKey) {
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][keyIndex]) === String(messageKey)) {
       return headers
-        .filter(function(header) {
+        .filter(function (header) {
           return header !== 'key';
         })
-        .map(function(header) {
+        .map(function (header) {
           return String(rows[i][headers.indexOf(header)] || '').trim();
         })
-        .filter(function(value) {
+        .filter(function (value) {
           return value;
         });
     }

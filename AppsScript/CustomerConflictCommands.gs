@@ -1,184 +1,109 @@
 function createCustomerConflict(data) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
-  const phoneKeyIndex =
-    headers.indexOf('phone_key');
+  const phoneKeyIndex = headers.indexOf('phone_key');
 
-  const conflictPhoneKeyIndex =
-    headers.indexOf('conflict_phone_key');
+  const conflictPhoneKeyIndex = headers.indexOf('conflict_phone_key');
 
-  const activeIndex =
-    headers.indexOf('active');
+  const activeIndex = headers.indexOf('active');
 
   for (let i = 1; i < rows.length; i++) {
-    const phoneKey =
-      String(rows[i][phoneKeyIndex]);
+    const phoneKey = String(rows[i][phoneKeyIndex]);
 
-    const conflictPhoneKey =
-      String(rows[i][conflictPhoneKeyIndex]);
+    const conflictPhoneKey = String(rows[i][conflictPhoneKeyIndex]);
 
-    const active =
-      String(rows[i][activeIndex]) !== 'FALSE';
+    const active = String(rows[i][activeIndex]) !== 'FALSE';
 
     if (!active) {
       continue;
     }
 
     if (
-      (
-        phoneKey === String(data.phone_key) &&
-        conflictPhoneKey === String(data.conflict_phone_key)
-      ) ||
-      (
-        phoneKey === String(data.conflict_phone_key) &&
-        conflictPhoneKey === String(data.phone_key)
-      )
+      (phoneKey === String(data.phone_key) && conflictPhoneKey === String(data.conflict_phone_key)) ||
+      (phoneKey === String(data.conflict_phone_key) && conflictPhoneKey === String(data.phone_key))
     ) {
       return false;
     }
   }
 
-  const newRow =
-    new Array(headers.length).fill('');
+  const newRow = new Array(headers.length).fill('');
 
-  newRow[
-    headers.indexOf('conflict_id')
-  ] =
-    generateId('conflict');
+  newRow[headers.indexOf('conflict_id')] = generateId('conflict');
 
-  newRow[
-    headers.indexOf('phone')
-  ] =
-    data.phone;
+  newRow[headers.indexOf('phone')] = data.phone;
 
-  newRow[
-    headers.indexOf('phone_key')
-  ] =
-    data.phone_key;
+  newRow[headers.indexOf('phone_key')] = data.phone_key;
 
-  newRow[
-    headers.indexOf('customer_name')
-  ] =
-    data.customer_name;
+  newRow[headers.indexOf('customer_name')] = data.customer_name;
 
-  newRow[
-    headers.indexOf('conflict_phone')
-  ] =
-    data.conflict_phone;
+  newRow[headers.indexOf('conflict_phone')] = data.conflict_phone;
 
-  newRow[
-    headers.indexOf('conflict_phone_key')
-  ] =
-    data.conflict_phone_key;
+  newRow[headers.indexOf('conflict_phone_key')] = data.conflict_phone_key;
 
-  newRow[
-    headers.indexOf('conflict_customer_name')
-  ] =
-    data.conflict_customer_name;
+  newRow[headers.indexOf('conflict_customer_name')] = data.conflict_customer_name;
 
-  newRow[
-    headers.indexOf('active')
-  ] =
-    true;
+  newRow[headers.indexOf('active')] = true;
 
-  newRow[
-    headers.indexOf('created_at')
-  ] =
-    new Date();
+  newRow[headers.indexOf('created_at')] = new Date();
 
-  newRow[
-    headers.indexOf('updated_at')
-  ] =
-    new Date();
+  newRow[headers.indexOf('updated_at')] = new Date();
 
-  newRow[
-    headers.indexOf('notes')
-  ] =
-    '';
+  newRow[headers.indexOf('notes')] = '';
 
   sheet.appendRow(newRow);
 
   return true;
 }
 
-function deactivateCustomerConflict(
-  phoneKey,
-  conflictPhoneKey
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
+function deactivateCustomerConflict(phoneKey, conflictPhoneKey) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_CONFLICTS);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return false;
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
-  const phoneKeyIndex =
-    headers.indexOf('phone_key');
+  const phoneKeyIndex = headers.indexOf('phone_key');
 
-  const conflictPhoneKeyIndex =
-    headers.indexOf('conflict_phone_key');
+  const conflictPhoneKeyIndex = headers.indexOf('conflict_phone_key');
 
-  const activeIndex =
-    headers.indexOf('active');
+  const activeIndex = headers.indexOf('active');
 
-  const updatedAtIndex =
-    headers.indexOf('updated_at');
+  const updatedAtIndex = headers.indexOf('updated_at');
 
   for (let i = 1; i < rows.length; i++) {
-    const rowPhoneKey =
-      String(rows[i][phoneKeyIndex] || '');
+    const rowPhoneKey = String(rows[i][phoneKeyIndex] || '');
 
-    const rowConflictPhoneKey =
-      String(rows[i][conflictPhoneKeyIndex] || '');
+    const rowConflictPhoneKey = String(rows[i][conflictPhoneKeyIndex] || '');
 
-    const active =
-      String(rows[i][activeIndex]).toUpperCase() !== 'FALSE' &&
-      rows[i][activeIndex] !== false;
+    const active = String(rows[i][activeIndex]).toUpperCase() !== 'FALSE' && rows[i][activeIndex] !== false;
 
     if (!active) {
       continue;
     }
 
     const matched =
-      (
-        rowPhoneKey === String(phoneKey) &&
-        rowConflictPhoneKey === String(conflictPhoneKey)
-      ) ||
-      (
-        rowPhoneKey === String(conflictPhoneKey) &&
-        rowConflictPhoneKey === String(phoneKey)
-      );
+      (rowPhoneKey === String(phoneKey) && rowConflictPhoneKey === String(conflictPhoneKey)) ||
+      (rowPhoneKey === String(conflictPhoneKey) && rowConflictPhoneKey === String(phoneKey));
 
     if (!matched) {
       continue;
     }
 
-    sheet
-      .getRange(i + 1, activeIndex + 1)
-      .setValue(false);
+    sheet.getRange(i + 1, activeIndex + 1).setValue(false);
 
-    sheet
-      .getRange(i + 1, updatedAtIndex + 1)
-      .setValue(new Date());
+    sheet.getRange(i + 1, updatedAtIndex + 1).setValue(new Date());
 
     return true;
   }

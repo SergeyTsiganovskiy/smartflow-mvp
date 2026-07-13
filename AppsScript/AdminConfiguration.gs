@@ -1,37 +1,32 @@
 function sendConfigurationMenu(chatId, settings, language) {
   navigateAdmin(chatId, ADMIN_MENUS.CONFIGURATION);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CONFIGURATION_ACTION
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CONFIGURATION_ACTION);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
     getMessage(MESSAGE_KEYS.CONFIGURATION_TITLE, language),
-    buildKeyboardWithMainMenu([
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_LANGUAGE, language) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_IDS, language) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_REMINDER_DAY_BEFORE, language) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS, language) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS, language) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE, language) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_DEFAULT_WORK_HOURS, language) }]
-    ], language)
+    buildKeyboardWithMainMenu(
+      [
+        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_LANGUAGE, language) }],
+        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_IDS, language) }],
+        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_REMINDER_DAY_BEFORE, language) }],
+        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS, language) }],
+        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS, language) }],
+        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE, language) }],
+        [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_DEFAULT_WORK_HOURS, language) }]
+      ],
+      language
+    )
   );
 }
 
 function startConfigurationReminderDayBefore(chatId, settings) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CONFIGURATION_REMINDER_DAY_BEFORE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CONFIGURATION_REMINDER_DAY_BEFORE);
 
   const enabled = isSettingEnabled(settings.ReminderDayBefore, true);
-  const status = enabled
-    ? getMessage(MESSAGE_KEYS.ACTIVE)
-    : getMessage(MESSAGE_KEYS.INACTIVE);
+  const status = enabled ? getMessage(MESSAGE_KEYS.ACTIVE) : getMessage(MESSAGE_KEYS.INACTIVE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -39,7 +34,8 @@ function startConfigurationReminderDayBefore(chatId, settings) {
     getMessage(MESSAGE_KEYS.CONFIGURATION_REMINDER_DAY_BEFORE_TITLE) +
       '\n\n' +
       getMessage(MESSAGE_KEYS.CONFIGURATION_CURRENT_STATUS) +
-      ': ' + status,
+      ': ' +
+      status,
     buildKeyboardWithMainMenu([
       [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ENABLE) }],
       [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_DISABLE) }]
@@ -75,27 +71,19 @@ function processConfigurationReminderDayBefore(chatId, text, settings) {
   sendTelegramMessage(
     updatedSettings.AdminBotToken,
     chatId,
-    getMessage(
-      enabled
-        ? MESSAGE_KEYS.CONFIGURATION_REMINDER_ENABLED
-        : MESSAGE_KEYS.CONFIGURATION_REMINDER_DISABLED
-    )
+    getMessage(enabled ? MESSAGE_KEYS.CONFIGURATION_REMINDER_ENABLED : MESSAGE_KEYS.CONFIGURATION_REMINDER_DISABLED)
   );
 
   sendConfigurationMenu(chatId, updatedSettings);
 }
 
 function startConfigurationAdminIds(chatId, settings) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CONFIGURATION_ADMIN_ACTION
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CONFIGURATION_ADMIN_ACTION);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMINS_TITLE) +
-      '\n\n' + String(settings.AdminTelegramIds || ''),
+    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMINS_TITLE) + '\n\n' + String(settings.AdminTelegramIds || ''),
     buildKeyboardWithMainMenu([
       [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_LIST) }],
       [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ADD) }],
@@ -108,8 +96,7 @@ function showConfigurationAdminList(chatId, settings) {
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMINS_TITLE) +
-      '\n\n' + String(settings.AdminTelegramIds || ''),
+    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMINS_TITLE) + '\n\n' + String(settings.AdminTelegramIds || ''),
     buildKeyboardWithMainMenu([
       [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_LIST) }],
       [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ADD) }],
@@ -144,9 +131,7 @@ function normalizeConfigurationAdminIds(text) {
 }
 
 function getConfigurationAdminIds(settings) {
-  return normalizeConfigurationAdminIds(
-    String(settings.AdminTelegramIds || '')
-  );
+  return normalizeConfigurationAdminIds(String(settings.AdminTelegramIds || ''));
 }
 
 function isValidConfigurationTelegramId(text) {
@@ -168,8 +153,7 @@ function startConfigurationAdminDelete(chatId, settings) {
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_DELETE_PROMPT) +
-      '\n\n' + String(settings.AdminTelegramIds || ''),
+    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_DELETE_PROMPT) + '\n\n' + String(settings.AdminTelegramIds || ''),
     buildKeyboardWithMainMenu([])
   );
 }
@@ -178,22 +162,14 @@ function processConfigurationAdminAdd(chatId, text, settings) {
   const telegramId = String(text || '').trim();
 
   if (!isValidConfigurationTelegramId(telegramId)) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ID_INVALID)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ID_INVALID));
     return;
   }
 
   const adminIds = getConfigurationAdminIds(settings);
 
   if (adminIds.indexOf(telegramId) !== -1) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ALREADY_EXISTS)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ALREADY_EXISTS));
 
     startConfigurationAdminIds(chatId, settings);
     return;
@@ -216,11 +192,7 @@ function processConfigurationAdminAdd(chatId, text, settings) {
   setUserState(chatId, '');
   const updatedSettings = getSettings();
 
-  sendTelegramMessage(
-    updatedSettings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ADDED)
-  );
+  sendTelegramMessage(updatedSettings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ADDED));
 
   startConfigurationAdminIds(chatId, updatedSettings);
 }
@@ -229,11 +201,7 @@ function processConfigurationAdminDelete(chatId, text, settings) {
   const telegramId = String(text || '').trim();
 
   if (!isValidConfigurationTelegramId(telegramId)) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ID_INVALID)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_ID_INVALID));
     return;
   }
 
@@ -250,11 +218,7 @@ function processConfigurationAdminDelete(chatId, text, settings) {
   const index = adminIds.indexOf(telegramId);
 
   if (index === -1) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_NOT_FOUND)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_NOT_FOUND));
     return;
   }
 
@@ -274,20 +238,13 @@ function processConfigurationAdminDelete(chatId, text, settings) {
   setUserState(chatId, '');
   const updatedSettings = getSettings();
 
-  sendTelegramMessage(
-    updatedSettings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_DELETED)
-  );
+  sendTelegramMessage(updatedSettings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_DELETED));
 
   startConfigurationAdminIds(chatId, updatedSettings);
 }
 
 function startConfigurationLanguage(chatId, settings) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CONFIGURATION_LANGUAGE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CONFIGURATION_LANGUAGE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -321,11 +278,7 @@ function processConfigurationLanguage(chatId, text, settings) {
   const language = getConfigurationLanguageByText(text);
 
   if (!language || !updateAdminConfigurationValue('Language', language)) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.CONFIGURATION_INVALID_LANGUAGE)
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_INVALID_LANGUAGE));
     return;
   }
 

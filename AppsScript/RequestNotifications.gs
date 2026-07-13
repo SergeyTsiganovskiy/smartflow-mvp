@@ -5,71 +5,32 @@ function notifyAdminsAboutRequestFromSession(session, requestId) {
   const service = findServiceById(session.service_id);
   const provider = findProviderById(session.provider_id);
 
-  const customerNote =
-    String(session.customer_note || '').trim() || '-';
+  const customerNote = String(session.customer_note || '').trim() || '-';
 
-  let text =
-    '<b>' +
-    getMessage(MESSAGE_KEYS.NEW_REQUEST_ADMIN_TITLE) +
-    '</b>\n\n';
+  let text = '<b>' + getMessage(MESSAGE_KEYS.NEW_REQUEST_ADMIN_TITLE) + '</b>\n\n';
 
-  text +=
-    '👤 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_CUSTOMER) +
-    ': ' +
-    session.customer_name +
-    '\n';
+  text += '👤 ' + getMessage(MESSAGE_KEYS.ADMIN_CUSTOMER) + ': ' + session.customer_name + '\n';
+
+  text += '📞 ' + getMessage(MESSAGE_KEYS.ADMIN_PHONE) + ': ' + session.customer_phone + '\n';
+
+  text += '📝 Комментарий: ' + customerNote + '\n\n';
 
   text +=
-    '📞 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_PHONE) +
-    ': ' +
-    session.customer_phone +
-    '\n';
+    '📍 ' + getMessage(MESSAGE_KEYS.ADMIN_LOCATION) + ': ' + (location ? location.name : session.location_id) + '\n';
+
+  text += '💅 ' + getMessage(MESSAGE_KEYS.ADMIN_SERVICE) + ': ' + (service ? service.name : session.service_id) + '\n';
 
   text +=
-    '📝 Комментарий: ' +
-    customerNote +
-    '\n\n';
+    '👩‍💼 ' + getMessage(MESSAGE_KEYS.ADMIN_PROVIDER) + ': ' + (provider ? provider.name : session.provider_id) + '\n\n';
 
-  text +=
-    '📍 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_LOCATION) +
-    ': ' +
-    (location ? location.name : session.location_id) +
-    '\n';
-
-  text +=
-    '💅 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_SERVICE) +
-    ': ' +
-    (service ? service.name : session.service_id) +
-    '\n';
-
-  text +=
-    '👩‍💼 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_PROVIDER) +
-    ': ' +
-    (provider ? provider.name : session.provider_id) +
-    '\n\n';
-
-  text +=
-    '<b>' +
-    getMessage(MESSAGE_KEYS.ADMIN_TIME_OPTIONS) +
-    ':</b>\n';
+  text += '<b>' + getMessage(MESSAGE_KEYS.ADMIN_TIME_OPTIONS) + ':</b>\n';
 
   for (let i = 1; i <= 3; i++) {
     const date = session['option' + i + '_date'];
     const time = session['option' + i + '_time'];
 
     if (date && time) {
-      text +=
-        i +
-        ') ' +
-        formatDateForDisplay(date) +
-        ' ' +
-        formatTimeForDisplay(time) +
-        '\n';
+      text += i + ') ' + formatDateForDisplay(date) + ' ' + formatTimeForDisplay(time) + '\n';
     }
   }
 
@@ -103,67 +64,32 @@ function notifyAdminsAboutRequestFromSession(session, requestId) {
   sendAdminNotification(text, inlineKeyboard);
 }
 
-function buildAdminRequestConfirmedText(
-  request,
-  options,
-  approvedPriority
-) {
+function buildAdminRequestConfirmedText(request, options, approvedPriority) {
   const customer = getCustomerById(request.customer_id);
   const service = findServiceById(request.service_id);
   const provider = findProviderById(request.provider_id);
   const location = findLocationById(request.location_id);
 
-  let text =
-    '<b>' +
-    getMessage(MESSAGE_KEYS.NEW_REQUEST_ADMIN_TITLE) +
-    '</b>\n\n';
+  let text = '<b>' + getMessage(MESSAGE_KEYS.NEW_REQUEST_ADMIN_TITLE) + '</b>\n\n';
 
   text +=
-    '👤 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_CUSTOMER) +
-    ': ' +
-    (customer ? customer.name : request.customer_id) +
-    '\n';
+    '👤 ' + getMessage(MESSAGE_KEYS.ADMIN_CUSTOMER) + ': ' + (customer ? customer.name : request.customer_id) + '\n';
+
+  text += '📞 ' + getMessage(MESSAGE_KEYS.ADMIN_PHONE) + ': ' + (customer ? customer.phone : '') + '\n';
+
+  text += '📝 Комментарий: ' + (String(request.customer_note || '').trim() || '-') + '\n\n';
 
   text +=
-    '📞 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_PHONE) +
-    ': ' +
-    (customer ? customer.phone : '') +
-    '\n';
+    '📍 ' + getMessage(MESSAGE_KEYS.ADMIN_LOCATION) + ': ' + (location ? location.name : request.location_id) + '\n';
+
+  text += '💅 ' + getMessage(MESSAGE_KEYS.ADMIN_SERVICE) + ': ' + (service ? service.name : request.service_id) + '\n';
 
   text +=
-    '📝 Комментарий: ' +
-    (String(request.customer_note || '').trim() || '-') +
-    '\n\n';
+    '👩‍💼 ' + getMessage(MESSAGE_KEYS.ADMIN_PROVIDER) + ': ' + (provider ? provider.name : request.provider_id) + '\n\n';
 
-  text +=
-    '📍 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_LOCATION) +
-    ': ' +
-    (location ? location.name : request.location_id) +
-    '\n';
+  text += '<b>' + getMessage(MESSAGE_KEYS.ADMIN_TIME_OPTIONS) + ':</b>\n';
 
-  text +=
-    '💅 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_SERVICE) +
-    ': ' +
-    (service ? service.name : request.service_id) +
-    '\n';
-
-  text +=
-    '👩‍💼 ' +
-    getMessage(MESSAGE_KEYS.ADMIN_PROVIDER) +
-    ': ' +
-    (provider ? provider.name : request.provider_id) +
-    '\n\n';
-
-  text +=
-    '<b>' +
-    getMessage(MESSAGE_KEYS.ADMIN_TIME_OPTIONS) +
-    ':</b>\n';
-
-  options.forEach(function(option) {
+  options.forEach(function (option) {
     const line =
       option.priority +
       ') ' +
@@ -171,22 +97,14 @@ function buildAdminRequestConfirmedText(
       ' ' +
       formatTimeForDisplay(option.preferred_time);
 
-    if (
-      options.length > 1 &&
-      Number(option.priority) ===
-      Number(approvedPriority)
-    ) {
+    if (options.length > 1 && Number(option.priority) === Number(approvedPriority)) {
       text += '<b>' + line + '</b>\n';
     } else {
       text += line + '\n';
     }
   });
 
-  text +=
-    '\n' +
-    getMessage(
-      MESSAGE_KEYS.ADMIN_REQUEST_CONFIRMED_STATUS
-    );
+  text += '\n' + getMessage(MESSAGE_KEYS.ADMIN_REQUEST_CONFIRMED_STATUS);
 
   return text;
 }

@@ -1,13 +1,9 @@
-
 function showContacts(chatId, settings) {
   const locations = getLocations();
 
-  let text =
-    '📞 ' +
-    getMessage(MESSAGE_KEYS.CONTACTS) +
-    '\n\n';
+  let text = '📞 ' + getMessage(MESSAGE_KEYS.CONTACTS) + '\n\n';
 
-  locations.forEach(function(location) {
+  locations.forEach(function (location) {
     text += '📍 ' + location.name + '\n';
 
     if (location.address) {
@@ -47,10 +43,5 @@ function showContacts(chatId, settings) {
 
   const keyboard = buildKeyboardWithMainMenu([]);
 
-  sendTelegramMessage(
-    settings.ClientBotToken,
-    chatId,
-    text,
-    keyboard
-  );
+  sendTelegramMessage(settings.ClientBotToken, chatId, text, keyboard);
 }

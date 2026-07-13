@@ -1,8 +1,5 @@
 function startConfigurationPageSize(chatId, settings) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CONFIGURATION_PAGE_SIZE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CONFIGURATION_PAGE_SIZE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -10,7 +7,8 @@ function startConfigurationPageSize(chatId, settings) {
     getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE_PROMPT) +
       '\n\n' +
       getMessage(MESSAGE_KEYS.CONFIGURATION_CURRENT_VALUE) +
-      ': ' + String(getPaginationPageSize(settings)),
+      ': ' +
+      String(getPaginationPageSize(settings)),
     buildKeyboardWithMainMenu([])
   );
 }
@@ -42,15 +40,7 @@ function processConfigurationPageSize(chatId, text, settings) {
   setUserState(chatId, '');
   const updatedSettings = getSettings();
 
-  sendTelegramMessage(
-    updatedSettings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE_UPDATED)
-  );
+  sendTelegramMessage(updatedSettings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE_UPDATED));
 
-  backToAdminMenu(
-    chatId,
-    updatedSettings,
-    ADMIN_MENUS.CONFIGURATION
-  );
+  backToAdminMenu(chatId, updatedSettings, ADMIN_MENUS.CONFIGURATION);
 }

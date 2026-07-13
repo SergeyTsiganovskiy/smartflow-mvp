@@ -1,52 +1,22 @@
-function processScheduleStartTime(
-  chatId,
-  text,
-  settings
-) {
-  updateScheduleTimeAndRefresh(
-    chatId,
-    text,
-    settings,
-    'start_time'
-  );
+function processScheduleStartTime(chatId, text, settings) {
+  updateScheduleTimeAndRefresh(chatId, text, settings, 'start_time');
 }
 
-function processScheduleEndTime(
-  chatId,
-  text,
-  settings
-) {
-  updateScheduleTimeAndRefresh(
-    chatId,
-    text,
-    settings,
-    'end_time'
-  );
+function processScheduleEndTime(chatId, text, settings) {
+  updateScheduleTimeAndRefresh(chatId, text, settings, 'end_time');
 }
 
-function updateScheduleTimeAndRefresh(
-  chatId,
-  text,
-  settings,
-  fieldName
-) {
-  const session =
-    getUserSession(chatId);
+function updateScheduleTimeAndRefresh(chatId, text, settings, fieldName) {
+  const session = getUserSession(chatId);
 
-  const providerId =
-    session.schedule_provider_id;
+  const providerId = session.schedule_provider_id;
 
-  const dayCode =
-    session.schedule_day_code;
+  const dayCode = session.schedule_day_code;
 
-  const value =
-    normalizeTimeValue(text);
+  const value = normalizeTimeValue(text);
 
   if (!isValidTimeValue(value)) {
-    setUserState(
-      chatId,
-      ADMIN_STATES.WAITING_SCHEDULE_DAY
-    );
+    setUserState(chatId, ADMIN_STATES.WAITING_SCHEDULE_DAY);
 
     sendTelegramMessage(
       settings.AdminBotToken,
@@ -58,17 +28,10 @@ function updateScheduleTimeAndRefresh(
     return;
   }
 
-  const currentSchedule =
-    getProviderScheduleDay(
-      providerId,
-      dayCode
-    );
+  const currentSchedule = getProviderScheduleDay(providerId, dayCode);
 
   if (!currentSchedule) {
-    setUserState(
-      chatId,
-      ADMIN_STATES.WAITING_SCHEDULE_DAY
-    );
+    setUserState(chatId, ADMIN_STATES.WAITING_SCHEDULE_DAY);
 
     sendTelegramMessage(
       settings.AdminBotToken,
@@ -80,41 +43,20 @@ function updateScheduleTimeAndRefresh(
     return;
   }
 
-  const currentStartTime =
-    formatScheduleTime(
-      currentSchedule.start_time
-    );
+  const currentStartTime = formatScheduleTime(currentSchedule.start_time);
 
-  const currentEndTime =
-    formatScheduleTime(
-      currentSchedule.end_time
-    );
+  const currentEndTime = formatScheduleTime(currentSchedule.end_time);
 
-  const nextStartTime =
-    fieldName === 'start_time'
-      ? value
-      : currentStartTime;
+  const nextStartTime = fieldName === 'start_time' ? value : currentStartTime;
 
-  const nextEndTime =
-    fieldName === 'end_time'
-      ? value
-      : currentEndTime;
+  const nextEndTime = fieldName === 'end_time' ? value : currentEndTime;
 
-  const startMinutes =
-    timeValueToMinutes(nextStartTime);
+  const startMinutes = timeValueToMinutes(nextStartTime);
 
-  const endMinutes =
-    timeValueToMinutes(nextEndTime);
+  const endMinutes = timeValueToMinutes(nextEndTime);
 
-  if (
-    startMinutes === null ||
-    endMinutes === null ||
-    startMinutes >= endMinutes
-  ) {
-    setUserState(
-      chatId,
-      ADMIN_STATES.WAITING_SCHEDULE_DAY
-    );
+  if (startMinutes === null || endMinutes === null || startMinutes >= endMinutes) {
+    setUserState(chatId, ADMIN_STATES.WAITING_SCHEDULE_DAY);
 
     sendTelegramMessage(
       settings.AdminBotToken,
@@ -126,33 +68,14 @@ function updateScheduleTimeAndRefresh(
     return;
   }
 
-  updateProviderScheduleField(
-    providerId,
-    dayCode,
-    fieldName,
-    value
-  );
+  updateProviderScheduleField(providerId, dayCode, fieldName, value);
 
-  updateProviderScheduleField(
-    providerId,
-    dayCode,
-    'is_working',
-    true
-  );
+  updateProviderScheduleField(providerId, dayCode, 'is_working', true);
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.SCHEDULE_UPDATED)
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.SCHEDULE_UPDATED));
 
-  showProviderScheduleAdmin(
-    chatId,
-    providerId,
-    settings
-  );
+  showProviderScheduleAdmin(chatId, providerId, settings);
 }
-
 
 function returnToScheduleDays(chatId, settings) {
   const session = getUserSession(chatId);
@@ -168,9 +91,5 @@ function returnToScheduleDays(chatId, settings) {
 
   setPreviousMenu(chatId, 'PROVIDERS_MENU');
 
-  showProviderScheduleAdmin(
-    chatId,
-    providerId,
-    settings
-  );
+  showProviderScheduleAdmin(chatId, providerId, settings);
 }

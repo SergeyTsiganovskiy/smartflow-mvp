@@ -1,25 +1,19 @@
 function startEditCustomerService(chatId, settings) {
-  const session =
-    getUserSession(chatId);
+  const session = getUserSession(chatId);
 
-  const phone =
-    session.customer_service_phone;
+  const phone = session.customer_service_phone;
 
   if (!phone) {
-    startCustomerServices(
-      chatId,
-      settings
-    );
+    startCustomerServices(chatId, settings);
 
     return;
   }
 
-  const services =
-    getServices();
+  const services = getServices();
 
   const keyboardRows = [];
 
-  services.forEach(function(service) {
+  services.forEach(function (service) {
     keyboardRows.push([
       {
         text: service.name
@@ -27,10 +21,7 @@ function startEditCustomerService(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_EDIT
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_EDIT);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -54,18 +45,12 @@ function processCustomerServiceToEdit(chatId, text, settings) {
     return;
   }
 
-  setUserSessionValues(
-    chatId,
-    {
-      customer_service_service_id: service.service_id,
-      customer_service_service_name: service.name
-    }
-  );
+  setUserSessionValues(chatId, {
+    customer_service_service_id: service.service_id,
+    customer_service_service_name: service.name
+  });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CUSTOMER_SERVICE_DURATION
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CUSTOMER_SERVICE_DURATION);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -89,11 +74,9 @@ function processCustomerServiceDuration(chatId, text, settings) {
     return;
   }
 
-  const session =
-    getUserSession(chatId);
+  const session = getUserSession(chatId);
 
-  const phone =
-    session.customer_service_phone;
+  const phone = session.customer_service_phone;
 
   if (!phone) {
     sendTelegramMessage(
@@ -106,8 +89,7 @@ function processCustomerServiceDuration(chatId, text, settings) {
     return;
   }
 
-  const profile =
-    findCustomerProfileByPhone(phone);
+  const profile = findCustomerProfileByPhone(phone);
 
   if (!profile || profile.active === false) {
     sendTelegramMessage(
@@ -120,10 +102,7 @@ function processCustomerServiceDuration(chatId, text, settings) {
     return;
   }
 
-  const service =
-    findServiceById(
-      session.customer_service_service_id
-    );
+  const service = findServiceById(session.customer_service_service_id);
 
   upsertCustomerServiceSetting({
     profile_id: profile.profile_id,
@@ -135,15 +114,7 @@ function processCustomerServiceDuration(chatId, text, settings) {
     notes: ''
   });
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.CUSTOMER_SERVICE_UPDATED)
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.CUSTOMER_SERVICE_UPDATED));
 
-  showCustomerServices(
-    chatId,
-    profile,
-    settings
-  );
+  showCustomerServices(chatId, profile, settings);
 }

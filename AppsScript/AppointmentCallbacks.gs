@@ -1,4 +1,3 @@
-
 function handleAppointmentCallback(callbackQuery) {
   const settings = getSettings();
 
@@ -10,10 +9,6 @@ function handleAppointmentCallback(callbackQuery) {
   const action = parts[0];
   const requestId = parts[1] || '';
 
-  // =========================
-  // APPOINTMENT CANCEL
-  // =========================
-
   if (action === 'cancel_appointment') {
     const appointmentId = requestId;
 
@@ -23,10 +18,7 @@ function handleAppointmentCallback(callbackQuery) {
       messageId,
       getMessage(MESSAGE_KEYS.CONFIRM_APPOINTMENT_CANCEL),
 
-      buildConfirmInlineKeyboard(
-        'confirm_cancel|' + appointmentId,
-        'back_to_appointment|' + appointmentId
-      )
+      buildConfirmInlineKeyboard('confirm_cancel|' + appointmentId, 'back_to_appointment|' + appointmentId)
     );
 
     return;
@@ -50,21 +42,12 @@ function handleAppointmentCallback(callbackQuery) {
     return;
   }
 
-  // =========================
-  // APPOINTMENT BACK
-  // =========================
-
   if (action === 'back_to_appointment') {
     const appointmentId = requestId;
     const appointment = getAppointmentById(appointmentId);
 
     if (!appointment) {
-      editTelegramMessage(
-        settings.ClientBotToken,
-        adminChatId,
-        messageId,
-        getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
-      );
+      editTelegramMessage(settings.ClientBotToken, adminChatId, messageId, getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND));
 
       return;
     }
@@ -76,37 +59,32 @@ function handleAppointmentCallback(callbackQuery) {
     const text =
       formatDateTimeForDisplay(appointment.start_at) +
       '\n\n' +
-      '💅 ' + (service ? service.name : appointment.service_id) + '\n' +
-      '👩‍💼 ' + (provider ? provider.name : appointment.provider_id) + '\n' +
-      '📍 ' + (location ? location.name : appointment.location_id);
+      '💅 ' +
+      (service ? service.name : appointment.service_id) +
+      '\n' +
+      '👩‍💼 ' +
+      (provider ? provider.name : appointment.provider_id) +
+      '\n' +
+      '📍 ' +
+      (location ? location.name : appointment.location_id);
 
-    editTelegramMessageWithInlineKeyboard(
-      settings.ClientBotToken,
-      adminChatId,
-      messageId,
-      text,
+    editTelegramMessageWithInlineKeyboard(settings.ClientBotToken, adminChatId, messageId, text, [
       [
-        [
-          {
-            text: getMessage(MESSAGE_KEYS.RESCHEDULE_APPOINTMENT_BUTTON),
-            callback_data: 'reschedule_appointment|' + appointment.appointment_id
-          }
-        ],
-        [
-          {
-            text: getMessage(MESSAGE_KEYS.CANCEL_APPOINTMENT_BUTTON),
-            callback_data: 'cancel_appointment|' + appointment.appointment_id
-          }
-        ]
+        {
+          text: getMessage(MESSAGE_KEYS.RESCHEDULE_APPOINTMENT_BUTTON),
+          callback_data: 'reschedule_appointment|' + appointment.appointment_id
+        }
+      ],
+      [
+        {
+          text: getMessage(MESSAGE_KEYS.CANCEL_APPOINTMENT_BUTTON),
+          callback_data: 'cancel_appointment|' + appointment.appointment_id
+        }
       ]
-    );
+    ]);
 
     return;
   }
-
-  // =========================
-  // APPOINTMENT RESCHEDULE
-  // =========================
 
   if (action === 'reschedule_appointment') {
     const appointmentId = requestId;
@@ -117,10 +95,7 @@ function handleAppointmentCallback(callbackQuery) {
       messageId,
       getMessage(MESSAGE_KEYS.CONFIRM_APPOINTMENT_RESCHEDULE),
 
-      buildConfirmInlineKeyboard(
-        'confirm_reschedule|' + appointmentId,
-        'back_to_appointment|' + appointmentId
-      )
+      buildConfirmInlineKeyboard('confirm_reschedule|' + appointmentId, 'back_to_appointment|' + appointmentId)
     );
 
     return;
@@ -129,11 +104,7 @@ function handleAppointmentCallback(callbackQuery) {
   if (action === 'confirm_reschedule') {
     const appointmentId = requestId;
 
-    setUserSessionValue(
-      adminChatId,
-      'reschedule_appointment_id',
-      appointmentId
-    );
+    setUserSessionValue(adminChatId, 'reschedule_appointment_id', appointmentId);
 
     editTelegramMessage(
       settings.ClientBotToken,
@@ -148,10 +119,7 @@ function handleAppointmentCallback(callbackQuery) {
   }
 }
 
-function buildConfirmInlineKeyboard(
-  confirmCallback,
-  backCallback
-) {
+function buildConfirmInlineKeyboard(confirmCallback, backCallback) {
   return [
     [
       {

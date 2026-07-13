@@ -1,62 +1,40 @@
 function resetNavigation(chatId) {
-  setUserSessionValue(
-    chatId,
-    'navigation_stack',
-    JSON.stringify([])
-  );
+  setUserSessionValue(chatId, 'navigation_stack', JSON.stringify([]));
 }
 
 function getNavigationStack(chatId) {
-  const session =
-    getUserSession(chatId) || {};
+  const session = getUserSession(chatId) || {};
 
   if (!session.navigation_stack) {
     return [];
   }
 
   try {
-    return JSON.parse(
-      session.navigation_stack
-    );
+    return JSON.parse(session.navigation_stack);
   } catch (error) {
     return [];
   }
 }
 
 function saveNavigationStack(chatId, stack) {
-  setUserSessionValue(
-    chatId,
-    'navigation_stack',
-    JSON.stringify(stack)
-  );
+  setUserSessionValue(chatId, 'navigation_stack', JSON.stringify(stack));
 }
 
 function pushNavigation(chatId, menu) {
-  const session =
-    getUserSession(chatId) || {};
+  const session = getUserSession(chatId) || {};
 
   const renderOnly =
-    session.navigation_render_only === true ||
-    String(
-      session.navigation_render_only || ''
-    ).toUpperCase() === 'TRUE';
+    session.navigation_render_only === true || String(session.navigation_render_only || '').toUpperCase() === 'TRUE';
 
   if (renderOnly) {
     return;
   }
 
-  const stack =
-    getNavigationStack(chatId);
+  const stack = getNavigationStack(chatId);
 
-  const current =
-    stack.length > 0
-      ? stack[stack.length - 1]
-      : null;
+  const current = stack.length > 0 ? stack[stack.length - 1] : null;
 
-  if (
-    current &&
-    current.menu === menu
-  ) {
+  if (current && current.menu === menu) {
     return;
   }
 
@@ -64,32 +42,21 @@ function pushNavigation(chatId, menu) {
     menu: menu
   });
 
-  saveNavigationStack(
-    chatId,
-    stack
-  );
+  saveNavigationStack(chatId, stack);
 }
 
 function getCurrentNavigation(chatId) {
-  const stack =
-    getNavigationStack(chatId);
+  const stack = getNavigationStack(chatId);
 
-  return stack.length > 0
-    ? stack[stack.length - 1]
-    : null;
+  return stack.length > 0 ? stack[stack.length - 1] : null;
 }
 
 function setNavigationRenderOnly(chatId, value) {
-  setUserSessionValue(
-    chatId,
-    'navigation_render_only',
-    value
-  );
+  setUserSessionValue(chatId, 'navigation_render_only', value);
 }
 
 function trimNavigationToMenu(chatId, menu) {
-  const stack =
-    getNavigationStack(chatId);
+  const stack = getNavigationStack(chatId);
 
   let targetIndex = -1;
 
@@ -104,14 +71,9 @@ function trimNavigationToMenu(chatId, menu) {
     return false;
   }
 
-  const newStack =
-    stack.slice(0, targetIndex + 1);
+  const newStack = stack.slice(0, targetIndex + 1);
 
-  saveNavigationStack(
-    chatId,
-    newStack
-  );
+  saveNavigationStack(chatId, newStack);
 
   return true;
 }
-

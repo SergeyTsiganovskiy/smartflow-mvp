@@ -4,6 +4,10 @@
 
 SmartFlow is a lightweight business automation platform for small appointment-based companies. It replaces a complex CRM interface with two Telegram bots connected to Google Sheets and Google Calendar.
 
+Apps Script source formatting is standardized with Prettier using the repository
+configuration. The 120-character line width keeps long message keys and Apps
+Script API calls compact without sacrificing consistent indentation.
+
 A typical installation contains:
 
 - one Google Spreadsheet;

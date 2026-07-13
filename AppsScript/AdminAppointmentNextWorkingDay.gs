@@ -1,13 +1,9 @@
-function startNextWorkingDayAppointments(
-  chatId,
-  settings
-) {
-  const providers =
-    getProviders();
+function startNextWorkingDayAppointments(chatId, settings) {
+  const providers = getProviders();
 
   const keyboardRows = [];
 
-  providers.forEach(function(provider) {
+  providers.forEach(function (provider) {
     keyboardRows.push([
       {
         text: provider.name
@@ -15,82 +11,39 @@ function startNextWorkingDayAppointments(
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_NEXT_WORKING_DAY_PROVIDER
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_NEXT_WORKING_DAY_PROVIDER);
 
-  setPreviousMenu(
-    chatId,
-    'APPOINTMENTS_MENU'
-  );
+  setPreviousMenu(chatId, 'APPOINTMENTS_MENU');
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.SELECT_PROVIDER_FOR_NEXT_WORKING_DAY
-    ),
-    buildKeyboardWithMainMenu(
-      keyboardRows
-    )
+    getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FOR_NEXT_WORKING_DAY),
+    buildKeyboardWithMainMenu(keyboardRows)
   );
 }
 
-function processNextWorkingDayProvider(
-  chatId,
-  text,
-  settings
-) {
-
-  setUserSessionValue(
-    chatId,
-    'admin_back_menu',
-    ADMIN_MENUS.APPOINTMENTS
-  );
-  const provider =
-    findProviderByName(text);
+function processNextWorkingDayProvider(chatId, text, settings) {
+  setUserSessionValue(chatId, 'admin_back_menu', ADMIN_MENUS.APPOINTMENTS);
+  const provider = findProviderByName(text);
 
   if (!provider) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(
-        MESSAGE_KEYS.PROVIDER_SELECT_FROM_LIST
-      )
-    );
+    sendTelegramMessage(settings.AdminBotToken, chatId, getMessage(MESSAGE_KEYS.PROVIDER_SELECT_FROM_LIST));
 
     return;
   }
 
   setUserState(chatId, '');
 
-  showNextWorkingDayAppointmentsAdmin(
-    chatId,
-    settings,
-    provider
-  );
+  showNextWorkingDayAppointmentsAdmin(chatId, settings, provider);
 }
 
-function showNextWorkingDayAppointmentsAdmin(
-  chatId,
-  settings,
-  provider
-) {
-  setUserSessionValue(
-    chatId,
-    'admin_back_menu',
-    ADMIN_MENUS.APPOINTMENTS
-  );
+function showNextWorkingDayAppointmentsAdmin(chatId, settings, provider) {
+  setUserSessionValue(chatId, 'admin_back_menu', ADMIN_MENUS.APPOINTMENTS);
 
-  const providerId =
-    provider.provider_id ||
-    provider.id;
+  const providerId = provider.provider_id || provider.id;
 
-  const nextWorkingDate =
-    getNextWorkingDateForProvider(
-      providerId
-    );
+  const nextWorkingDate = getNextWorkingDateForProvider(providerId);
 
   if (!nextWorkingDate) {
     sendTelegramMessage(
@@ -103,15 +56,9 @@ function showNextWorkingDayAppointmentsAdmin(
     return;
   }
 
-  const appointments =
-    getCachedAppointmentsByDate(
-      nextWorkingDate
-    ).filter(function(appointment) {
-      return (
-        String(appointment.provider_id) ===
-        String(providerId)
-      );
-    });
+  const appointments = getCachedAppointmentsByDate(nextWorkingDate).filter(function (appointment) {
+    return String(appointment.provider_id) === String(providerId);
+  });
 
   if (appointments.length === 0) {
     sendTelegramMessage(
@@ -133,7 +80,7 @@ function showNextWorkingDayAppointmentsAdmin(
     formatDateForDisplay(nextWorkingDate) +
     '</b>\n\n';
 
-  appointments.forEach(function(appointment) {
+  appointments.forEach(function (appointment) {
     text +=
       '<b>' +
       extractTimeFromDateTime(appointment.start_at) +
@@ -143,48 +90,25 @@ function showNextWorkingDayAppointmentsAdmin(
 
     text +=
       '👤 ' +
-      (
-        appointment.customer_name
-          ? appointment.customer_name + ' ' + appointment.phone
-          : appointment.phone || '-'
-      ) +
+      (appointment.customer_name ? appointment.customer_name + ' ' + appointment.phone : appointment.phone || '-') +
       '\n';
 
-    text +=
-      getCustomerConfirmationText(appointment) +
-      '\n';
+    text += getCustomerConfirmationText(appointment) + '\n';
 
-    text +=
-      '💅 ' +
-      (appointment.service_name || '-') +
-      '\n';
+    text += '💅 ' + (appointment.service_name || '-') + '\n';
 
-    text +=
-      '📍 ' +
-      (appointment.location_name || '-') +
-      '\n';
+    text += '📍 ' + (appointment.location_name || '-') + '\n';
 
     if (appointment.customer_note) {
-      text +=
-        '📝 ' +
-        appointment.customer_note +
-        '\n';
+      text += '📝 ' + appointment.customer_note + '\n';
     }
 
     if (appointment.source === 'calendar_manual') {
-      text +=
-        '📌 ' +
-        getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL) +
-        '\n';
+      text += '📌 ' + getMessage(MESSAGE_KEYS.MANUAL_CALENDAR_APPOINTMENT_LABEL) + '\n';
     }
 
     text += '\n';
   });
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    text,
-    buildKeyboardWithMainMenu([])
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, text, buildKeyboardWithMainMenu([]));
 }

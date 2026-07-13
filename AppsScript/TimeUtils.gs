@@ -36,11 +36,7 @@ function normalizeTimeForStorage(value) {
   let match = text.match(/^(\d{1,2})[:.](\d{2})$/);
 
   if (match) {
-    return (
-      String(match[1]).padStart(2, '0') +
-      ':' +
-      match[2]
-    );
+    return String(match[1]).padStart(2, '0') + ':' + match[2];
   }
 
   match = text.match(/^(\d{1,2})$/);
@@ -54,34 +50,23 @@ function normalizeTimeForStorage(value) {
 
 function timeToMinutes(value) {
   if (value instanceof Date) {
-    return (
-      value.getHours() * 60 +
-      value.getMinutes()
-    );
+    return value.getHours() * 60 + value.getMinutes();
   }
 
-  const parts =
-    String(value || '').split(':');
+  const parts = String(value || '').split(':');
 
   if (parts.length < 2) {
     return 0;
   }
 
-  return (
-    Number(parts[0]) * 60 +
-    Number(parts[1])
-  );
+  return Number(parts[0]) * 60 + Number(parts[1]);
 }
 
 function minutesToTime(totalMinutes) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  return (
-    String(hours).padStart(2, '0') +
-    ':' +
-    String(minutes).padStart(2, '0')
-  );
+  return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
 }
 
 function extractTimeFromDateTime(value) {
@@ -90,11 +75,7 @@ function extractTimeFromDateTime(value) {
   }
 
   if (Object.prototype.toString.call(value) === '[object Date]') {
-    return Utilities.formatDate(
-      value,
-      getSettings().TimeZone || 'Europe/Kyiv',
-      'HH:mm'
-    );
+    return Utilities.formatDate(value, getSettings().TimeZone || 'Europe/Kyiv', 'HH:mm');
   }
 
   const text = String(value).trim();
@@ -111,11 +92,7 @@ function getCurrentTimeMinutes() {
   const timezone = getSettings().TimeZone || 'Europe/Kyiv';
   const now = new Date();
 
-  const currentTime = Utilities.formatDate(
-    now,
-    timezone,
-    'HH:mm'
-  );
+  const currentTime = Utilities.formatDate(now, timezone, 'HH:mm');
 
   return timeToMinutes(currentTime);
 }

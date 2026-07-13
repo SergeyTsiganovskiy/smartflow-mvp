@@ -1,51 +1,31 @@
 function getCalendarEventByAppointment(appointment) {
-  const calendarEventId =
-    String(appointment.calendar_event_id || '').trim();
+  const calendarEventId = String(appointment.calendar_event_id || '').trim();
 
   if (!calendarEventId) {
     return null;
   }
 
-  const calendarId =
-    getProviderCalendarId(appointment.provider_id);
+  const calendarId = getProviderCalendarId(appointment.provider_id);
 
   if (!calendarId) {
     return null;
   }
 
-  const calendar =
-    CalendarApp.getCalendarById(calendarId);
+  const calendar = CalendarApp.getCalendarById(calendarId);
 
   if (!calendar) {
     return null;
   }
 
   try {
-    const start =
-      new Date(
-        parseDateTimeForCalendar(
-          appointment.start_at
-        ).getTime() - 60000
-      );
+    const start = new Date(parseDateTimeForCalendar(appointment.start_at).getTime() - 60000);
 
-    const end =
-      new Date(
-        parseDateTimeForCalendar(
-          appointment.end_at
-        ).getTime() + 60000
-      );
+    const end = new Date(parseDateTimeForCalendar(appointment.end_at).getTime() + 60000);
 
-    const events =
-      calendar.getEvents(
-        start,
-        end
-      );
+    const events = calendar.getEvents(start, end);
 
     for (let i = 0; i < events.length; i++) {
-      if (
-        String(events[i].getId()) ===
-        String(calendarEventId)
-      ) {
+      if (String(events[i].getId()) === String(calendarEventId)) {
         return events[i];
       }
     }

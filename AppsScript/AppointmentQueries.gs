@@ -1,7 +1,5 @@
 function getAppointmentById(appointmentId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -12,7 +10,7 @@ function getAppointmentById(appointmentId) {
     if (String(rows[i][appointmentIdIndex]) === String(appointmentId)) {
       const result = {};
 
-      headers.forEach(function(header, index) {
+      headers.forEach(function (header, index) {
         result[header] = rows[i][index];
       });
 
@@ -24,9 +22,7 @@ function getAppointmentById(appointmentId) {
 }
 
 function getAppointmentsByCustomerIds(customerIds) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -40,10 +36,7 @@ function getAppointmentsByCustomerIds(customerIds) {
     const customerId = rows[i][customerIdIndex];
     const status = String(rows[i][statusIndex]).toLowerCase();
 
-    if (
-      customerIds.indexOf(customerId) !== -1 &&
-      status === 'confirmed'
-    ) {
+    if (customerIds.indexOf(customerId) !== -1 && status === 'confirmed') {
       const item = {};
 
       headers.forEach((header, index) => {
@@ -58,36 +51,27 @@ function getAppointmentsByCustomerIds(customerIds) {
 }
 
 function isCurrentOrFutureAppointment(appointment) {
-  const endValue =
-    appointment.end_at ||
-    appointment.endAt ||
-    appointment.endTime;
+  const endValue = appointment.end_at || appointment.endAt || appointment.endTime;
 
   if (!endValue) {
     return true;
   }
 
-  const endDate =
-    parseDateTimeForCalendar(endValue);
+  const endDate = parseDateTimeForCalendar(endValue);
 
   return endDate.getTime() >= new Date().getTime();
 }
 
 function getProviderAppointmentsForDate(providerId, dateValue) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
-    return getManualCalendarBusySlotsForProvider(
-      providerId,
-      dateValue
-    );
+    return getManualCalendarBusySlotsForProvider(providerId, dateValue);
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -95,17 +79,14 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
   const startAtIndex = headers.indexOf('start_at');
   const statusIndex = headers.indexOf('status');
 
-  const targetDate =
-    normalizeDateForStorage(dateValue);
+  const targetDate = normalizeDateForStorage(dateValue);
 
   const result = [];
 
   for (let i = 1; i < rows.length; i++) {
-    const provider =
-      rows[i][providerIdIndex];
+    const provider = rows[i][providerIdIndex];
 
-    const status =
-      String(rows[i][statusIndex] || '').toLowerCase();
+    const status = String(rows[i][statusIndex] || '').toLowerCase();
 
     if (String(provider) !== String(providerId)) {
       continue;
@@ -115,11 +96,9 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
       continue;
     }
 
-    const startAt =
-      rows[i][startAtIndex];
+    const startAt = rows[i][startAtIndex];
 
-    const appointmentDate =
-      normalizeDateForStorage(startAt);
+    const appointmentDate = normalizeDateForStorage(startAt);
 
     if (appointmentDate !== targetDate) {
       continue;
@@ -127,7 +106,7 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
 
     const appointment = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       appointment[header] = rows[i][index];
     });
 
@@ -142,13 +121,9 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
     });
   }
 
-  const manualCalendarSlots =
-    getManualCalendarBusySlotsForProvider(
-      providerId,
-      dateValue
-    );
+  const manualCalendarSlots = getManualCalendarBusySlotsForProvider(providerId, dateValue);
 
-  manualCalendarSlots.forEach(function(slot) {
+  manualCalendarSlots.forEach(function (slot) {
     result.push(slot);
   });
 
@@ -156,9 +131,7 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
 }
 
 function appointmentExistsForRequest(requestId) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.APPOINTMENTS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];

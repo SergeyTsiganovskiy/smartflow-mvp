@@ -16,10 +16,7 @@ function handleClientNavigationCommand(chatId, text, settings) {
     return true;
   }
 
-  if (
-    text === '/start' ||
-    isMessageText(text, MESSAGE_KEYS.MAIN_MENU)
-  ) {
+  if (text === '/start' || isMessageText(text, MESSAGE_KEYS.MAIN_MENU)) {
     clearUserSession(chatId);
     setUserState(chatId, '');
     sendClientStartMenu(chatId, settings);

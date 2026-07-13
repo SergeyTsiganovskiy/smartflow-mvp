@@ -7,7 +7,8 @@ function startConfigurationBookingDaysAhead(chatId, settings) {
     getMessage(MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS_PROMPT) +
       '\n\n' +
       getMessage(MESSAGE_KEYS.CONFIGURATION_CURRENT_VALUE) +
-      ': ' + String(settings.BookingDaysAhead || 30),
+      ': ' +
+      String(settings.BookingDaysAhead || 30),
     buildKeyboardWithMainMenu([])
   );
 }
@@ -21,7 +22,8 @@ function startConfigurationCalendarCacheDays(chatId, settings) {
     getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS_PROMPT) +
       '\n\n' +
       getMessage(MESSAGE_KEYS.CONFIGURATION_CURRENT_VALUE) +
-      ': ' + String(settings.CalendarCacheDays || 30),
+      ': ' +
+      String(settings.CalendarCacheDays || 30),
     buildKeyboardWithMainMenu([])
   );
 }
@@ -36,99 +38,53 @@ function parseConfigurationDays(text) {
   return Number(value);
 }
 
-function sendConfigurationDaysError(
-  chatId,
-  settings,
-  messageKey,
-  limitValue
-) {
+function sendConfigurationDaysError(chatId, settings, messageKey, limitValue) {
   let text = getMessage(messageKey);
 
   if (limitValue !== undefined) {
     text += ': ' + String(limitValue);
   }
 
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    text,
-    buildKeyboardWithMainMenu([])
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, text, buildKeyboardWithMainMenu([]));
 }
 
 function processConfigurationBookingDaysAhead(chatId, text, settings) {
   const value = parseConfigurationDays(text);
 
   if (!isAllowedAdminConfigurationValue('BookingDaysAhead', value)) {
-    sendConfigurationDaysError(
-      chatId,
-      settings,
-      MESSAGE_KEYS.CONFIGURATION_DAYS_INVALID
-    );
+    sendConfigurationDaysError(chatId, settings, MESSAGE_KEYS.CONFIGURATION_DAYS_INVALID);
     return;
   }
 
   const cacheDays = Number(settings.CalendarCacheDays || 30);
 
   if (value > cacheDays) {
-    sendConfigurationDaysError(
-      chatId,
-      settings,
-      MESSAGE_KEYS.CONFIGURATION_BOOKING_EXCEEDS_CACHE,
-      cacheDays
-    );
+    sendConfigurationDaysError(chatId, settings, MESSAGE_KEYS.CONFIGURATION_BOOKING_EXCEEDS_CACHE, cacheDays);
     return;
   }
 
-  saveConfigurationDays(
-    chatId,
-    settings,
-    'BookingDaysAhead',
-    value,
-    MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS_UPDATED
-  );
+  saveConfigurationDays(chatId, settings, 'BookingDaysAhead', value, MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS_UPDATED);
 }
 
 function processConfigurationCalendarCacheDays(chatId, text, settings) {
   const value = parseConfigurationDays(text);
 
   if (!isAllowedAdminConfigurationValue('CalendarCacheDays', value)) {
-    sendConfigurationDaysError(
-      chatId,
-      settings,
-      MESSAGE_KEYS.CONFIGURATION_DAYS_INVALID
-    );
+    sendConfigurationDaysError(chatId, settings, MESSAGE_KEYS.CONFIGURATION_DAYS_INVALID);
     return;
   }
 
   const bookingDays = Number(settings.BookingDaysAhead || 30);
 
   if (value < bookingDays) {
-    sendConfigurationDaysError(
-      chatId,
-      settings,
-      MESSAGE_KEYS.CONFIGURATION_CACHE_BELOW_BOOKING,
-      bookingDays
-    );
+    sendConfigurationDaysError(chatId, settings, MESSAGE_KEYS.CONFIGURATION_CACHE_BELOW_BOOKING, bookingDays);
     return;
   }
 
-  saveConfigurationDays(
-    chatId,
-    settings,
-    'CalendarCacheDays',
-    value,
-    MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS_UPDATED
-  );
+  saveConfigurationDays(chatId, settings, 'CalendarCacheDays', value, MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS_UPDATED);
 }
 
-function saveConfigurationDays(
-  chatId,
-  settings,
-  settingKey,
-  value,
-  successMessageKey
-) {
+function saveConfigurationDays(chatId, settings, settingKey, value, successMessageKey) {
   updateAdminConfigurationValue(settingKey, value);
 
   addAuditLog(
@@ -143,15 +99,7 @@ function saveConfigurationDays(
   setUserState(chatId, '');
   const updatedSettings = getSettings();
 
-  sendTelegramMessage(
-    updatedSettings.AdminBotToken,
-    chatId,
-    getMessage(successMessageKey)
-  );
+  sendTelegramMessage(updatedSettings.AdminBotToken, chatId, getMessage(successMessageKey));
 
-  backToAdminMenu(
-    chatId,
-    updatedSettings,
-    ADMIN_MENUS.CONFIGURATION
-  );
+  backToAdminMenu(chatId, updatedSettings, ADMIN_MENUS.CONFIGURATION);
 }

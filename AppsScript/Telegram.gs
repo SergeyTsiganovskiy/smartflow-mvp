@@ -1,8 +1,5 @@
 function sendTelegramMessage(botToken, chatId, text, keyboard) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/sendMessage';
+  const url = 'https://api.telegram.org/bot' + botToken + '/sendMessage';
 
   const payload = {
     chat_id: String(chatId),
@@ -28,16 +25,8 @@ function sendTelegramMessage(botToken, chatId, text, keyboard) {
   return result;
 }
 
-function sendTelegramMessageWithInlineKeyboard(
-  botToken,
-  chatId,
-  text,
-  inlineKeyboard
-) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/sendMessage';
+function sendTelegramMessageWithInlineKeyboard(botToken, chatId, text, inlineKeyboard) {
+  const url = 'https://api.telegram.org/bot' + botToken + '/sendMessage';
 
   const payload = {
     chat_id: String(chatId),
@@ -62,16 +51,8 @@ function sendTelegramMessageWithInlineKeyboard(
   return result;
 }
 
-function editTelegramMessage(
-  botToken,
-  chatId,
-  messageId,
-  text
-) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/editMessageText';
+function editTelegramMessage(botToken, chatId, messageId, text) {
+  const url = 'https://api.telegram.org/bot' + botToken + '/editMessageText';
 
   const payload = {
     chat_id: String(chatId),
@@ -94,17 +75,8 @@ function editTelegramMessage(
   return result;
 }
 
-function editTelegramMessageWithInlineKeyboard(
-  botToken,
-  chatId,
-  messageId,
-  text,
-  inlineKeyboard
-) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/editMessageText';
+function editTelegramMessageWithInlineKeyboard(botToken, chatId, messageId, text, inlineKeyboard) {
+  const url = 'https://api.telegram.org/bot' + botToken + '/editMessageText';
 
   const payload = {
     chat_id: String(chatId),
@@ -125,35 +97,15 @@ function editTelegramMessageWithInlineKeyboard(
 
   const result = response.getContentText();
 
-  addAuditLog(
-    'EDIT_MESSAGE_WITH_KEYBOARD_RESULT',
-    result
-  );
+  addAuditLog('EDIT_MESSAGE_WITH_KEYBOARD_RESULT', result);
 
   return result;
 }
 
+function answerCallbackQuery(callbackQueryId, text) {
+  const settings = getSettings();
 
-
-
-
-
-
-
-
-
-
-function answerCallbackQuery(
-  callbackQueryId,
-  text
-) {
-  const settings =
-    getSettings();
-
-  const url =
-    'https://api.telegram.org/bot' +
-    settings.ClientBotToken +
-    '/answerCallbackQuery';
+  const url = 'https://api.telegram.org/bot' + settings.ClientBotToken + '/answerCallbackQuery';
 
   const payload = {
     callback_query_id: callbackQueryId,
@@ -161,27 +113,16 @@ function answerCallbackQuery(
     show_alert: false
   };
 
-  UrlFetchApp.fetch(
-    url,
-    {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    }
-  );
+  UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
 }
 
-function editTelegramMessageReplyMarkup(
-  botToken,
-  chatId,
-  messageId,
-  replyMarkup
-) {
-  const url =
-    'https://api.telegram.org/bot' +
-    botToken +
-    '/editMessageReplyMarkup';
+function editTelegramMessageReplyMarkup(botToken, chatId, messageId, replyMarkup) {
+  const url = 'https://api.telegram.org/bot' + botToken + '/editMessageReplyMarkup';
 
   const payload = {
     chat_id: chatId,
@@ -189,13 +130,10 @@ function editTelegramMessageReplyMarkup(
     reply_markup: replyMarkup || {}
   };
 
-  UrlFetchApp.fetch(
-    url,
-    {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    }
-  );
+  UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
 }

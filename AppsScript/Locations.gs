@@ -8,9 +8,7 @@ function getActiveLocations() {
   if (LOCATIONS_CACHE) {
     return LOCATIONS_CACHE;
   }
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.LOCATIONS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.LOCATIONS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -24,7 +22,7 @@ function getActiveLocations() {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -59,9 +57,7 @@ function getAllLocations() {
   if (LOCATIONS_CACHE) {
     return LOCATIONS_CACHE;
   }
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.LOCATIONS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.LOCATIONS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -75,7 +71,7 @@ function getAllLocations() {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -98,23 +94,13 @@ function getAllLocations() {
   return result;
 }
 
-function findLocationByName(
-  name,
-  includeInactive
-) {
-  const searchName =
-    String(name || '').trim();
+function findLocationByName(name, includeInactive) {
+  const searchName = String(name || '').trim();
 
-  const locations =
-    includeInactive
-      ? getAllLocations()
-      : getActiveLocations();
+  const locations = includeInactive ? getAllLocations() : getActiveLocations();
 
   for (let i = 0; i < locations.length; i++) {
-    if (
-      String(locations[i].name).trim() ===
-      searchName
-    ) {
+    if (String(locations[i].name).trim() === searchName) {
       return locations[i];
     }
   }

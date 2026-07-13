@@ -2,22 +2,16 @@ function getManualCalendarAppointmentsByDate(dateValue) {
   const providers = getProviders();
   const result = [];
 
-  providers.forEach(function(provider) {
-    const providerId =
-      provider.id ||
-      provider.provider_id;
+  providers.forEach(function (provider) {
+    const providerId = provider.id || provider.provider_id;
 
     if (!providerId) {
       return;
     }
 
-    const manualSlots =
-      getManualCalendarBusySlotsForProvider(
-        providerId,
-        dateValue
-      );
+    const manualSlots = getManualCalendarBusySlotsForProvider(providerId, dateValue);
 
-    manualSlots.forEach(function(slot) {
+    manualSlots.forEach(function (slot) {
       result.push({
         source: slot.source || 'calendar_manual',
 
@@ -58,26 +52,20 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
   const calendars = {};
   const result = [];
 
-  const dateString =
-    normalizeDateForStorage(dateValue);
+  const dateString = normalizeDateForStorage(dateValue);
 
-  const dayStart =
-    new Date(dateString + 'T00:00:00');
+  const dayStart = new Date(dateString + 'T00:00:00');
 
-  const dayEnd =
-    new Date(dateString + 'T23:59:59');
+  const dayEnd = new Date(dateString + 'T23:59:59');
 
-  providers.forEach(function(provider) {
-    const providerId =
-      provider.id ||
-      provider.provider_id;
+  providers.forEach(function (provider) {
+    const providerId = provider.id || provider.provider_id;
 
     if (!providerId) {
       return;
     }
 
-    const calendarId =
-      getProviderCalendarId(providerId);
+    const calendarId = getProviderCalendarId(providerId);
 
     if (!calendarId) {
       return;
@@ -96,98 +84,54 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
     });
   });
 
-  const knownEventIds =
-    getAllAppointmentCalendarEventIds();
+  const knownEventIds = getAllAppointmentCalendarEventIds();
 
-  Object.keys(calendars).forEach(function(calendarId) {
-    const calendar =
-      CalendarApp.getCalendarById(calendarId);
+  Object.keys(calendars).forEach(function (calendarId) {
+    const calendar = CalendarApp.getCalendarById(calendarId);
 
     if (!calendar) {
       return;
     }
 
-    const events =
-      calendar.getEvents(
-        dayStart,
-        dayEnd
-      );
+    const events = calendar.getEvents(dayStart, dayEnd);
 
-    events.forEach(function(event) {
-      const eventId =
-        event.getId();
+    events.forEach(function (event) {
+      const eventId = event.getId();
 
       if (knownEventIds.indexOf(eventId) !== -1) {
         return;
       }
 
-      const title =
-        event.getTitle() || '';
+      const title = event.getTitle() || '';
 
-      const description =
-        event.getDescription() || '';
+      const description = event.getDescription() || '';
 
-      const fullText =
-        title + '\n' + description;
+      const fullText = title + '\n' + description;
 
-      const providerNameFromEvent =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER
-          )
-        );
+      const providerNameFromEvent = extractValueByLabel(
+        fullText,
+        getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PROVIDER)
+      );
 
-      const matchedProvider =
-        calendars[calendarId].find(function(provider) {
-          return normalizeTextForSearch(provider.provider_name) ===
-            normalizeTextForSearch(providerNameFromEvent);
-        });
+      const matchedProvider = calendars[calendarId].find(function (provider) {
+        return normalizeTextForSearch(provider.provider_name) === normalizeTextForSearch(providerNameFromEvent);
+      });
 
       if (!matchedProvider) {
         return;
       }
 
       const phone =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_PHONE
-          )
-        ) ||
+        extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_PHONE)) ||
         extractPhoneFromText(fullText);
 
-      const customerName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER
-          )
-        );
+      const customerName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_CUSTOMER));
 
-      const serviceName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_SERVICE
-          )
-        );
+      const serviceName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_SERVICE));
 
-      const locationName =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_LOCATION
-          )
-        );
+      const locationName = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_LOCATION));
 
-      const commentText =
-        extractValueByLabel(
-          fullText,
-          getMessageValues(
-            MESSAGE_KEYS.CALENDAR_LABEL_COMMENT
-          )
-        );
+      const commentText = extractValueByLabel(fullText, getMessageValues(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT));
 
       if (!phone) {
         return;
@@ -222,28 +166,20 @@ function getManualCalendarAppointmentsByDateOptimized(dateValue) {
   return result;
 }
 
-function getManualCalendarBusySlotsForProvider(
-  providerId,
-  dateValue
-) {
-  const appointments =
-    getManualCalendarAppointmentsByDateOptimized(
-      dateValue
-    );
+function getManualCalendarBusySlotsForProvider(providerId, dateValue) {
+  const appointments = getManualCalendarAppointmentsByDateOptimized(dateValue);
 
   const result = [];
 
-  appointments.forEach(function(appointment) {
+  appointments.forEach(function (appointment) {
     if (String(appointment.provider_id) !== String(providerId)) {
       return;
     }
 
     result.push({
-      startTime:
-        appointment.startTime,
+      startTime: appointment.startTime,
 
-      endTime:
-        appointment.endTime
+      endTime: appointment.endTime
     });
   });
 

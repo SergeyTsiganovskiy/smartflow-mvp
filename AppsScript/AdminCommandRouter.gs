@@ -1,14 +1,5 @@
-function handleAdminCommandMessage(
-  chatId,
-  text,
-  state,
-  settings
-) {
-
-  if (
-    isMessageText(text, MESSAGE_KEYS.MAIN_MENU) ||
-    isMessageText(text, MESSAGE_KEYS.BACK)
-  ) {
+function handleAdminCommandMessage(chatId, text, state, settings) {
+  if (isMessageText(text, MESSAGE_KEYS.MAIN_MENU) || isMessageText(text, MESSAGE_KEYS.BACK)) {
     handleAdminNavigationCommand(chatId, text, settings);
     return;
   }
@@ -24,12 +15,7 @@ function handleAdminCommandMessage(
     state === ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS ||
     state === ADMIN_STATES.WAITING_CONFIGURATION_PAGE_SIZE
   ) {
-    handleAdminConfigurationState(
-      chatId,
-      text,
-      state,
-      settings
-    );
+    handleAdminConfigurationState(chatId, text, state, settings);
     return;
   }
 
@@ -112,10 +98,5 @@ function handleAdminCommandMessage(
     return;
   }
 
-  handleAdminStateMessage(
-    chatId,
-    text,
-    state,
-    settings
-  );
+  handleAdminStateMessage(chatId, text, state, settings);
 }

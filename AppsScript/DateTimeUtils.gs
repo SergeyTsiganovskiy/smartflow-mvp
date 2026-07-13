@@ -21,11 +21,7 @@ function addMinutesToDateTime(dateTimeValue, minutesToAdd) {
 
   resultDate.setDate(resultDate.getDate() + extraDays);
 
-  const finalDate = Utilities.formatDate(
-    resultDate,
-    timezone,
-    'yyyy-MM-dd'
-  );
+  const finalDate = Utilities.formatDate(resultDate, timezone, 'yyyy-MM-dd');
 
   return finalDate + ' ' + minutesToTime(finalMinutes);
 }
@@ -66,12 +62,7 @@ function buildDateTime(dateValue, timeValue) {
   const timeString = formatTimeForDisplay(timeValue);
 
   if (!dateString || !timeString) {
-    throw new Error(
-      'buildDateTime: invalid date/time: ' +
-      String(dateValue) +
-      ' / ' +
-      String(timeValue)
-    );
+    throw new Error('buildDateTime: invalid date/time: ' + String(dateValue) + ' / ' + String(timeValue));
   }
 
   return dateString + ' ' + timeString;
@@ -82,15 +73,10 @@ function formatDateTimeForStorage(value) {
     return '';
   }
 
-  const timezone =
-    getSettings().TimeZone || 'Europe/Kyiv';
+  const timezone = getSettings().TimeZone || 'Europe/Kyiv';
 
   if (Object.prototype.toString.call(value) === '[object Date]') {
-    return Utilities.formatDate(
-      value,
-      timezone,
-      'yyyy-MM-dd HH:mm'
-    );
+    return Utilities.formatDate(value, timezone, 'yyyy-MM-dd HH:mm');
   }
 
   const stringValue = String(value).trim();

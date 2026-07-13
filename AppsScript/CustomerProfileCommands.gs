@@ -1,28 +1,17 @@
 function createCustomerProfile(data) {
-  const phone =
-    normalizePhone(
-      data.phone || ''
-    );
+  const phone = normalizePhone(data.phone || '');
 
   if (!phone) {
     return null;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(
-      SHEET_NAMES.CUSTOMER_PROFILES
-    );
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_PROFILES);
 
-  const now =
-    new Date();
+  const now = new Date();
 
-  const phoneKey =
-    getPhoneSearchKey(phone);
+  const phoneKey = getPhoneSearchKey(phone);
 
-  const profileId =
-    'profile_' +
-    now.getTime();
+  const profileId = 'profile_' + now.getTime();
 
   sheet.appendRow([
     profileId,
@@ -48,85 +37,50 @@ function createCustomerProfile(data) {
 
   resetCustomerProfilesCache();
 
-  return getCustomerProfileById(
-    profileId
-  );
+  return getCustomerProfileById(profileId);
 }
 
-function updateCustomerProfile(
-  profileId,
-  updates
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(
-      SHEET_NAMES.CUSTOMER_PROFILES
-    );
+function updateCustomerProfile(profileId, updates) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMER_PROFILES);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   if (rows.length < 2) {
     return false;
   }
 
-  const headers =
-    rows[0].map(function(header) {
-      return String(header).trim();
-    });
+  const headers = rows[0].map(function (header) {
+    return String(header).trim();
+  });
 
-  const profileIdIndex =
-    headers.indexOf(
-      'profile_id'
-    );
+  const profileIdIndex = headers.indexOf('profile_id');
 
   if (profileIdIndex === -1) {
     return false;
   }
 
   for (let i = 1; i < rows.length; i++) {
-    if (
-      String(
-        rows[i][profileIdIndex]
-      ) !== String(profileId)
-    ) {
+    if (String(rows[i][profileIdIndex]) !== String(profileId)) {
       continue;
     }
 
-    Object.keys(updates).forEach(
-      function(key) {
-        const columnIndex =
-          headers.indexOf(key);
+    Object.keys(updates).forEach(function (key) {
+      const columnIndex = headers.indexOf(key);
 
-        if (columnIndex === -1) {
-          return;
-        }
-
-        rows[i][columnIndex] =
-          updates[key];
+      if (columnIndex === -1) {
+        return;
       }
-    );
 
-    const updatedAtIndex =
-      headers.indexOf(
-        'updated_at'
-      );
+      rows[i][columnIndex] = updates[key];
+    });
+
+    const updatedAtIndex = headers.indexOf('updated_at');
 
     if (updatedAtIndex !== -1) {
-      rows[i][updatedAtIndex] =
-        new Date();
+      rows[i][updatedAtIndex] = new Date();
     }
 
-    sheet
-      .getRange(
-        i + 1,
-        1,
-        1,
-        headers.length
-      )
-      .setValues([
-        rows[i]
-      ]);
+    sheet.getRange(i + 1, 1, 1, headers.length).setValues([rows[i]]);
 
     resetCustomerProfilesCache();
 
@@ -136,13 +90,8 @@ function updateCustomerProfile(
   return false;
 }
 
-function deactivateCustomerProfile(
-  profileId
-) {
-  return updateCustomerProfile(
-    profileId,
-    {
-      active: false
-    }
-  );
+function deactivateCustomerProfile(profileId) {
+  return updateCustomerProfile(profileId, {
+    active: false
+  });
 }

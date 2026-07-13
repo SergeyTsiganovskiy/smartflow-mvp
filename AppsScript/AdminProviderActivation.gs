@@ -3,7 +3,7 @@ function startDisableProvider(chatId, settings) {
   const providers = getProviders();
   const keyboardRows = [];
 
-  providers.forEach(function(provider) {
+  providers.forEach(function (provider) {
     keyboardRows.push([
       {
         text: provider.name
@@ -11,17 +11,14 @@ function startDisableProvider(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_TO_DISABLE);
 
-sendTelegramMessage(
-  settings.AdminBotToken,
-  chatId,
-  getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
-  buildKeyboardWithMainMenu(keyboardRows)
-);
+  sendTelegramMessage(
+    settings.AdminBotToken,
+    chatId,
+    getMessage(MESSAGE_KEYS.SELECT_PROVIDER_FROM_LIST),
+    buildKeyboardWithMainMenu(keyboardRows)
+  );
 }
 
 function processProviderToDisable(chatId, text, settings) {
@@ -37,11 +34,7 @@ function processProviderToDisable(chatId, text, settings) {
     return;
   }
 
-  updateProviderField(
-    provider.id,
-    'active',
-    false
-  );
+  updateProviderField(provider.id, 'active', false);
 
   clearUserSession(chatId);
   setUserState(chatId, '');
@@ -61,7 +54,7 @@ function startEnableProvider(chatId, settings) {
   const providers = getInactiveProviders();
   const keyboardRows = [];
 
-  providers.forEach(function(provider) {
+  providers.forEach(function (provider) {
     keyboardRows.push([
       {
         text: provider.name
@@ -69,10 +62,7 @@ function startEnableProvider(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_TO_ENABLE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_PROVIDER_TO_ENABLE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -95,11 +85,7 @@ function processProviderToEnable(chatId, text, settings) {
     return;
   }
 
-  updateProviderField(
-    provider.id,
-    'active',
-    true
-  );
+  updateProviderField(provider.id, 'active', true);
 
   clearUserSession(chatId);
   setUserState(chatId, '');

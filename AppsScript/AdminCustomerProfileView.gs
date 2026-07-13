@@ -1,12 +1,5 @@
-function startCustomerProfile(
-  chatId,
-  settings
-) {
-  navigateAdmin(
-    chatId,
-    ADMIN_MENUS.CUSTOMERS,
-    ADMIN_STATES.WAITING_CUSTOMER_PROFILE_PHONE
-  );
+function startCustomerProfile(chatId, settings) {
+  navigateAdmin(chatId, ADMIN_MENUS.CUSTOMERS, ADMIN_STATES.WAITING_CUSTOMER_PROFILE_PHONE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -16,26 +9,16 @@ function startCustomerProfile(
   );
 }
 
-function processCustomerProfilePhone(
-  chatId,
-  text,
-  settings
-) {
-  const profile =
-    findCustomerProfileByPhone(text);
+function processCustomerProfilePhone(chatId, text, settings) {
+  const profile = findCustomerProfileByPhone(text);
 
   if (!profile || profile.active === false) {
-    setUserState(
-      chatId,
-      ADMIN_STATES.WAITING_CUSTOMER_PROFILE_PHONE
-    );
+    setUserState(chatId, ADMIN_STATES.WAITING_CUSTOMER_PROFILE_PHONE);
 
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND) +
-        '\n\n' +
-        getMessage(MESSAGE_KEYS.ENTER_CUSTOMER_PHONE),
+      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND) + '\n\n' + getMessage(MESSAGE_KEYS.ENTER_CUSTOMER_PHONE),
       buildKeyboardWithMainMenu([])
     );
 
@@ -44,304 +27,141 @@ function processCustomerProfilePhone(
 
   setUserState(chatId, '');
 
-  showCustomerProfile(
-    chatId,
-    settings,
-    profile
-  );
+  showCustomerProfile(chatId, settings, profile);
 }
 
-function showCustomerProfile(
-  chatId,
-  settings,
-  profile
-) {
-  const nextAppointment =
-    getNextCustomerAppointment(
-      profile.phone
-    );
+function showCustomerProfile(chatId, settings, profile) {
+  const nextAppointment = getNextCustomerAppointment(profile.phone);
 
-  let text =
-    '<b>' +
-    getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_TITLE) +
-    '</b>\n\n';
+  let text = '<b>' + getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_TITLE) + '</b>\n\n';
+
+  text += '<b>Основная информация</b>\n';
+
+  text += '👤 Имя: ' + (profile.name || '-') + '\n';
+
+  text += '📞 Телефон: ' + formatPhoneForDisplay(profile.phone) + '\n\n';
+
+  text += '<b>Записи и визиты</b>\n';
 
   text +=
-    '<b>Основная информация</b>\n';
+    '📅 Последний визит: ' + (profile.last_visit_at ? formatDateTimeForDisplay(profile.last_visit_at) : '-') + '\n';
 
-  text +=
-    '👤 Имя: ' +
-    (profile.name || '-') +
-    '\n';
+  text += '🔢 Всего визитов: ' + (profile.visit_count || 0) + '\n\n';
 
-  text +=
-    '📞 Телефон: ' +
-    formatPhoneForDisplay(
-      profile.phone
-    ) +
-    '\n\n';
-
-  text +=
-    '<b>Записи и визиты</b>\n';
-
-  text +=
-    '📅 Последний визит: ' +
-    (
-      profile.last_visit_at
-        ? formatDateTimeForDisplay(
-            profile.last_visit_at
-          )
-        : '-'
-    ) +
-    '\n';
-
-  text +=
-    '🔢 Всего визитов: ' +
-    (profile.visit_count || 0) +
-    '\n\n';
-
-  text +=
-    '<b>Следующая запись</b>\n';
+  text += '<b>Следующая запись</b>\n';
 
   if (nextAppointment) {
-    text +=
-      '🕒 ' +
-      formatDateTimeForDisplay(
-        nextAppointment.start_at
-      ) +
-      '\n';
+    text += '🕒 ' + formatDateTimeForDisplay(nextAppointment.start_at) + '\n';
 
-    text +=
-      '💇 ' +
-      (nextAppointment.service_name || '-') +
-      '\n';
+    text += '💇 ' + (nextAppointment.service_name || '-') + '\n';
 
-    text +=
-      '👩 ' +
-      (nextAppointment.provider_name || '-') +
-      '\n';
+    text += '👩 ' + (nextAppointment.provider_name || '-') + '\n';
 
-    text +=
-      '🏢 ' +
-      (nextAppointment.location_name || '-') +
-      '\n\n';
+    text += '🏢 ' + (nextAppointment.location_name || '-') + '\n\n';
   } else {
-    text +=
-      'Записей нет\n\n';
+    text += 'Записей нет\n\n';
   }
 
-  text +=
-    '<b>Информация для мастера</b>\n';
+  text += '<b>Информация для мастера</b>\n';
 
-  text +=
-    '🛍 Подсказка продажи: ' +
-    (profile.sales_hint || '-') +
-    '\n';
+  text += '🛍 Подсказка продажи: ' + (profile.sales_hint || '-') + '\n';
 
-  text +=
-    '📝 Заметка: ' +
-    (profile.note || '-') +
-    '\n';
+  text += '📝 Заметка: ' + (profile.note || '-') + '\n';
+
+  sendTelegramMessage(settings.AdminBotToken, chatId, text, buildKeyboardWithMainMenu([]));
+}
+
+function startEditCustomerProfile(chatId, settings) {
+  setUserState(chatId, ADMIN_STATES.WAITING_CUSTOMER_PROFILE_EDIT_PHONE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    text,
+    getMessage(MESSAGE_KEYS.ENTER_CUSTOMER_PHONE),
     buildKeyboardWithMainMenu([])
   );
 }
 
-function startEditCustomerProfile(
-  chatId,
-  settings
-) {
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CUSTOMER_PROFILE_EDIT_PHONE
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(
-      MESSAGE_KEYS.ENTER_CUSTOMER_PHONE
-    ),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processEditCustomerProfilePhone(
-  chatId,
-  text,
-  settings
-) {
-  const profile =
-    findCustomerProfileByPhone(text);
+function processEditCustomerProfilePhone(chatId, text, settings) {
+  const profile = findCustomerProfileByPhone(text);
 
   if (!profile || profile.active === false) {
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      getMessage(
-        MESSAGE_KEYS.CUSTOMER_NOT_FOUND
-      ) +
-        '\n\n' +
-        getMessage(
-          MESSAGE_KEYS.ENTER_CUSTOMER_PHONE
-        ),
+      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND) + '\n\n' + getMessage(MESSAGE_KEYS.ENTER_CUSTOMER_PHONE),
       buildKeyboardWithMainMenu([])
     );
 
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'customer_profile_id',
-    profile.profile_id
-  );
+  setUserSessionValue(chatId, 'customer_profile_id', profile.profile_id);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CUSTOMER_PROFILE_EDIT_FIELD
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CUSTOMER_PROFILE_EDIT_FIELD);
 
-  showCustomerProfileEditFieldMenu(
-    chatId,
-    settings,
-    profile
-  );
+  showCustomerProfileEditFieldMenu(chatId, settings, profile);
 }
 
-function showCustomerProfileEditFieldMenu(
-  chatId,
-  settings,
-  profile
-) {
-  let text =
-    '<b>' +
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_TITLE
-    ) +
-    '</b>\n\n';
+function showCustomerProfileEditFieldMenu(chatId, settings, profile) {
+  let text = '<b>' + getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_TITLE) + '</b>\n\n';
+
+  text += '<b>Основная информация</b>\n';
+
+  text += '👤 Имя: ' + (profile.name || '-') + '\n';
+
+  text += '📞 Телефон: ' + (profile.phone || '-') + '\n\n';
+
+  text += '<b>Визиты</b>\n';
 
   text +=
-    '<b>Основная информация</b>\n';
+    '📅 Последняя запись: ' + (profile.last_visit_at ? formatDateTimeForDisplay(profile.last_visit_at) : '-') + '\n';
 
-  text +=
-    '👤 Имя: ' +
-    (profile.name || '-') +
-    '\n';
+  text += '🔢 Всего записей: ' + (profile.visit_count || 0) + '\n\n';
 
-  text +=
-    '📞 Телефон: ' +
-    (profile.phone || '-') +
-    '\n\n';
+  text += '<b>Информация для мастера</b>\n';
 
-  text +=
-    '<b>Визиты</b>\n';
+  text += '🛍 Подсказка продажи: ' + (profile.sales_hint || '-') + '\n';
 
-  text +=
-    '📅 Последняя запись: ' +
-    (
-      profile.last_visit_at
-        ? formatDateTimeForDisplay(
-            profile.last_visit_at
-          )
-        : '-'
-    ) +
-    '\n';
+  text += '📝 Заметка: ' + (profile.note || '-') + '\n\n';
 
-  text +=
-    '🔢 Всего записей: ' +
-    (profile.visit_count || 0) +
-    '\n\n';
+  text += '<b>' + getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_FIELD) + '</b>';
 
-  text +=
-    '<b>Информация для мастера</b>\n';
-
-  text +=
-    '🛍 Подсказка продажи: ' +
-    (profile.sales_hint || '-') +
-    '\n';
-
-  text +=
-    '📝 Заметка: ' +
-    (profile.note || '-') +
-    '\n\n';
-
-  text +=
-    '<b>' +
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_FIELD
-    ) +
-    '</b>';
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    text,
-    buildCustomerProfileEditFieldKeyboard()
-  );
+  sendTelegramMessage(settings.AdminBotToken, chatId, text, buildCustomerProfileEditFieldKeyboard());
 }
 
 function buildCustomerProfileEditFieldKeyboard() {
   return buildKeyboardWithMainMenu([
     [
       {
-        text: getMessage(
-          MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NAME
-        )
+        text: getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NAME)
       }
     ],
     [
       {
-        text: getMessage(
-          MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_SALES_HINT
-        )
+        text: getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_SALES_HINT)
       }
     ],
     [
       {
-        text: getMessage(
-          MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NOTE
-        )
+        text: getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NOTE)
       }
     ]
   ]);
 }
 
-function processEditCustomerProfileField(
-  chatId,
-  text,
-  settings
-) {
+function processEditCustomerProfileField(chatId, text, settings) {
   let field = '';
 
-  if (
-    text ===
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NAME
-    )
-  ) {
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NAME)) {
     field = 'name';
   }
 
-  if (
-    text ===
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_SALES_HINT
-    )
-  ) {
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_SALES_HINT)) {
     field = 'sales_hint';
   }
 
-  if (
-    text ===
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NOTE
-    )
-  ) {
+  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT_NOTE)) {
     field = 'note';
   }
 
@@ -349,40 +169,24 @@ function processEditCustomerProfileField(
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'customer_profile_field',
-    field
-  );
+  setUserSessionValue(chatId, 'customer_profile_field', field);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_CUSTOMER_PROFILE_EDIT_VALUE
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_CUSTOMER_PROFILE_EDIT_VALUE);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_ENTER_NEW_VALUE
-    ),
+    getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_ENTER_NEW_VALUE),
     buildKeyboardWithMainMenu([])
   );
 }
 
-function processEditCustomerProfileValue(
-  chatId,
-  text,
-  settings
-) {
-  const session =
-    getUserSession(chatId);
+function processEditCustomerProfileValue(chatId, text, settings) {
+  const session = getUserSession(chatId);
 
-  const profileId =
-    session.customer_profile_id;
+  const profileId = session.customer_profile_id;
 
-  const field =
-    session.customer_profile_field;
+  const field = session.customer_profile_field;
 
   if (!profileId || !field) {
     setUserState(chatId, '');
@@ -390,9 +194,7 @@ function processEditCustomerProfileValue(
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      getMessage(
-        MESSAGE_KEYS.CUSTOMER_NOT_FOUND
-      ),
+      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND),
       buildKeyboardWithMainMenu([])
     );
 
@@ -403,11 +205,7 @@ function processEditCustomerProfileValue(
 
   updates[field] = text;
 
-  const updated =
-    updateCustomerProfile(
-      profileId,
-      updates
-    );
+  const updated = updateCustomerProfile(profileId, updates);
 
   setUserState(chatId, '');
 
@@ -415,9 +213,7 @@ function processEditCustomerProfileValue(
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      getMessage(
-        MESSAGE_KEYS.CUSTOMER_NOT_FOUND
-      ),
+      getMessage(MESSAGE_KEYS.CUSTOMER_NOT_FOUND),
       buildKeyboardWithMainMenu([])
     );
 
@@ -427,9 +223,7 @@ function processEditCustomerProfileValue(
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.CUSTOMER_PROFILE_UPDATED
-    ),
+    getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_UPDATED),
     buildKeyboardWithMainMenu([])
   );
 }

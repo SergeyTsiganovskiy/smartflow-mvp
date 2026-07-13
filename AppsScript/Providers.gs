@@ -6,12 +6,9 @@ function getProviders() {
     return PROVIDERS_CACHE;
   }
 
-  const providers =
-    getProvidersIncludingInactive()
-      .filter(function(provider) {
-        return String(provider.active).toUpperCase() === 'TRUE' ||
-          provider.active === true;
-      });
+  const providers = getProvidersIncludingInactive().filter(function (provider) {
+    return String(provider.active).toUpperCase() === 'TRUE' || provider.active === true;
+  });
 
   PROVIDERS_CACHE = providers;
 
@@ -19,29 +16,27 @@ function getProviders() {
 }
 
 function getInactiveProviders() {
-  return getProvidersIncludingInactive()
-    .filter(function(provider) {
-      return provider.active !== true;
-    });
+  return getProvidersIncludingInactive().filter(function (provider) {
+    return provider.active !== true;
+  });
 }
 
 function findInactiveProviderByName(name) {
   const targetName = String(name || '').trim();
 
-  return getInactiveProviders().find(function(provider) {
-    return String(provider.name || '').trim() === targetName;
-  }) || null;
+  return (
+    getInactiveProviders().find(function (provider) {
+      return String(provider.name || '').trim() === targetName;
+    }) || null
+  );
 }
 
 function getProvidersIncludingInactive() {
-
   if (PROVIDERS_INCLUDING_INACTIVE_CACHE) {
     return PROVIDERS_INCLUDING_INACTIVE_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDERS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDERS);
 
   const rows = sheet.getDataRange().getValues();
 
@@ -49,7 +44,7 @@ function getProvidersIncludingInactive() {
     return [];
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
@@ -58,7 +53,7 @@ function getProvidersIncludingInactive() {
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -84,24 +79,14 @@ function getNextWorkingDateForProvider(providerId) {
 
   const today = new Date();
 
-  const cacheDays =
-    Number(
-      settings.CalendarCacheDays || 30
-    );
+  const cacheDays = Number(settings.CalendarCacheDays || 30);
 
   for (let i = 1; i <= cacheDays; i++) {
     const date = new Date(today);
 
-    date.setDate(
-      date.getDate() + i
-    );
+    date.setDate(date.getDate() + i);
 
-    const dateString =
-      Utilities.formatDate(
-        date,
-        timezone,
-        'yyyy-MM-dd'
-      );
+    const dateString = Utilities.formatDate(date, timezone, 'yyyy-MM-dd');
 
     if (isProviderWorkingOnDate(providerId, dateString)) {
       return dateString;
@@ -111,69 +96,37 @@ function getNextWorkingDateForProvider(providerId) {
   return '';
 }
 
-function isProviderWorkingOnDate(
-  providerId,
-  dateValue
-) {
-  const override =
-    getProviderOverrideForDate(
-      providerId,
-      dateValue
-    );
+function isProviderWorkingOnDate(providerId, dateValue) {
+  const override = getProviderOverrideForDate(providerId, dateValue);
 
   if (override) {
-    return (
-      String(override.is_working).toUpperCase() === 'TRUE' ||
-      override.is_working === true
-    );
+    return String(override.is_working).toUpperCase() === 'TRUE' || override.is_working === true;
   }
 
-  const schedule =
-    getProviderScheduleForDate(
-      providerId,
-      dateValue
-    );
+  const schedule = getProviderScheduleForDate(providerId, dateValue);
 
   if (!schedule) {
     return false;
   }
 
-  return (
-    String(schedule.is_working).toUpperCase() === 'TRUE' ||
-    schedule.is_working === true
-  );
+  return String(schedule.is_working).toUpperCase() === 'TRUE' || schedule.is_working === true;
 }
 
-function getProviderScheduleForDate(
-  providerId,
-  dateValue
-) {
-  const schedules =
-    getProviderSchedules();
+function getProviderScheduleForDate(providerId, dateValue) {
+  const schedules = getProviderSchedules();
 
-  const date =
-    new Date(
-      dateValue + 'T12:00:00'
-    );
+  const date = new Date(dateValue + 'T12:00:00');
 
-  const dayCode =
-    getWeekDayCode(date);
+  const dayCode = getWeekDayCode(date);
 
   for (let i = 0; i < schedules.length; i++) {
-    const schedule =
-      schedules[i];
+    const schedule = schedules[i];
 
-    if (
-      String(schedule.provider_id) !==
-      String(providerId)
-    ) {
+    if (String(schedule.provider_id) !== String(providerId)) {
       continue;
     }
 
-    if (
-      String(schedule.day_of_week) !==
-      String(dayCode)
-    ) {
+    if (String(schedule.day_of_week) !== String(dayCode)) {
       continue;
     }
 
@@ -188,9 +141,7 @@ function getProviderSchedules() {
     return PROVIDER_SCHEDULES_CACHE;
   }
 
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.PROVIDER_SCHEDULE);
 
   const rows = sheet.getDataRange().getValues();
   const result = [];
@@ -200,14 +151,14 @@ function getProviderSchedules() {
     return result;
   }
 
-  const headers = rows[0].map(function(header) {
+  const headers = rows[0].map(function (header) {
     return String(header).trim();
   });
 
   for (let i = 1; i < rows.length; i++) {
     const item = {};
 
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = rows[i][index];
     });
 
@@ -238,7 +189,7 @@ function getProvidersByLocation(locationId) {
   const providers = getProviders();
   const result = [];
 
-  providers.forEach(function(provider) {
+  providers.forEach(function (provider) {
     if (String(provider.location_id) === String(locationId)) {
       result.push(provider);
     }
@@ -259,18 +210,13 @@ function findProviderById(providerId) {
   return null;
 }
 function getProviderCalendarId(providerId) {
-  const provider =
-    findProviderById(providerId);
+  const provider = findProviderById(providerId);
 
-  if (
-    provider &&
-    provider.calendar_id
-  ) {
+  if (provider && provider.calendar_id) {
     return provider.calendar_id;
   }
 
-  const settings =
-    getSettings();
+  const settings = getSettings();
 
   return settings.DefaultCalendarId || '';
 }

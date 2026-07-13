@@ -2,7 +2,7 @@ function showServiceLocations(chatId, settings) {
   const locations = getLocations();
   const keyboardRows = [];
 
-  locations.forEach(function(location) {
+  locations.forEach(function (location) {
     keyboardRows.push([
       {
         text: location.name
@@ -10,10 +10,7 @@ function showServiceLocations(chatId, settings) {
     ]);
   });
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_LOCATION
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_LOCATION);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -23,92 +20,53 @@ function showServiceLocations(chatId, settings) {
   );
 }
 
-function processServiceDurationMax(
-  chatId,
-  text,
-  settings
-) {
-  const durationMax =
-    Number(
-      String(text || '').trim()
-    );
+function processServiceDurationMax(chatId, text, settings) {
+  const durationMax = Number(String(text || '').trim());
 
-  const session =
-    getUserSession(chatId);
+  const session = getUserSession(chatId);
 
-  const durationMin =
-    Number(
-      session.service_duration_min || 0
-    );
+  const durationMin = Number(session.service_duration_min || 0);
 
-  if (
-    !durationMax ||
-    durationMax < durationMin
-  ) {
+  if (!durationMax || durationMax < durationMin) {
     sendTelegramMessage(
       settings.AdminBotToken,
       chatId,
-      getMessage(
-        MESSAGE_KEYS.ENTER_SERVICE_DURATION_MAX
-      ),
+      getMessage(MESSAGE_KEYS.ENTER_SERVICE_DURATION_MAX),
       buildKeyboardWithMainMenu([])
     );
 
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'service_duration_max',
-    durationMax
-  );
+  setUserSessionValue(chatId, 'service_duration_max', durationMax);
 
-  const updatedSession =
-    getUserSession(chatId);
+  const updatedSession = getUserSession(chatId);
 
-  const serviceId =
-    createService({
-      name:
-        updatedSession.service_name,
+  const serviceId = createService({
+    name: updatedSession.service_name,
 
-      location_id:
-        updatedSession.service_location_id,
+    location_id: updatedSession.service_location_id,
 
-      duration_min:
-        updatedSession.service_duration_min,
+    duration_min: updatedSession.service_duration_min,
 
-      duration_max:
-        updatedSession.service_duration_max
-    });
+    duration_max: updatedSession.service_duration_max
+  });
 
-  resetServiceWizardSession(
-    chatId
-  );
+  resetServiceWizardSession(chatId);
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(
-      MESSAGE_KEYS.SERVICE_CREATED
-    ) +
-      '\n\nID: ' +
-      serviceId
+    getMessage(MESSAGE_KEYS.SERVICE_CREATED) + '\n\nID: ' + serviceId
   );
 
-  backToAdminMenu(
-    chatId,
-    settings,
-    ADMIN_MENUS.SERVICES
-  );
+  backToAdminMenu(chatId, settings, ADMIN_MENUS.SERVICES);
 }
 
 function startCreateService(chatId, settings) {
   setPreviousMenu(chatId, 'SERVICES_MENU');
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_NAME
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_NAME);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -126,11 +84,7 @@ function processServiceName(chatId, text, settings) {
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'service_name',
-    serviceName
-  );
+  setUserSessionValue(chatId, 'service_name', serviceName);
 
   showServiceLocations(chatId, settings);
 }
@@ -143,16 +97,9 @@ function processServiceLocation(chatId, text, settings) {
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'service_location_id',
-    location.id
-  );
+  setUserSessionValue(chatId, 'service_location_id', location.id);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_DURATION_MIN
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_DURATION_MIN);
 
   sendTelegramMessage(
     settings.AdminBotToken,
@@ -176,16 +123,9 @@ function processServiceDurationMin(chatId, text, settings) {
     return;
   }
 
-  setUserSessionValue(
-    chatId,
-    'service_duration_min',
-    durationMin
-  );
+  setUserSessionValue(chatId, 'service_duration_min', durationMin);
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_DURATION_MAX
-  );
+  setUserState(chatId, ADMIN_STATES.WAITING_SERVICE_DURATION_MAX);
 
   sendTelegramMessage(
     settings.AdminBotToken,

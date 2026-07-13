@@ -1,7 +1,5 @@
 function setUserState(telegramId, state) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.USER_STATES);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.USER_STATES);
 
   const rows = sheet.getDataRange().getValues();
 

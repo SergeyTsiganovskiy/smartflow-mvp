@@ -1,9 +1,4 @@
-
-function sendCustomersMenu(
-  chatId,
-  settings
-) {
-
+function sendCustomersMenu(chatId, settings) {
   navigateAdmin(chatId, ADMIN_MENUS.CUSTOMERS);
 
   sendTelegramMessage(
@@ -50,6 +45,6 @@ function buildCustomersMenuKeyboard() {
       {
         text: getMessage(MESSAGE_KEYS.CUSTOMER_VISIT_HISTORY)
       }
-    ],
+    ]
   ]);
 }

@@ -1,22 +1,10 @@
 function doPost(e) {
   try {
+    const update = JSON.parse(e.postData.contents);
 
-    const update =
-      JSON.parse(e.postData.contents);
+    const botType = e.parameter && e.parameter.bot ? e.parameter.bot : 'client';
 
-    const botType =
-      e.parameter && e.parameter.bot
-        ? e.parameter.bot
-        : 'client';
-
-    if (
-      update.update_id &&
-      isDuplicateTelegramUpdate(
-        update.update_id,
-        botType.toUpperCase()
-      )
-    ) {
-
+    if (update.update_id && isDuplicateTelegramUpdate(update.update_id, botType.toUpperCase())) {
       return HtmlService.createHtmlOutput('OK');
     }
 
@@ -41,29 +29,21 @@ function doPost(e) {
     }
 
     return HtmlService.createHtmlOutput('OK');
-
   } catch (error) {
-    addAuditLog(
-      'DOPOST_ERROR',
-      String(error)
-    );
+    addAuditLog('DOPOST_ERROR', String(error));
 
     return HtmlService.createHtmlOutput('ERROR');
   }
 }
 
 function handleAdminCallback(callbackQuery) {
-  const data =
-    callbackQuery.data || '';
+  const data = callbackQuery.data || '';
 
-  const parts =
-    data.split('|');
+  const parts = data.split('|');
 
-  const action =
-    parts[0];
+  const action = parts[0];
 
-  const requestId =
-    parts[1] || '';
+  const requestId = parts[1] || '';
 
   addAuditLog(
     'ADMIN_CALLBACK',
@@ -74,49 +54,29 @@ function handleAdminCallback(callbackQuery) {
     })
   );
 
-  if (
-    action.indexOf('approve_option_') === 0
-  ) {
-    processRequestApproveOption(
-      callbackQuery,
-      action,
-      requestId
-    );
+  if (action.indexOf('approve_option_') === 0) {
+    processRequestApproveOption(callbackQuery, action, requestId);
 
     return;
   }
 
-  if (
-    action ===
-    'reject_request'
-  ) {
-    processRequestReject(
-      callbackQuery,
-      requestId
-    );
+  if (action === 'reject_request') {
+    processRequestReject(callbackQuery, requestId);
 
     return;
   }
 
-  addAuditLog(
-    'UNKNOWN_ADMIN_CALLBACK',
-    data
-  );
+  addAuditLog('UNKNOWN_ADMIN_CALLBACK', data);
 }
 
 function handleClientCallback(callbackQuery) {
-  const data =
-    callbackQuery.data || '';
+  const data = callbackQuery.data || '';
 
   if (data.indexOf('confirm_appointment:') === 0) {
-    processAppointmentConfirmation(
-      callbackQuery
-    );
+    processAppointmentConfirmation(callbackQuery);
 
     return;
   }
 
-  handleAppointmentCallback(
-    callbackQuery
-  );
+  handleAppointmentCallback(callbackQuery);
 }

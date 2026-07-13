@@ -1,7 +1,5 @@
 function createOrUpdateCustomer(session) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMERS);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
 
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -70,38 +68,20 @@ function createOrUpdateCustomer(session) {
   return customerId;
 }
 
-function updateCustomerStatus(
-  customerId,
-  status
-) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.CUSTOMERS);
+function updateCustomerStatus(customerId, status) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.CUSTOMERS);
 
-  const rows =
-    sheet.getDataRange().getValues();
+  const rows = sheet.getDataRange().getValues();
 
   const headers = rows[0];
 
-  const customerIdIndex =
-    headers.indexOf('customer_id');
+  const customerIdIndex = headers.indexOf('customer_id');
 
-  const statusIndex =
-    headers.indexOf('status');
+  const statusIndex = headers.indexOf('status');
 
   for (let i = 1; i < rows.length; i++) {
-
-    if (
-      String(rows[i][customerIdIndex]) ===
-      String(customerId)
-    ) {
-
-      sheet
-        .getRange(
-          i + 1,
-          statusIndex + 1
-        )
-        .setValue(status);
+    if (String(rows[i][customerIdIndex]) === String(customerId)) {
+      sheet.getRange(i + 1, statusIndex + 1).setValue(status);
 
       return;
     }
