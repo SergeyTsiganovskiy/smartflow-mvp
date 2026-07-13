@@ -37,6 +37,11 @@ function getConfigurationMessageMigrationRows() {
     ['CONFIGURATION_CACHE_BELOW_BOOKING', 'Горизонт кешу не може бути меншим за горизонт онлайн-запису. Введіть нове значення не менше', 'Горизонт кеша не может быть меньше горизонта онлайн-записи. Введите новое значение не меньше', 'Calendar cache horizon cannot be shorter than the booking horizon. Enter a new value no less than'],
     ['CONFIGURATION_BOOKING_DAYS_UPDATED', 'Горизонт онлайн-запису оновлено', 'Горизонт онлайн-записи обновлён', 'Online booking horizon updated'],
     ['CONFIGURATION_CACHE_DAYS_UPDATED', 'Горизонт кешу календаря оновлено', 'Горизонт кеша календаря обновлён', 'Calendar cache horizon updated'],
+    ['CONFIGURATION_DEFAULT_WORK_HOURS', '🕘 Стандартні робочі години', '🕘 Стандартные рабочие часы', '🕘 Default working hours'],
+    ['CONFIGURATION_DEFAULT_WORK_HOURS_PROMPT', 'Введіть стандартний початок і кінець робочого дня у форматі ГГ:ХХ-ГГ:ХХ. Значення застосовуються до нових майстрів і як резервні години; чинні графіки не зміняться.', 'Введите стандартное начало и конец рабочего дня в формате ЧЧ:ММ-ЧЧ:ММ. Значения применяются к новым мастерам и как резервные часы; действующие графики не изменятся.', 'Enter the default workday start and end as HH:MM-HH:MM. These values apply to new providers and as fallback hours; existing schedules will not change.'],
+    ['CONFIGURATION_DEFAULT_WORK_HOURS_INVALID', 'Введіть час у форматі ГГ:ХХ-ГГ:ХХ, наприклад 09:00-20:00', 'Введите время в формате ЧЧ:ММ-ЧЧ:ММ, например 09:00-20:00', 'Enter time as HH:MM-HH:MM, for example 09:00-20:00'],
+    ['CONFIGURATION_DEFAULT_WORK_HOURS_ORDER_INVALID', 'Час завершення має бути пізніше часу початку. Введіть нове значення.', 'Время окончания должно быть позже времени начала. Введите новое значение.', 'End time must be later than start time. Enter a new value.'],
+    ['CONFIGURATION_DEFAULT_WORK_HOURS_UPDATED', 'Стандартні робочі години оновлено', 'Стандартные рабочие часы обновлены', 'Default working hours updated'],
     ['CONFIGURATION_SELECT_LANGUAGE', 'Оберіть мову', 'Выберите язык', 'Select language'],
     ['CONFIGURATION_LANGUAGE_UPDATED', 'Мову змінено', 'Язык изменён', 'Language updated'],
     ['CONFIGURATION_INVALID_LANGUAGE', 'Оберіть мову зі списку', 'Выберите язык из списка', 'Select a language from the list'],
@@ -230,5 +235,48 @@ function migrateConfigurationMessages() {
   );
 
   Logger.log(JSON.stringify(result));
+  return result;
+}
+
+function migrateSystemConfigurationSettings() {
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName(SHEET_NAMES.SETTINGS);
+
+  if (!sheet) {
+    throw new Error('Settings sheet not found');
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const obsoleteKeys = {
+    OwnerTelegramId: true,
+    ReminderMonth: true,
+    EnableLogs: true
+  };
+  const deletedKeys = [];
+
+  for (let i = rows.length - 1; i >= 1; i--) {
+    const key = String(rows[i][0] || '').trim();
+
+    if (obsoleteKeys[key]) {
+      sheet.deleteRow(i + 1);
+      deletedKeys.push(key);
+    }
+  }
+
+  resetSettingsCache();
+
+  const result = {
+    migration: 'system_configuration_settings_v1',
+    deletedKeys: deletedKeys.sort()
+  };
+
+  addAuditLog(
+    'SYSTEM_CONFIGURATION_SETTINGS_MIGRATED',
+    JSON.stringify(result)
+  );
+
+  Logger.log(JSON.stringify(result));
+
   return result;
 }

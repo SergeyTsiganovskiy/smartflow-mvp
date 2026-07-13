@@ -18,6 +18,12 @@ const ADMIN_CONFIGURATION_SETTINGS = {
     type: 'integer',
     min: 1,
     max: 365
+  },
+  DefaultWorkStartTime: {
+    type: 'time'
+  },
+  DefaultWorkEndTime: {
+    type: 'time'
   }
 };
 
@@ -50,6 +56,10 @@ function isAllowedAdminConfigurationValue(settingKey, value) {
       value >= definition.min &&
       value <= definition.max
     );
+  }
+
+  if (definition.type === 'time') {
+    return isValidTimeValue(value);
   }
 
   return false;

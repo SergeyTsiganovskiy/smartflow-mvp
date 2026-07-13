@@ -435,11 +435,19 @@ The Configuration menu controls the `ReminderDayBefore` setting. When disabled, 
 
 `BookingDaysAhead` and `CalendarCacheDays` are editable integer horizons from 1 to 365 days. The cache horizon must be greater than or equal to the booking horizon so every client-selectable date is covered by Calendar synchronization.
 
+`DefaultWorkStartTime` and `DefaultWorkEndTime` are edited together as one `HH:MM-HH:MM` interval. The end must be later than the start. Updating these defaults affects newly created provider schedules and missing-time fallback behavior; it does not rewrite existing provider schedules.
+
 When a cross-setting horizon constraint fails, the bot keeps the current input state and displays the exact maximum or minimum acceptable value. Successful horizon updates return through the registered Configuration menu rather than the parent Settings menu.
 
 After deploying the configuration workflow to an existing installation, run `migrateConfigurationMessages()` once from the Apps Script editor. The migration is safe to repeat and preserves existing message translations.
 
+Repeat `migrateConfigurationMessages()` after deploying newly added configuration editors. It appends only localization keys that are not already present.
+
 Existing installations that ran the first configuration migration should run `migrateConfigurationMenuIcon()` once to add the localized gear icon to the Configuration menu item.
+
+Run `migrateSystemConfigurationSettings()` once after deploying the system-settings cleanup. It safely removes obsolete `OwnerTelegramId`, `ReminderMonth`, and experimental `EnableLogs` rows, resets the shared Settings cache, and is safe to repeat.
+
+`DefaultWorkStartTime` and `DefaultWorkEndTime` remain active settings because provider schedule creation and day enabling still consume them. `BusinessName` is retained as reserved metadata but currently has no effect on runtime behavior.
 
 ### Parallel work
 

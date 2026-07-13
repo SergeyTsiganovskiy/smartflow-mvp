@@ -195,6 +195,8 @@ Boolean configuration values are persisted as native Sheet booleans. `send24hApp
 
 Numeric configuration definitions declare inclusive minimum and maximum values in `ConfigurationRegistry`. Cross-setting validation additionally enforces `CalendarCacheDays >= BookingDaysAhead` before either value is written.
 
+Default work hours are configured as a validated pair. Admin Bot accepts only `HH:MM-HH:MM`, requires both values to be valid 24-hour times, and requires the end to be later than the start. Both Settings values are validated before writes. The editor explicitly states that existing provider schedule rows are not changed.
+
 Configuration action labels must remain domain-specific. Generic labels such as "Enable" and "Disable" can collide with location or service commands because stable menu commands are intentionally routed before state handlers.
 
 Configuration states are the exception to general stable-command priority: after Main Menu and Back handling, `AdminCommandRouter` delegates active configuration states before matching domain commands. This prevents stale or customized `Messages` values from routing a configuration action into a location, service, or provider workflow.
@@ -448,13 +450,20 @@ TimeZone
 ClientBotToken
 AdminBotToken
 AdminTelegramIds
-MainCalendarId
+AppsScriptUrl
+DefaultCalendarId
+DefaultWorkStartTime
+DefaultWorkEndTime
 BookingDaysAhead
+CalendarCacheDays
 ReminderDayBefore
-Reminder2Hours
 ```
 
 The Settings module should automatically reset the cache after updates.
+
+`DefaultWorkStartTime` and `DefaultWorkEndTime` are active schedule defaults. Provider creation uses them for every weekday, and enabling an existing schedule day uses them when stored times are missing. Admin Bot edits them as one interval while preserving all existing provider schedule rows.
+
+`BusinessName` is reserved metadata and currently has no runtime consumer. It is retained for future branding and multi-template work, but should not be exposed in Admin Bot before a visible use is implemented.
 
 ### Runtime caches
 
@@ -588,6 +597,7 @@ ADMIN_BACK_STACK_DEBUG
 Temporary debugging events should be removed after fixes.
 
 Telegram helpers should expose failed API responses even when `muteHttpExceptions` is enabled.
+
 
 ## 18. Security
 

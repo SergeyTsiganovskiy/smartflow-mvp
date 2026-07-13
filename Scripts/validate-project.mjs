@@ -73,7 +73,10 @@ for (const file of files) {
     errors.push(`Hardcoded sheet name in ${file}`);
   }
 
-  if (/\bOwnerTelegramId\b|\bnotifyOwner|\bbuildOwner/.test(source)) {
+  if (
+    file !== 'ConfigurationMigrations.gs' &&
+    /\bOwnerTelegramId\b|\bnotifyOwner|\bbuildOwner/.test(source)
+  ) {
     errors.push(`Legacy Owner runtime reference in ${file}`);
   }
 

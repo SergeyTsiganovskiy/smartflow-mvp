@@ -57,16 +57,21 @@ TimeZone
 ClientBotToken
 AdminBotToken
 AdminTelegramIds
-MainCalendarId
-ClientWebAppUrl
+AppsScriptUrl
+DefaultCalendarId
+DefaultWorkStartTime
+DefaultWorkEndTime
 ReminderDayBefore
-Reminder2Hours
-ReminderMonth
+CalendarCacheDays
 BookingDaysAhead
 
 Admin Bot configuration writes are restricted by an application-level allowlist. Infrastructure secrets remain editable only directly in the protected Settings sheet. Updating a value invalidates the in-memory Settings cache immediately.
 
 `AdminTelegramIds` must be stored as plain text. Comma-separated Telegram IDs must never be stored as a numeric value because spreadsheet locale parsing and numeric precision can corrupt the list.
+
+`DefaultWorkStartTime` and `DefaultWorkEndTime` are active defaults used when a provider schedule is created and when an existing schedule day is enabled without usable times. Admin Bot validates and updates them together, but the update does not modify existing `ProviderSchedule` rows.
+
+`BusinessName` is currently reserved installation metadata. Runtime behavior does not depend on it yet.
 ```
 
 Notes:
