@@ -335,7 +335,7 @@ Examples:
 WAITING_PROVIDER_NAME
 WAITING_PROVIDER_LOCATION
 WAITING_PROVIDER_PHONE
-WAITING_SERVICE_PRICE_MIN
+WAITING_SERVICE_DURATION_MIN
 WAITING_LOCATION_NEW_VALUE
 WAITING_CUSTOM_DATE
 ```
@@ -443,9 +443,7 @@ Settings keys are trimmed when read. A command that finds a key containing leadi
 Typical settings:
 
 ```text
-BusinessName
 Language
-Currency
 TimeZone
 ClientBotToken
 AdminBotToken
@@ -463,7 +461,7 @@ The Settings module should automatically reset the cache after updates.
 
 `DefaultWorkStartTime` and `DefaultWorkEndTime` are active schedule defaults. Provider creation uses them for every weekday, and enabling an existing schedule day uses them when stored times are missing. Admin Bot edits them as one interval while preserving all existing provider schedule rows.
 
-`BusinessName` is reserved metadata and currently has no runtime consumer. It is retained for future branding and multi-template work, but should not be exposed in Admin Bot before a visible use is implemented.
+Financial configuration is intentionally absent. The booking system does not own prices, currency, billing, or revenue calculations.
 
 ### Runtime caches
 
@@ -595,6 +593,8 @@ ADMIN_BACK_STACK_DEBUG
 ```
 
 Temporary debugging events should be removed after fixes.
+
+After a service activation change, the handler sends the success result and immediately returns through `backToAdminMenu(..., ADMIN_MENUS.SERVICES)`. This restores a valid navigation stack and renders the Services menu without requiring an extra Back action.
 
 Telegram helpers should expose failed API responses even when `muteHttpExceptions` is enabled.
 

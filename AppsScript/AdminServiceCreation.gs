@@ -74,12 +74,6 @@ function processServiceDurationMax(
       location_id:
         updatedSession.service_location_id,
 
-      price_min:
-        updatedSession.service_price_min,
-
-      price_max:
-        updatedSession.service_price_max,
-
       duration_min:
         updatedSession.service_duration_min,
 
@@ -153,74 +147,6 @@ function processServiceLocation(chatId, text, settings) {
     chatId,
     'service_location_id',
     location.id
-  );
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_PRICE_MIN
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MIN),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processServicePriceMin(chatId, text, settings) {
-  const priceMin = Number(String(text || '').trim());
-
-  if (!priceMin || priceMin < 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MIN),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'service_price_min',
-    priceMin
-  );
-
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_SERVICE_PRICE_MAX
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MAX),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processServicePriceMax(chatId, text, settings) {
-  const priceMax = Number(String(text || '').trim());
-  const session = getUserSession(chatId);
-  const priceMin = Number(session.service_price_min || 0);
-
-  if (!priceMax || priceMax < priceMin) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ENTER_SERVICE_PRICE_MAX),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'service_price_max',
-    priceMax
   );
 
   setUserState(

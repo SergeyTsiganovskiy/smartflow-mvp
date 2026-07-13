@@ -64,39 +64,6 @@ function processCustomerServiceToEdit(chatId, text, settings) {
 
   setUserState(
     chatId,
-    ADMIN_STATES.WAITING_CUSTOMER_SERVICE_PRICE
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_CUSTOM_PRICE),
-    buildKeyboardWithMainMenu([])
-  );
-}
-
-function processCustomerServicePrice(chatId, text, settings) {
-  const price = Number(String(text || '').trim());
-
-  if (!price || price < 0) {
-    sendTelegramMessage(
-      settings.AdminBotToken,
-      chatId,
-      getMessage(MESSAGE_KEYS.ENTER_CUSTOM_PRICE),
-      buildKeyboardWithMainMenu([])
-    );
-
-    return;
-  }
-
-  setUserSessionValue(
-    chatId,
-    'customer_service_price',
-    price
-  );
-
-  setUserState(
-    chatId,
     ADMIN_STATES.WAITING_CUSTOMER_SERVICE_DURATION
   );
 
@@ -165,7 +132,6 @@ function processCustomerServiceDuration(chatId, text, settings) {
     service_id: service.service_id,
     service_name: service.name,
     duration_minutes: duration,
-    price: session.customer_service_price,
     notes: ''
   });
 

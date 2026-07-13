@@ -80,6 +80,13 @@ for (const file of files) {
     errors.push(`Legacy Owner runtime reference in ${file}`);
   }
 
+  if (
+    file !== 'ConfigurationMigrations.gs' &&
+    /\b(?:price_min|price_max|customer_service_price|service_price_min|service_price_max|BusinessName|Currency)\b/.test(source)
+  ) {
+    errors.push(`Financial runtime reference in ${file}`);
+  }
+
   if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
     messageKeysSource = source;
   }

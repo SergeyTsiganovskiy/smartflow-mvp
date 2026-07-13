@@ -19,13 +19,18 @@ function processServiceToDisable(chatId, text, settings) {
 
   clearUserSession(chatId);
   setUserState(chatId, '');
-  setPreviousMenu(chatId, 'SERVICES_MENU');
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
     getMessage(MESSAGE_KEYS.SERVICE_DISABLED) || 'Услуга отключена',
     buildKeyboardWithMainMenu([])
+  );
+
+  backToAdminMenu(
+    chatId,
+    settings,
+    ADMIN_MENUS.SERVICES
   );
 }
 
@@ -116,12 +121,17 @@ function processServiceToEnable(chatId, text, settings) {
 
   clearUserSession(chatId);
   setUserState(chatId, '');
-  setPreviousMenu(chatId, 'SERVICES_MENU');
 
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
     getMessage(MESSAGE_KEYS.SERVICE_ENABLED) || 'Услуга включена',
     buildKeyboardWithMainMenu([])
+  );
+
+  backToAdminMenu(
+    chatId,
+    settings,
+    ADMIN_MENUS.SERVICES
   );
 }

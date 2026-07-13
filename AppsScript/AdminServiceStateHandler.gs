@@ -14,16 +14,6 @@ function handleAdminServiceState(
       return;
     }
   
-  if (state === ADMIN_STATES.WAITING_SERVICE_PRICE_MIN) {
-      processServicePriceMin(chatId, text, settings);
-      return;
-    }
-  
-  if (state === ADMIN_STATES.WAITING_SERVICE_PRICE_MAX) {
-      processServicePriceMax(chatId, text, settings);
-      return;
-    }
-  
   if (state === ADMIN_STATES.WAITING_SERVICE_DURATION_MIN) {
       processServiceDurationMin(chatId, text, settings);
       return;
@@ -66,11 +56,6 @@ function handleAdminServiceState(
   
   if (state === ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_EDIT) {
       processCustomerServiceToEdit(chatId, text, settings);
-      return;
-    }
-  
-  if (state === ADMIN_STATES.WAITING_CUSTOMER_SERVICE_PRICE) {
-      processCustomerServicePrice(chatId, text, settings);
       return;
     }
   

@@ -38,7 +38,7 @@ The current reference implementation targets a **beauty salon**, while the archi
 - appointment views by day, date, and provider;
 - customer management and conflict handling;
 - provider CRUD, schedules, and overrides;
-- service CRUD with price and duration ranges;
+- service CRUD with duration ranges;
 - location CRUD;
 - customer confirmation status in appointment lists;
 - hierarchical mobile-friendly navigation;

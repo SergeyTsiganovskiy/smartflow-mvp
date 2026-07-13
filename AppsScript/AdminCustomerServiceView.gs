@@ -87,12 +87,6 @@ function showCustomerServices(chatId, customer, settings) {
         '</b>\n';
 
       text +=
-        getMessage(MESSAGE_KEYS.CUSTOM_PRICE_LABEL) +
-        ': ' +
-        setting.price +
-        '\n';
-
-      text +=
         getMessage(MESSAGE_KEYS.CUSTOM_DURATION_LABEL) +
         ': ' +
         setting.duration_minutes +

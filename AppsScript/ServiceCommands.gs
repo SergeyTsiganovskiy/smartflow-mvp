@@ -21,17 +21,38 @@ function createService(serviceData) {
     )
   );
 
-  sheet.appendRow([
-    serviceId,
-    serviceData.location_id,
-    nameKey,
-    serviceData.price_min,
-    serviceData.price_max,
-    serviceData.duration_min,
-    serviceData.duration_max,
-    true,
-    new Date()
-  ]);
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(function(header) {
+      return String(header || '').trim();
+    });
+  const newRow = new Array(headers.length).fill('');
+  const requiredHeaders = [
+    'service_id',
+    'location_id',
+    'name_key',
+    'duration_min',
+    'duration_max',
+    'active',
+    'created_at'
+  ];
+
+  requiredHeaders.forEach(function(header) {
+    if (headers.indexOf(header) === -1) {
+      throw new Error('Services sheet is missing column: ' + header);
+    }
+  });
+
+  newRow[headers.indexOf('service_id')] = serviceId;
+  newRow[headers.indexOf('location_id')] = serviceData.location_id;
+  newRow[headers.indexOf('name_key')] = nameKey;
+  newRow[headers.indexOf('duration_min')] = serviceData.duration_min;
+  newRow[headers.indexOf('duration_max')] = serviceData.duration_max;
+  newRow[headers.indexOf('active')] = true;
+  newRow[headers.indexOf('created_at')] = new Date();
+
+  sheet.appendRow(newRow);
 
   return serviceId;
 }

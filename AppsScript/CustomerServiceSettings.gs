@@ -19,7 +19,6 @@ function getCustomerServiceSetting(
   const customerIdIndex = headers.indexOf('customer_id');
   const serviceIdIndex = headers.indexOf('service_id');
   const durationIndex = headers.indexOf('duration_minutes');
-  const priceIndex = headers.indexOf('price');
 
   for (let i = 1; i < rows.length; i++) {
     if (
@@ -27,8 +26,7 @@ function getCustomerServiceSetting(
       String(rows[i][serviceIdIndex]) === String(serviceId)
     ) {
       return {
-        duration_minutes: Number(rows[i][durationIndex] || 0),
-        price: Number(rows[i][priceIndex] || 0)
+        duration_minutes: Number(rows[i][durationIndex] || 0)
       };
     }
   }

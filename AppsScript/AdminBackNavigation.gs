@@ -10,7 +10,6 @@ function resetAdminWizard(chatId) {
       customer_service_customer_id: '',
       customer_service_phone: '',
       customer_service_service_id: '',
-      customer_service_price: '',
 
       conflict_main_phone: '',
       conflict_main_phone_key: '',
@@ -108,8 +107,6 @@ function isServiceWizardState(state) {
   return [
     ADMIN_STATES.WAITING_SERVICE_NAME,
     ADMIN_STATES.WAITING_SERVICE_LOCATION,
-    ADMIN_STATES.WAITING_SERVICE_PRICE_MIN,
-    ADMIN_STATES.WAITING_SERVICE_PRICE_MAX,
     ADMIN_STATES.WAITING_SERVICE_DURATION_MIN,
     ADMIN_STATES.WAITING_SERVICE_DURATION_MAX,
     ADMIN_STATES.WAITING_SERVICE_TO_EDIT,
@@ -119,7 +116,6 @@ function isServiceWizardState(state) {
     ADMIN_STATES.WAITING_SERVICE_TO_ENABLE,
     ADMIN_STATES.WAITING_CUSTOMER_SERVICE_PHONE,
     ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_EDIT,
-    ADMIN_STATES.WAITING_CUSTOMER_SERVICE_PRICE,
     ADMIN_STATES.WAITING_CUSTOMER_SERVICE_DURATION,
     ADMIN_STATES.WAITING_CUSTOMER_SERVICE_TO_DELETE
   ].indexOf(state) !== -1;

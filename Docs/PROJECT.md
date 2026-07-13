@@ -76,7 +76,7 @@ Support is reduced through predictable menus, localization tables, reusable CRUD
 
 ### 4.5 Reusable engine
 
-Business-specific information should be data rather than hardcoded logic: names, prices, durations, schedules, locations, messages, recipients, and settings.
+Business-specific information should be data rather than hardcoded logic: names, durations, schedules, locations, messages, recipients, and settings.
 
 ## 5. Users and roles
 
@@ -121,7 +121,6 @@ Typical customer actions:
 
 - Book;
 - Services;
-- Prices;
 - Contacts;
 - My appointments.
 
@@ -292,7 +291,6 @@ Service features:
 - edit;
 - enable/disable;
 - location association;
-- minimum/maximum price;
 - minimum/maximum duration.
 
 Creation wizard:
@@ -300,8 +298,6 @@ Creation wizard:
 ```text
 Name
 → Location
-→ Min price
-→ Max price
 → Min duration
 → Max duration
 → Create
@@ -447,7 +443,13 @@ Existing installations that ran the first configuration migration should run `mi
 
 Run `migrateSystemConfigurationSettings()` once after deploying the system-settings cleanup. It safely removes obsolete `OwnerTelegramId`, `ReminderMonth`, and experimental `EnableLogs` rows, resets the shared Settings cache, and is safe to repeat.
 
-`DefaultWorkStartTime` and `DefaultWorkEndTime` remain active settings because provider schedule creation and day enabling still consume them. `BusinessName` is retained as reserved metadata but currently has no effect on runtime behavior.
+`DefaultWorkStartTime` and `DefaultWorkEndTime` remain active settings because provider schedule creation and day enabling still consume them.
+
+The product intentionally does not store service prices or currency. Service management is limited to booking-relevant data such as location, duration, availability, and customer-specific duration overrides.
+
+After enabling or disabling a service, Admin Bot automatically renders the Services menu.
+
+Run `migrateRemoveFinancialFields()` once after deploying the financial-field cleanup. It removes `BusinessName` and `Currency` Settings rows, obsolete price localization rows, price columns from `Services` and `CustomerServiceSettings`, obsolete price fields from `UserSessions`, and price values from valid session JSON. It is safe to repeat. Historical `AuditLog` payloads are preserved as immutable operational history.
 
 ### Parallel work
 

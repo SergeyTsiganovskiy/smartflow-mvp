@@ -280,3 +280,183 @@ function migrateSystemConfigurationSettings() {
 
   return result;
 }
+
+function deleteSheetColumnsByHeader(sheet, headerNames) {
+  if (!sheet || sheet.getLastColumn() === 0) {
+    return [];
+  }
+
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(function(header) {
+      return String(header || '').trim();
+    });
+  const deletedHeaders = [];
+
+  for (let i = headers.length - 1; i >= 0; i--) {
+    if (headerNames.indexOf(headers[i]) === -1) {
+      continue;
+    }
+
+    sheet.deleteColumn(i + 1);
+    deletedHeaders.push(headers[i]);
+  }
+
+  return deletedHeaders.reverse();
+}
+
+function deleteSheetRowsByFirstColumnValue(sheet, valuesToDelete) {
+  if (!sheet || sheet.getLastRow() < 2) {
+    return [];
+  }
+
+  const values = sheet
+    .getRange(2, 1, sheet.getLastRow() - 1, 1)
+    .getValues();
+  const deletedValues = [];
+
+  for (let i = values.length - 1; i >= 0; i--) {
+    const value = String(values[i][0] || '').trim();
+
+    if (valuesToDelete.indexOf(value) === -1) {
+      continue;
+    }
+
+    sheet.deleteRow(i + 2);
+    deletedValues.push(value);
+  }
+
+  return deletedValues.reverse();
+}
+
+function removeFinancialValuesFromUserSessions(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) {
+    return 0;
+  }
+
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(function(header) {
+      return String(header || '').trim();
+    });
+  const sessionDataIndex = headers.indexOf('session_data');
+
+  if (sessionDataIndex === -1) {
+    return 0;
+  }
+
+  const range = sheet.getRange(
+    2,
+    sessionDataIndex + 1,
+    sheet.getLastRow() - 1,
+    1
+  );
+  const values = range.getValues();
+  let updatedCount = 0;
+
+  values.forEach(function(row) {
+    const text = String(row[0] || '').trim();
+
+    if (!text) {
+      return;
+    }
+
+    try {
+      const data = JSON.parse(text);
+      let changed = false;
+
+      [
+        'service_price_min',
+        'service_price_max',
+        'customer_service_price'
+      ].forEach(function(key) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+          delete data[key];
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        row[0] = JSON.stringify(data);
+        updatedCount++;
+      }
+    } catch (error) {
+      // Preserve malformed legacy session data instead of risking data loss.
+    }
+  });
+
+  if (updatedCount > 0) {
+    range.setValues(values);
+  }
+
+  return updatedCount;
+}
+
+function migrateRemoveFinancialFields() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const deleted = {};
+
+  deleted.Settings = deleteSheetRowsByFirstColumnValue(
+    spreadsheet.getSheetByName(SHEET_NAMES.SETTINGS),
+    ['BusinessName', 'Currency']
+  );
+
+  deleted.Messages = deleteSheetRowsByFirstColumnValue(
+    spreadsheet.getSheetByName(SHEET_NAMES.MESSAGES),
+    [
+      'PRICES',
+      'ENTER_SERVICE_PRICE_MIN',
+      'ENTER_SERVICE_PRICE_MAX',
+      'SERVICE_PRICE_LABEL',
+      'SERVICE_FIELD_PRICE_MIN',
+      'SERVICE_FIELD_PRICE_MAX',
+      'BASE_PRICE_LABEL',
+      'CUSTOM_PRICE_LABEL',
+      'ENTER_CUSTOM_PRICE',
+      'CUSTOMER_SERVICE_PRICE'
+    ]
+  );
+
+  deleted.Services = deleteSheetColumnsByHeader(
+    spreadsheet.getSheetByName(SHEET_NAMES.SERVICES),
+    ['price_min', 'price_max']
+  );
+
+  deleted.CustomerServiceSettings = deleteSheetColumnsByHeader(
+    spreadsheet.getSheetByName(SHEET_NAMES.CUSTOMER_SERVICE_SETTINGS),
+    ['price']
+  );
+
+  const userSessionsSheet = spreadsheet.getSheetByName(
+    SHEET_NAMES.USER_SESSIONS
+  );
+
+  deleted.UserSessionValues = removeFinancialValuesFromUserSessions(
+    userSessionsSheet
+  );
+
+  deleted.UserSessions = deleteSheetColumnsByHeader(
+    userSessionsSheet,
+    [
+      'service_price_min',
+      'service_price_max',
+      'customer_service_price'
+    ]
+  );
+
+  resetSettingsCache();
+  resetMessagesCache();
+  SERVICES_CACHE = null;
+  SERVICES_INCLUDING_INACTIVE_CACHE = null;
+
+  addAuditLog(
+    'FINANCIAL_FIELDS_REMOVED',
+    JSON.stringify(deleted)
+  );
+
+  Logger.log(JSON.stringify(deleted));
+
+  return deleted;
+}

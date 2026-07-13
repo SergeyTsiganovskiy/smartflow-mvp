@@ -46,8 +46,6 @@ function resetServiceWizardSession(chatId) {
     {
       service_name: '',
       service_location_id: '',
-      service_price_min: '',
-      service_price_max: '',
       service_duration_min: '',
       service_duration_max: '',
 

@@ -28,7 +28,7 @@ Customers
 │   └── RequestOptions
 ├── Appointments
 ├── CustomerConflicts
-└── CustomerServices
+└── CustomerServiceSettings
 
 Appointments
 ├── Google Calendar
@@ -50,9 +50,7 @@ Purpose: global installation configuration.
 Known keys:
 
 ```text
-BusinessName
 Language
-Currency
 TimeZone
 ClientBotToken
 AdminBotToken
@@ -71,7 +69,7 @@ Admin Bot configuration writes are restricted by an application-level allowlist.
 
 `DefaultWorkStartTime` and `DefaultWorkEndTime` are active defaults used when a provider schedule is created and when an existing schedule day is enabled without usable times. Admin Bot validates and updates them together, but the update does not modify existing `ProviderSchedule` rows.
 
-`BusinessName` is currently reserved installation metadata. Runtime behavior does not depend on it yet.
+Financial and branding metadata are intentionally absent from Settings. The application does not store prices or currency.
 ```
 
 Notes:
@@ -114,7 +112,7 @@ Examples:
 WAITING_LOCATION
 WAITING_SERVICE
 WAITING_PROVIDER_NAME
-WAITING_SERVICE_PRICE_MIN
+WAITING_SERVICE_DURATION_MIN
 WAITING_LOCATION_NEW_VALUE
 ```
 
@@ -174,8 +172,6 @@ Service fields:
 ```text
 service_name
 service_location_id
-service_price_min
-service_price_max
 service_duration_min
 service_duration_max
 edit_service_id
@@ -211,7 +207,6 @@ customer_note
 customer_service_customer_id
 customer_service_phone
 customer_service_service_id
-customer_service_price
 conflict_main_phone
 conflict_main_phone_key
 conflict_main_customer_name
@@ -238,7 +233,7 @@ Purpose: registered customers.
 | `last_visit_at` | DateTime | Last visit |
 | `notes` | String | Internal notes |
 
-Relationships: Requests, Appointments, Conflicts, CustomerServices.
+Relationships: Requests, Appointments, Conflicts, CustomerServiceSettings.
 
 ## 8. Locations
 
@@ -324,29 +319,29 @@ Purpose: business services.
 | `location_id` | String | Location |
 | `name_key` | String | Optional localization key |
 | `name` | String | Resolved/direct name |
-| `price_min` | Number | Min price |
-| `price_max` | Number | Max price |
 | `duration_min` | Number | Min minutes |
 | `duration_max` | Number | Max minutes |
 | `active` | Boolean | Active |
 
-## 13. CustomerServices
+## 13. CustomerServiceSettings
 
-Purpose: customer-specific service/pricing overrides.
+Purpose: customer-specific service duration overrides.
 
 Typical columns:
 
 | Column | Type | Description |
 |---|---|---|
-| `customer_service_id` | String | Primary ID |
-| `customer_id` | String | Customer |
+| `profile_id` | String | Customer profile |
+| `phone` | String | Customer phone |
+| `phone_key` | String | Normalized phone lookup key |
+| `customer_name` | String | Customer name snapshot |
 | `service_id` | String | Service |
-| `price` | Number | Custom price |
-| `active` | Boolean | Active |
-| `created_at` | DateTime | Created |
+| `service_name` | String | Service name snapshot |
+| `duration_minutes` | Number | Customer-specific duration |
 | `updated_at` | DateTime | Updated |
+| `notes` | String | Optional notes |
 
-The exact worksheet name should be verified against the production template.
+Price and currency fields are intentionally excluded from the schema.
 
 ## 14. Requests
 

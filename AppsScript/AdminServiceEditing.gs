@@ -39,14 +39,6 @@ function showServicesListAdmin(chatId, settings) {
       '\n';
 
     text +=
-      getMessage(MESSAGE_KEYS.SERVICE_PRICE_LABEL) +
-      ': ' +
-      service.price_min +
-      '-' +
-      service.price_max +
-      '\n';
-
-    text +=
       getMessage(MESSAGE_KEYS.SERVICE_DURATION_LABEL) +
       ': ' +
       service.duration_min +
@@ -120,8 +112,6 @@ function showServiceEditFields(chatId, serviceId, settings) {
   const keyboard = buildKeyboardWithMainMenu([
     [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_NAME) }],
     [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_LOCATION) }],
-    [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_PRICE_MIN) }],
-    [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_PRICE_MAX) }],
     [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_DURATION_MIN) }],
     [{ text: getMessage(MESSAGE_KEYS.SERVICE_FIELD_DURATION_MAX) }]
   ]);
@@ -146,8 +136,6 @@ function processServiceFieldToEdit(chatId, text, settings) {
 
   allowedFields[getMessage(MESSAGE_KEYS.SERVICE_FIELD_NAME)] = 'name';
   allowedFields[getMessage(MESSAGE_KEYS.SERVICE_FIELD_LOCATION)] = 'location_id';
-  allowedFields[getMessage(MESSAGE_KEYS.SERVICE_FIELD_PRICE_MIN)] = 'price_min';
-  allowedFields[getMessage(MESSAGE_KEYS.SERVICE_FIELD_PRICE_MAX)] = 'price_max';
   allowedFields[getMessage(MESSAGE_KEYS.SERVICE_FIELD_DURATION_MIN)] = 'duration_min';
   allowedFields[getMessage(MESSAGE_KEYS.SERVICE_FIELD_DURATION_MAX)] = 'duration_max';
 
@@ -246,8 +234,6 @@ function processServiceNewValue(chatId, text, settings) {
   }
 
   if (
-    field === 'price_min' ||
-    field === 'price_max' ||
     field === 'duration_min' ||
     field === 'duration_max'
   ) {

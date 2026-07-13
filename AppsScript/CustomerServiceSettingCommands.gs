@@ -45,7 +45,6 @@ function upsertCustomerServiceSetting(data) {
       setRowValueByHeader(sheet, headers, i + 1, 'customer_name', data.customer_name || '');
       setRowValueByHeader(sheet, headers, i + 1, 'service_name', data.service_name || '');
       setRowValueByHeader(sheet, headers, i + 1, 'duration_minutes', data.duration_minutes);
-      setRowValueByHeader(sheet, headers, i + 1, 'price', data.price);
       setRowValueByHeader(sheet, headers, i + 1, 'updated_at', new Date());
       setRowValueByHeader(sheet, headers, i + 1, 'notes', data.notes || '');
 
@@ -76,9 +75,6 @@ function upsertCustomerServiceSetting(data) {
 
   newRow[headers.indexOf('duration_minutes')] =
     data.duration_minutes;
-
-  newRow[headers.indexOf('price')] =
-    data.price;
 
   newRow[headers.indexOf('updated_at')] =
     new Date();
