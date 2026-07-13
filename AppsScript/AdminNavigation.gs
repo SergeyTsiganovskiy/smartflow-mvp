@@ -44,6 +44,10 @@ function initializeAdminNavigation() {
   ADMIN_NAVIGATION_HANDLERS[
     ADMIN_MENUS.SETTINGS
   ] = sendSettingsMenu;
+
+  ADMIN_NAVIGATION_HANDLERS[
+    ADMIN_MENUS.CONFIGURATION
+  ] = sendConfigurationMenu;
 }
 
 function openAdminMenu(chatId, settings, menu) {
@@ -188,6 +192,13 @@ function sendSettingsMenu(
         {
           text: getMessage(
             MESSAGE_KEYS.ADMIN_LOCATIONS
+          )
+        }
+      ],
+      [
+        {
+          text: getMessage(
+            MESSAGE_KEYS.ADMIN_CONFIGURATION
           )
         }
       ]

@@ -141,6 +141,7 @@ The exact filenames may evolve, but the architecture is domain-oriented.
 - client state handlers: `ClientBookingStateHandler.gs` handles the booking wizard; `ClientAppointmentStateHandler.gs` handles appointment lookup states; `ClientRescheduleStateHandler.gs` handles rescheduling date/time states;
 - admin entry, access, and routing: `AdminBot.gs`, `AdminAccess.gs`, `AdminCommandRouter.gs`, `AdminStateRouter.gs`;
 - admin command handlers: navigation and section handlers run first, followed by `AdminProviderCommandHandler.gs`, `AdminServiceCommandHandler.gs`, `AdminAppointmentCommandHandler.gs`, `AdminCustomerCommandHandler.gs`, and `AdminLocationCommandHandler.gs`;
+- admin configuration: `AdminConfiguration.gs` owns the Settings → Configuration menu and configuration states; `ConfigurationRegistry.gs` is the allowlist of values editable through Admin Bot; `ConfigCommands.gs` owns Settings sheet mutations and cache reset;
 - admin state handlers: `AdminServiceStateHandler.gs`, `AdminAppointmentStateHandler.gs`, `AdminCustomerStateHandler.gs`, `AdminLocationStateHandler.gs`, `AdminProviderStateHandler.gs`, `AdminScheduleStateHandler.gs`, and `AdminOverrideStateHandler.gs` preserve the original domain priority;
 - callback workflows: `AppointmentCallbacks.gs`, `AppointmentCards.gs`, `AppointmentConfirmations.gs`, `AppointmentRescheduling.gs`, `RequestCallbacks.gs`;
 - request and appointment notifications: `Notifications.gs`, `RequestNotifications.gs`, `Reminders.gs`.
@@ -185,6 +186,22 @@ Sheet-backed domains use an explicit query/command split where useful:
 - conversation state: `UserStates.gs`, `UserStateCommands.gs`, `Sessions.gs`, `SessionCommands.gs`.
 
 Query modules own reads and caches. Command modules own Sheet mutations. This separation is organizational only: Apps Script still exposes all top-level functions globally.
+
+Only keys declared in `ADMIN_CONFIGURATION_SETTINGS` may be changed through Admin Bot. Infrastructure secrets and integration identifiers are deliberately excluded from this registry.
+
+Security-sensitive configuration validators run before Settings writes. `AdminTelegramIds` is normalized to unique comma-separated numeric IDs, cannot be empty, and must retain the acting administrator.
+
+Boolean configuration values are persisted as native Sheet booleans. `send24hAppointmentReminders()` evaluates `ReminderDayBefore` before any appointment reads or Telegram calls and defaults to enabled when the setting is absent.
+
+Numeric configuration definitions declare inclusive minimum and maximum values in `ConfigurationRegistry`. Cross-setting validation additionally enforces `CalendarCacheDays >= BookingDaysAhead` before either value is written.
+
+Configuration action labels must remain domain-specific. Generic labels such as "Enable" and "Disable" can collide with location or service commands because stable menu commands are intentionally routed before state handlers.
+
+Configuration states are the exception to general stable-command priority: after Main Menu and Back handling, `AdminCommandRouter` delegates active configuration states before matching domain commands. This prevents stale or customized `Messages` values from routing a configuration action into a location, service, or provider workflow.
+
+The `AdminTelegramIds` Settings value is written with an explicit plain-text cell format. This prevents locale-dependent comma parsing and spreadsheet numeric precision loss from corrupting Telegram IDs or locking every administrator out.
+
+`migrateConfigurationMessages()` is an idempotent deployment migration. It validates the `Messages` columns, appends only missing configuration localization keys, resets the message cache, writes an audit event, and returns a migration summary. Repeated execution does not overwrite existing translations.
 
 ### Calendar, availability, and diagnostics
 
@@ -416,6 +433,10 @@ The target is zero hardcoded UI text.
 ### Settings
 
 `getSettings()` reads key/value rows and stores an in-memory object in `SETTINGS_CACHE`.
+
+The in-memory cache is guarded by a shared `SETTINGS_CACHE_VERSION` value in Script Properties. Every runtime instance compares its local version before returning cached settings. Settings writes replace the shared version with a UUID, forcing all warm Apps Script instances to reload the Sheet on their next settings read.
+
+Settings keys are trimmed when read. A command that finds a key containing leading or trailing whitespace rewrites column A with the canonical key before updating its value. This prevents visually identical Sheet keys such as `CalendarCacheDays ` from silently falling back to defaults.
 
 Typical settings:
 

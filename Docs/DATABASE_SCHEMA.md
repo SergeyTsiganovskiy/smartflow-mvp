@@ -63,6 +63,10 @@ ReminderDayBefore
 Reminder2Hours
 ReminderMonth
 BookingDaysAhead
+
+Admin Bot configuration writes are restricted by an application-level allowlist. Infrastructure secrets remain editable only directly in the protected Settings sheet. Updating a value invalidates the in-memory Settings cache immediately.
+
+`AdminTelegramIds` must be stored as plain text. Comma-separated Telegram IDs must never be stored as a numeric value because spreadsheet locale parsing and numeric precision can corrupt the list.
 ```
 
 Notes:

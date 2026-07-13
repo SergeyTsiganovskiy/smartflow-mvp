@@ -23,9 +23,24 @@ const SHEET_NAMES = {
 };
 
 let SETTINGS_CACHE = null;
+let SETTINGS_CACHE_VERSION = null;
+
+function getSettingsCacheVersion() {
+  return (
+    PropertiesService
+      .getScriptProperties()
+      .getProperty('SETTINGS_CACHE_VERSION') ||
+    '0'
+  );
+}
 
 function getSettings() {
-  if (SETTINGS_CACHE) {
+  const currentVersion = getSettingsCacheVersion();
+
+  if (
+    SETTINGS_CACHE &&
+    SETTINGS_CACHE_VERSION === currentVersion
+  ) {
     return SETTINGS_CACHE;
   }
 
@@ -38,7 +53,7 @@ function getSettings() {
   const settings = {};
 
   for (let i = 1; i < rows.length; i++) {
-    const key = rows[i][0];
+    const key = String(rows[i][0] || '').trim();
     const value = rows[i][1];
 
     if (key) {
@@ -47,10 +62,31 @@ function getSettings() {
   }
 
   SETTINGS_CACHE = settings;
+  SETTINGS_CACHE_VERSION = currentVersion;
 
   return SETTINGS_CACHE;
 }
 
 function resetSettingsCache() {
   SETTINGS_CACHE = null;
+  SETTINGS_CACHE_VERSION = null;
+
+  PropertiesService
+    .getScriptProperties()
+    .setProperty(
+      'SETTINGS_CACHE_VERSION',
+      Utilities.getUuid()
+    );
+}
+
+function isSettingEnabled(value, defaultValue) {
+  if (value === '' || value === null || value === undefined) {
+    return defaultValue === true;
+  }
+
+  if (value === true || value === false) {
+    return value;
+  }
+
+  return String(value).trim().toUpperCase() === 'TRUE';
 }

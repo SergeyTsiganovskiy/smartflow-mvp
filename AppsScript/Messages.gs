@@ -1,5 +1,9 @@
 let MESSAGES_CACHE = null;
 
+function resetMessagesCache() {
+  MESSAGES_CACHE = null;
+}
+
 function getMessage(messageKey) {
   if (!MESSAGES_CACHE) {
     MESSAGES_CACHE = loadMessagesCache();

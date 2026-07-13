@@ -58,6 +58,14 @@ function handleAdminSectionCommand(chatId, text, settings) {
   }
   
   if (
+  text === getMessage(MESSAGE_KEYS.ADMIN_CONFIGURATION)
+  ) {
+  setUserState(chatId, '');
+  sendConfigurationMenu(chatId, settings);
+  return;
+  }
+
+  if (
   text === getMessage(MESSAGE_KEYS.ADMIN_SETTINGS)
   ) {
   sendSettingsMenu(

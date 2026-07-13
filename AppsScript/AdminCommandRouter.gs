@@ -14,10 +14,30 @@ function handleAdminCommandMessage(
   }
 
   if (
+    state === ADMIN_STATES.WAITING_CONFIGURATION_ACTION ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_LANGUAGE ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_ADMIN_ACTION ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_ADMIN_ADD ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_ADMIN_DELETE ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_REMINDER_DAY_BEFORE ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_BOOKING_DAYS ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS
+  ) {
+    handleAdminConfigurationState(
+      chatId,
+      text,
+      state,
+      settings
+    );
+    return;
+  }
+
+  if (
     text === getMessage(MESSAGE_KEYS.ADMIN_PROVIDERS) ||
     text === getMessage(MESSAGE_KEYS.ADMIN_SERVICES) ||
     text === getMessage(MESSAGE_KEYS.ADMIN_APPOINTMENTS) ||
     text === getMessage(MESSAGE_KEYS.ADMIN_LOCATIONS) ||
+    text === getMessage(MESSAGE_KEYS.ADMIN_CONFIGURATION) ||
     text === getMessage(MESSAGE_KEYS.ADMIN_SETTINGS)
   ) {
     handleAdminSectionCommand(chatId, text, settings);

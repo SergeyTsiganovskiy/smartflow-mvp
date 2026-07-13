@@ -1,1 +1,17 @@
 AppsScript/.clasp.json
+
+# Local dependency and generated-work directories
+node_modules/
+tmp/
+
+# Tool-generated inspection and log files
+*.inspect.ndjson
+*.log
+
+# Local clasp credentials/configuration
+.clasp.json
+
+# OS and Office temporary files
+.DS_Store
+Thumbs.db
+~$*.xlsx

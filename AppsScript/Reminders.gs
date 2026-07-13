@@ -1,5 +1,10 @@
 function send24hAppointmentReminders() {
   const settings = getSettings();
+
+  if (!isSettingEnabled(settings.ReminderDayBefore, true)) {
+    return;
+  }
+
   const now = new Date();
 
   const currentHour = Number(

@@ -425,6 +425,22 @@ Providers may work in parallel. A busy interval belonging to one provider must n
 
 The supported interaction roles are Client and Admin. Admin access uses `AdminTelegramIds`, and Admin notifications use eligible `RequestRecipients`.
 
+The Admin Bot Settings section includes a Configuration submenu. User-editable settings are explicitly allowlisted; bot tokens, webhook URLs, Calendar identifiers, and other infrastructure values are not exposed through the Telegram UI. The first supported configuration workflow changes the application language using localized values from `Messages`.
+
+Administrators manage `AdminTelegramIds` through separate Add and Delete actions. Each action accepts one numeric Telegram ID and persists the normalized complete list as a comma-separated Settings value. Adding preserves existing IDs and rejects duplicates. Deleting rejects unknown IDs and prevents the acting administrator from deleting their own access.
+
+The Administrators menu also provides a read-only list action that displays every Telegram ID currently allowed to use Admin Bot.
+
+The Configuration menu controls the `ReminderDayBefore` setting. When disabled, the 24-hour reminder trigger exits before selecting or notifying appointments. Missing settings default to enabled to preserve existing installations.
+
+`BookingDaysAhead` and `CalendarCacheDays` are editable integer horizons from 1 to 365 days. The cache horizon must be greater than or equal to the booking horizon so every client-selectable date is covered by Calendar synchronization.
+
+When a cross-setting horizon constraint fails, the bot keeps the current input state and displays the exact maximum or minimum acceptable value. Successful horizon updates return through the registered Configuration menu rather than the parent Settings menu.
+
+After deploying the configuration workflow to an existing installation, run `migrateConfigurationMessages()` once from the Apps Script editor. The migration is safe to repeat and preserves existing message translations.
+
+Existing installations that ran the first configuration migration should run `migrateConfigurationMenuIcon()` once to add the localized gear icon to the Configuration menu item.
+
 ### Parallel work
 
 The architecture can support businesses where a provider serves multiple clients in parallel. Strict slot exclusion is therefore configurable rather than universally assumed.
