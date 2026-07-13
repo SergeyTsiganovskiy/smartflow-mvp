@@ -19,6 +19,11 @@ const ADMIN_CONFIGURATION_SETTINGS = {
     min: 1,
     max: 365
   },
+  PaginationPageSize: {
+    type: 'integer',
+    min: 1,
+    max: 10
+  },
   DefaultWorkStartTime: {
     type: 'time'
   },

@@ -2,7 +2,7 @@ function handleClientNavigationCommand(chatId, text, settings) {
   const currentNavigation = getCurrentNavigation(chatId);
 
   if (
-    text === getMessage(MESSAGE_KEYS.BACK) &&
+    isMessageText(text, MESSAGE_KEYS.BACK) &&
     currentNavigation &&
     currentNavigation.menu === CLIENT_MENUS.ADD_ANOTHER_OPTION
   ) {
@@ -11,14 +11,14 @@ function handleClientNavigationCommand(chatId, text, settings) {
     return true;
   }
 
-  if (text === getMessage(MESSAGE_KEYS.BACK)) {
+  if (isMessageText(text, MESSAGE_KEYS.BACK)) {
     handleClientBackButton(chatId, settings);
     return true;
   }
 
   if (
     text === '/start' ||
-    text === getMessage(MESSAGE_KEYS.MAIN_MENU)
+    isMessageText(text, MESSAGE_KEYS.MAIN_MENU)
   ) {
     clearUserSession(chatId);
     setUserState(chatId, '');

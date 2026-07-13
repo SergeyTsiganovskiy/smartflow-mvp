@@ -37,6 +37,10 @@ function getConfigurationMessageMigrationRows() {
     ['CONFIGURATION_CACHE_BELOW_BOOKING', 'Горизонт кешу не може бути меншим за горизонт онлайн-запису. Введіть нове значення не менше', 'Горизонт кеша не может быть меньше горизонта онлайн-записи. Введите новое значение не меньше', 'Calendar cache horizon cannot be shorter than the booking horizon. Enter a new value no less than'],
     ['CONFIGURATION_BOOKING_DAYS_UPDATED', 'Горизонт онлайн-запису оновлено', 'Горизонт онлайн-записи обновлён', 'Online booking horizon updated'],
     ['CONFIGURATION_CACHE_DAYS_UPDATED', 'Горизонт кешу календаря оновлено', 'Горизонт кеша календаря обновлён', 'Calendar cache horizon updated'],
+    ['CONFIGURATION_PAGE_SIZE', '📄 Розмір сторінки', '📄 Размер страницы', '📄 Page size'],
+    ['CONFIGURATION_PAGE_SIZE_PROMPT', 'Введіть кількість записів на одній сторінці пагінації (від 1 до 10)', 'Введите количество записей на одной странице пагинации (от 1 до 10)', 'Enter the number of items per pagination page (1 to 10)'],
+    ['CONFIGURATION_PAGE_SIZE_INVALID', 'Введіть ціле число від 1 до 10', 'Введите целое число от 1 до 10', 'Enter a whole number from 1 to 10'],
+    ['CONFIGURATION_PAGE_SIZE_UPDATED', 'Розмір сторінки оновлено', 'Размер страницы обновлён', 'Page size updated'],
     ['CONFIGURATION_DEFAULT_WORK_HOURS', '🕘 Стандартні робочі години', '🕘 Стандартные рабочие часы', '🕘 Default working hours'],
     ['CONFIGURATION_DEFAULT_WORK_HOURS_PROMPT', 'Введіть стандартний початок і кінець робочого дня у форматі ГГ:ХХ-ГГ:ХХ. Значення застосовуються до нових майстрів і як резервні години; чинні графіки не зміняться.', 'Введите стандартное начало и конец рабочего дня в формате ЧЧ:ММ-ЧЧ:ММ. Значения применяются к новым мастерам и как резервные часы; действующие графики не изменятся.', 'Enter the default workday start and end as HH:MM-HH:MM. These values apply to new providers and as fallback hours; existing schedules will not change.'],
     ['CONFIGURATION_DEFAULT_WORK_HOURS_INVALID', 'Введіть час у форматі ГГ:ХХ-ГГ:ХХ, наприклад 09:00-20:00', 'Введите время в формате ЧЧ:ММ-ЧЧ:ММ, например 09:00-20:00', 'Enter time as HH:MM-HH:MM, for example 09:00-20:00'],
@@ -148,6 +152,64 @@ function migrateConfigurationHorizonPrompts() {
   );
 
   Logger.log(JSON.stringify(result));
+  return result;
+}
+
+function migratePaginationConfiguration() {
+  const messages = {
+    CONFIGURATION_PAGE_SIZE: {
+      uk: '📄 Розмір сторінки',
+      ru: '📄 Размер страницы',
+      en: '📄 Page size'
+    },
+    CONFIGURATION_PAGE_SIZE_PROMPT: {
+      uk: 'Введіть кількість записів на одній сторінці пагінації (від 1 до 10)',
+      ru: 'Введите количество записей на одной странице пагинации (от 1 до 10)',
+      en: 'Enter the number of items per pagination page (1 to 10)'
+    },
+    CONFIGURATION_PAGE_SIZE_INVALID: {
+      uk: 'Введіть ціле число від 1 до 10',
+      ru: 'Введите целое число от 1 до 10',
+      en: 'Enter a whole number from 1 to 10'
+    },
+    CONFIGURATION_PAGE_SIZE_UPDATED: {
+      uk: 'Розмір сторінки оновлено',
+      ru: 'Размер страницы обновлён',
+      en: 'Page size updated'
+    }
+  };
+
+  Object.keys(messages).forEach(function(key) {
+    createOrUpdateMessageValues(key, messages[key]);
+  });
+
+  const settings = getSettings();
+  const currentValue = Number(settings.PaginationPageSize);
+  let settingValue = currentValue;
+
+  if (
+    !Number.isInteger(currentValue) ||
+    currentValue < 1 ||
+    currentValue > 10
+  ) {
+    settingValue = 5;
+    updateSettingValue('PaginationPageSize', settingValue);
+  }
+
+  resetMessagesCache();
+
+  const result = {
+    migration: 'pagination_configuration_v1',
+    updatedMessageKeys: Object.keys(messages),
+    pageSize: settingValue
+  };
+
+  addAuditLog(
+    'PAGINATION_CONFIGURATION_MIGRATED',
+    JSON.stringify(result)
+  );
+  Logger.log(JSON.stringify(result));
+
   return result;
 }
 
@@ -459,4 +521,288 @@ function migrateRemoveFinancialFields() {
   Logger.log(JSON.stringify(deleted));
 
   return deleted;
+}
+
+function getEntityMessageValuesByKey(messagesSheet) {
+  const rows = messagesSheet.getDataRange().getValues();
+  const headers = rows[0].map(function(header) {
+    return String(header || '').trim();
+  });
+  const keyIndex = headers.indexOf('key');
+  const settings = getSettings();
+  const selectedLanguage = String(settings.Language || 'ru').trim();
+  const languageOrder = [selectedLanguage, 'ru', 'uk', 'en']
+    .filter(function(language, index, languages) {
+      return languages.indexOf(language) === index;
+    });
+  const valuesByKey = {};
+
+  if (keyIndex === -1) {
+    throw new Error('Messages sheet is missing column: key');
+  }
+
+  for (let i = 1; i < rows.length; i++) {
+    const key = String(rows[i][keyIndex] || '').trim();
+
+    if (!key) {
+      continue;
+    }
+
+    let value = '';
+
+    for (let j = 0; j < languageOrder.length; j++) {
+      const languageIndex = headers.indexOf(languageOrder[j]);
+
+      if (languageIndex === -1) {
+        continue;
+      }
+
+      value = String(rows[i][languageIndex] || '').trim();
+
+      if (value) {
+        break;
+      }
+    }
+
+    valuesByKey[key] = value;
+  }
+
+  return valuesByKey;
+}
+
+function migrateEntityColumnFromMessages(
+  sheet,
+  keyHeader,
+  valueHeader,
+  valuesByKey,
+  migratedKeys
+) {
+  if (!sheet) {
+    throw new Error('Entity sheet not found for column: ' + keyHeader);
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0].map(function(header) {
+    return String(header || '').trim();
+  });
+  const keyIndex = headers.indexOf(keyHeader);
+  const valueIndex = headers.indexOf(valueHeader);
+
+  if (keyIndex === -1) {
+    if (valueIndex === -1) {
+      throw new Error(
+        sheet.getName() + ' sheet is missing column: ' + valueHeader
+      );
+    }
+
+    return 0;
+  }
+
+  if (valueIndex !== -1 && valueIndex !== keyIndex) {
+    throw new Error(
+      sheet.getName() + ' sheet contains both ' + keyHeader + ' and ' + valueHeader
+    );
+  }
+
+  const migratedValues = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const key = String(rows[i][keyIndex] || '').trim();
+    let value = key;
+
+    if (key && Object.prototype.hasOwnProperty.call(valuesByKey, key)) {
+      value = valuesByKey[key];
+
+      if (!value) {
+        throw new Error('No localized value found for message key: ' + key);
+      }
+
+      migratedKeys[key] = true;
+    } else if (
+      /^(?:LOCATION_(?:NAME|ADDRESS)|PROVIDER_NAME|SERVICE_NAME)_/.test(key)
+    ) {
+      throw new Error('Message row not found for entity key: ' + key);
+    }
+
+    migratedValues.push([value]);
+  }
+
+  if (migratedValues.length > 0) {
+    sheet
+      .getRange(2, keyIndex + 1, migratedValues.length, 1)
+      .setValues(migratedValues);
+  }
+
+  sheet.getRange(1, keyIndex + 1).setValue(valueHeader);
+
+  return migratedValues.length;
+}
+
+function validateEntityMigrationColumn(sheet, keyHeader, valueHeader) {
+  if (!sheet) {
+    throw new Error('Entity sheet not found for column: ' + keyHeader);
+  }
+
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(function(header) {
+      return String(header || '').trim();
+    });
+  const keyIndex = headers.indexOf(keyHeader);
+  const valueIndex = headers.indexOf(valueHeader);
+
+  if (keyIndex === -1 && valueIndex === -1) {
+    throw new Error(
+      sheet.getName() + ' sheet is missing column: ' + valueHeader
+    );
+  }
+
+  if (keyIndex !== -1 && valueIndex !== -1 && keyIndex !== valueIndex) {
+    throw new Error(
+      sheet.getName() + ' sheet contains both ' + keyHeader + ' and ' + valueHeader
+    );
+  }
+}
+
+function validateEntityMigrationValues(sheet, keyHeader, valuesByKey) {
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0].map(function(header) {
+    return String(header || '').trim();
+  });
+  const keyIndex = headers.indexOf(keyHeader);
+
+  if (keyIndex === -1) {
+    return;
+  }
+
+  for (let i = 1; i < rows.length; i++) {
+    const key = String(rows[i][keyIndex] || '').trim();
+
+    if (!/^(?:LOCATION_(?:NAME|ADDRESS)|PROVIDER_NAME|SERVICE_NAME)_/.test(key)) {
+      continue;
+    }
+
+    if (
+      !Object.prototype.hasOwnProperty.call(valuesByKey, key) ||
+      !String(valuesByKey[key] || '').trim()
+    ) {
+      throw new Error('Localized value not found for entity key: ' + key);
+    }
+  }
+}
+
+function deleteMigratedEntityMessages(messagesSheet, migratedKeys) {
+  if (messagesSheet.getLastRow() < 2) {
+    return [];
+  }
+
+  const headers = messagesSheet
+    .getRange(1, 1, 1, messagesSheet.getLastColumn())
+    .getValues()[0]
+    .map(function(header) {
+      return String(header || '').trim();
+    });
+  const keyIndex = headers.indexOf('key');
+
+  if (keyIndex === -1) {
+    throw new Error('Messages sheet is missing column: key');
+  }
+
+  const keys = messagesSheet
+    .getRange(2, keyIndex + 1, messagesSheet.getLastRow() - 1, 1)
+    .getValues();
+  const deletedKeys = [];
+
+  for (let i = keys.length - 1; i >= 0; i--) {
+    const key = String(keys[i][0] || '').trim();
+
+    if (!migratedKeys[key]) {
+      continue;
+    }
+
+    messagesSheet.deleteRow(i + 2);
+    deletedKeys.push(key);
+  }
+
+  return deletedKeys.reverse();
+}
+
+function migrateEntityNamesFromMessages() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const messagesSheet = spreadsheet.getSheetByName(SHEET_NAMES.MESSAGES);
+
+  if (!messagesSheet) {
+    throw new Error('Messages sheet not found');
+  }
+
+  const valuesByKey = getEntityMessageValuesByKey(messagesSheet);
+  const migratedKeys = {};
+  const locationsSheet = spreadsheet.getSheetByName(SHEET_NAMES.LOCATIONS);
+  const providersSheet = spreadsheet.getSheetByName(SHEET_NAMES.PROVIDERS);
+  const servicesSheet = spreadsheet.getSheetByName(SHEET_NAMES.SERVICES);
+
+  validateEntityMigrationColumn(locationsSheet, 'name_key', 'name');
+  validateEntityMigrationColumn(locationsSheet, 'address_key', 'address');
+  validateEntityMigrationColumn(providersSheet, 'name_key', 'name');
+  validateEntityMigrationColumn(servicesSheet, 'name_key', 'name');
+  validateEntityMigrationValues(locationsSheet, 'name_key', valuesByKey);
+  validateEntityMigrationValues(locationsSheet, 'address_key', valuesByKey);
+  validateEntityMigrationValues(providersSheet, 'name_key', valuesByKey);
+  validateEntityMigrationValues(servicesSheet, 'name_key', valuesByKey);
+
+  const migratedRows = {
+    LocationsName: migrateEntityColumnFromMessages(
+      locationsSheet,
+      'name_key',
+      'name',
+      valuesByKey,
+      migratedKeys
+    ),
+    LocationsAddress: migrateEntityColumnFromMessages(
+      locationsSheet,
+      'address_key',
+      'address',
+      valuesByKey,
+      migratedKeys
+    ),
+    ProvidersName: migrateEntityColumnFromMessages(
+      providersSheet,
+      'name_key',
+      'name',
+      valuesByKey,
+      migratedKeys
+    ),
+    ServicesName: migrateEntityColumnFromMessages(
+      servicesSheet,
+      'name_key',
+      'name',
+      valuesByKey,
+      migratedKeys
+    )
+  };
+  const deletedMessageKeys = deleteMigratedEntityMessages(
+    messagesSheet,
+    migratedKeys
+  );
+  const result = {
+    migration: 'entity_names_from_messages_v1',
+    migratedRows: migratedRows,
+    deletedMessageKeys: deletedMessageKeys
+  };
+
+  resetMessagesCache();
+  resetLocationsCache();
+  PROVIDERS_CACHE = null;
+  PROVIDERS_INCLUDING_INACTIVE_CACHE = null;
+  SERVICES_CACHE = null;
+  SERVICES_INCLUDING_INACTIVE_CACHE = null;
+
+  addAuditLog(
+    'ENTITY_NAMES_MIGRATED',
+    JSON.stringify(result)
+  );
+  Logger.log(JSON.stringify(result));
+
+  return result;
 }

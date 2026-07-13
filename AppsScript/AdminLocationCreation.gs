@@ -150,39 +150,34 @@ function createLocationFromSession(chatId) {
   const locationId =
     'loc_' + paddedNumber;
 
-  const nameKey =
-    'LOCATION_NAME_' + paddedNumber;
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(function(header) {
+      return String(header || '').trim();
+    });
+  const newRow = new Array(headers.length).fill('');
+  const requiredHeaders = [
+    'location_id',
+    'name',
+    'address',
+    'phone_1',
+    'active'
+  ];
 
-  const addressKey =
-    'LOCATION_ADDRESS_' + paddedNumber;
+  requiredHeaders.forEach(function(header) {
+    if (headers.indexOf(header) === -1) {
+      throw new Error('Locations sheet is missing column: ' + header);
+    }
+  });
 
-  createOrUpdateMessageValues(
-    nameKey,
-    createMessageValuesForAllLanguages(
-      session.location_name
-    )
-  );
+  newRow[headers.indexOf('location_id')] = locationId;
+  newRow[headers.indexOf('name')] = session.location_name;
+  newRow[headers.indexOf('address')] = session.location_address;
+  newRow[headers.indexOf('phone_1')] = session.location_phone || '';
+  newRow[headers.indexOf('active')] = true;
 
-  createOrUpdateMessageValues(
-    addressKey,
-    createMessageValuesForAllLanguages(
-      session.location_address
-    )
-  );
-
-  sheet.appendRow([
-    locationId,
-    nameKey,
-    addressKey,
-    '',
-    '',
-    '',
-    '',
-    '',
-    session.location_phone || '',
-    '',
-    true
-  ]);
+  sheet.appendRow(newRow);
 
   if (typeof resetLocationsCache === 'function') {
     resetLocationsCache();

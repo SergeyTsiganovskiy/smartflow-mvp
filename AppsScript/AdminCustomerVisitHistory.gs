@@ -43,18 +43,27 @@ function processCustomerVisitHistoryPhone(
     return;
   }
 
+  setUserSessionValues(chatId, {
+    customer_visit_history_phone: profile.phone,
+    customer_visit_history_page: 1
+  });
+
   showCustomerVisitHistory(
     chatId,
     profile,
-    settings
+    settings,
+    1
   );
 }
 
 function showCustomerVisitHistory(
   chatId,
   profile,
-  settings
+  settings,
+  page
 ) {
+
+  page = Math.max(1, Number(page || 1));
 
   const visits =
     getCustomerVisitHistoryByPhone(
@@ -79,12 +88,32 @@ function showCustomerVisitHistory(
     return;
   }
 
+  const pageSize = getPaginationPageSize(settings);
+
+  const totalPages = Math.ceil(
+    visits.length / pageSize
+  );
+  page = Math.min(page, totalPages);
+
+  setUserSessionValue(
+    chatId,
+    'customer_visit_history_page',
+    page
+  );
+
+  const startIndex = (page - 1) * pageSize;
+  const pageVisits = visits.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
   let text =
     '<b>' +
     getMessage(
       MESSAGE_KEYS.CUSTOMER_VISIT_HISTORY_TITLE
     ) +
-    '</b>\n\n';
+    '</b>\n' +
+    '(' + page + '/' + totalPages + ')\n\n';
 
   text +=
     '👤 ' +
@@ -103,12 +132,12 @@ function showCustomerVisitHistory(
     visits.length +
     '\n\n';
 
-  visits.forEach(function(
+  pageVisits.forEach(function(
     visit,
     index
   ) {
     text +=
-      '#' + (index + 1) +
+      '#' + (startIndex + index + 1) +
       '.\n';
 
     text +=
@@ -146,6 +175,35 @@ function showCustomerVisitHistory(
     settings.AdminBotToken,
     chatId,
     text,
-    buildKeyboardWithMainMenu([])
+    buildCustomerListKeyboard(
+      page,
+      totalPages
+    )
+  );
+}
+
+function showCustomerVisitHistoryPage(
+  chatId,
+  settings,
+  page
+) {
+  const session = getUserSession(chatId) || {};
+  const phone = String(
+    session.customer_visit_history_phone || ''
+  ).trim();
+  const profile = phone
+    ? findCustomerProfileByPhone(phone)
+    : null;
+
+  if (!profile) {
+    startCustomerVisitHistory(chatId, settings);
+    return;
+  }
+
+  showCustomerVisitHistory(
+    chatId,
+    profile,
+    settings,
+    page
   );
 }

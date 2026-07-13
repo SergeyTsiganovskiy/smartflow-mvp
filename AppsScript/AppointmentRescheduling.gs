@@ -29,80 +29,26 @@ function showRescheduleDateOptions(chatId, settings) {
 function showRescheduleTimeOptions(chatId, settings) {
   const session = getUserSession(chatId);
 
-  let providerId = '';
-  let durationMinutes = 60;
-  let customerId = '';
+  const appointment = getAppointmentById(
+    session.reschedule_appointment_id
+  );
 
-  if (session.pending_calendar_event_id) {
-    const event = getCalendarEventById(
-      session.pending_calendar_event_id
+  if (!appointment) {
+    sendTelegramMessage(
+      settings.ClientBotToken,
+      chatId,
+      getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
     );
-
-    if (!event) {
-      sendTelegramMessage(
-        settings.ClientBotToken,
-        chatId,
-        getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
-      );
-      return;
-    }
-
-    const data =
-      extractSmartflowCalendarData(
-        event.description
-      ) || {};
-
-    const provider =
-      data.provider_id
-        ? findProviderById(data.provider_id)
-        : null;
-
-    if (!provider) {
-      sendTelegramMessage(
-        settings.ClientBotToken,
-        chatId,
-        getMessage(MESSAGE_KEYS.PROVIDER_SELECT_FROM_LIST)
-      );
-      return;
-    }
-
-    providerId = provider.id;
-
-    durationMinutes = Math.round(
-      (event.end_at.getTime() - event.start_at.getTime()) / 60000
-    );
-
-    const customer =
-      data.customer_id
-        ? getCustomerById(data.customer_id)
-        : null;
-
-    customerId =
-      customer && customer.customer_id
-        ? customer.customer_id
-        : '';
-  } else {
-    const appointment = getAppointmentById(
-      session.reschedule_appointment_id
-    );
-
-    if (!appointment) {
-      sendTelegramMessage(
-        settings.ClientBotToken,
-        chatId,
-        getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
-      );
-      return;
-    }
-
-    providerId = appointment.provider_id;
-    customerId = appointment.customer_id;
-
-    durationMinutes = getServiceDurationMinutes(
-      appointment.customer_id,
-      appointment.service_id
-    );
+    return;
   }
+
+  const providerId = appointment.provider_id;
+  const customerId = appointment.customer_id;
+
+  const durationMinutes = getServiceDurationMinutes(
+    appointment.customer_id,
+    appointment.service_id
+  );
 
   const slots = getAvailableTimeSlots(
     providerId,

@@ -1,7 +1,4 @@
-function syncAppointmentWithCalendar(
-  appointment,
-  resetReminderIfChanged
-) {
+function syncAppointmentWithCalendar(appointment) {
   if (!appointment || !appointment.calendar_event_id) {
     return appointment;
   }
@@ -67,16 +64,12 @@ function syncAppointmentWithCalendar(
     calendarEndAt
   );
 
-  if (resetReminderIfChanged) {
-    updateAppointmentField(
-      appointment.appointment_id,
-      'reminder_24h_sent_at',
-      ''
-    );
-  }
-
   appointment.start_at = calendarStartAt;
   appointment.end_at = calendarEndAt;
+  appointment.reminder_24h_sent_at = '';
+  appointment.reminder_2h_sent_at = '';
+  appointment.customer_confirmed = '';
+  appointment.customer_confirmed_at = '';
 
   return appointment;
 }

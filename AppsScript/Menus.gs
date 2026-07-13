@@ -1,4 +1,14 @@
-const CUSTOMER_LIST_PAGE_SIZE = 10;
+function getPaginationPageSize(settings) {
+  const value = Number(
+    (settings || getSettings()).PaginationPageSize || 5
+  );
+
+  if (!Number.isInteger(value) || value < 1 || value > 10) {
+    return 5;
+  }
+
+  return value;
+}
 
 const CLIENT_MENUS = {
   MAIN: 'CLIENT_MAIN',

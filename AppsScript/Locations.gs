@@ -34,10 +34,8 @@ function getActiveLocations() {
 
     result.push({
       id: item.location_id,
-      name_key: item.name_key,
-      address_key: item.address_key,
-      name: getMessage(item.name_key),
-      address: getMessage(item.address_key),
+      name: String(item.name || '').trim(),
+      address: String(item.address || '').trim(),
       working_hours: item.working_hours,
       instagram: item.instagram,
       telegram: item.telegram,
@@ -83,10 +81,8 @@ function getAllLocations() {
 
     result.push({
       id: item.location_id,
-      name_key: item.name_key,
-      address_key: item.address_key,
-      name: getMessage(item.name_key),
-      address: getMessage(item.address_key),
+      name: String(item.name || '').trim(),
+      address: String(item.address || '').trim(),
       working_hours: item.working_hours,
       instagram: item.instagram,
       telegram: item.telegram,

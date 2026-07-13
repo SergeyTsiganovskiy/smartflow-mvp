@@ -6,8 +6,8 @@ function handleAdminCommandMessage(
 ) {
 
   if (
-    text === getMessage(MESSAGE_KEYS.MAIN_MENU) ||
-    text === getMessage(MESSAGE_KEYS.BACK)
+    isMessageText(text, MESSAGE_KEYS.MAIN_MENU) ||
+    isMessageText(text, MESSAGE_KEYS.BACK)
   ) {
     handleAdminNavigationCommand(chatId, text, settings);
     return;
@@ -21,7 +21,8 @@ function handleAdminCommandMessage(
     state === ADMIN_STATES.WAITING_CONFIGURATION_ADMIN_DELETE ||
     state === ADMIN_STATES.WAITING_CONFIGURATION_REMINDER_DAY_BEFORE ||
     state === ADMIN_STATES.WAITING_CONFIGURATION_BOOKING_DAYS ||
-    state === ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS
+    state === ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS ||
+    state === ADMIN_STATES.WAITING_CONFIGURATION_PAGE_SIZE
   ) {
     handleAdminConfigurationState(
       chatId,
@@ -86,8 +87,8 @@ function handleAdminCommandMessage(
     text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE) ||
     text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_EDIT) ||
     text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILES_LIST) ||
-    text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_NEXT) ||
-    text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_PREVIOUS) ||
+    isMessageText(text, MESSAGE_KEYS.CUSTOMER_LIST_NEXT) ||
+    isMessageText(text, MESSAGE_KEYS.CUSTOMER_LIST_PREVIOUS) ||
     text === getMessage(MESSAGE_KEYS.CUSTOMER_VISIT_HISTORY) ||
     text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_CREATE) ||
     text === getMessage(MESSAGE_KEYS.CUSTOMER_PROFILE_DELETE) ||

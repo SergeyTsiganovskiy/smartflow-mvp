@@ -2,6 +2,11 @@ function startCustomerProfilesList(
   chatId,
   settings
 ) {
+  setUserSessionValues(chatId, {
+    customer_visit_history_phone: '',
+    customer_visit_history_page: ''
+  });
+
   setUserSessionValue(
     chatId,
     'customer_list_page',
@@ -54,19 +59,21 @@ function showCustomerProfilesList(
     );
   });
 
+  const pageSize = getPaginationPageSize(settings);
+
   const totalPages =
     Math.ceil(
       profiles.length /
-      CUSTOMER_LIST_PAGE_SIZE
+      pageSize
     );
 
   const startIndex =
     (page - 1) *
-    CUSTOMER_LIST_PAGE_SIZE;
+    pageSize;
 
   const endIndex =
     startIndex +
-    CUSTOMER_LIST_PAGE_SIZE;
+    pageSize;
 
   const pageProfiles =
     profiles.slice(

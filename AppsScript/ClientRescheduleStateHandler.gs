@@ -81,49 +81,6 @@ function handleClientRescheduleState(
         selectedTime
       );
   
-      if (session.pending_calendar_event_id) {
-        const calendarEventId =
-          session.pending_calendar_event_id;
-  
-        const updated =
-          updateCalendarEventDateTimeById(
-            calendarEventId,
-            startAt
-          );
-  
-        addAuditLog(
-          'CALENDAR_EVENT_RESCHEDULE_RESULT',
-          String(updated)
-        );
-  
-        if (!updated) {
-          sendTelegramMessage(
-            settings.ClientBotToken,
-            chatId,
-            getMessage(MESSAGE_KEYS.UNKNOWN_COMMAND)
-          );
-  
-          return;
-        }
-  
-        sendTelegramMessage(
-          settings.ClientBotToken,
-          chatId,
-          getMessage(MESSAGE_KEYS.APPOINTMENT_RESCHEDULED_CLIENT)
-        );
-  
-        setUserSessionValue(
-          chatId,
-          'pending_calendar_event_id',
-          ''
-        );
-  
-        clearUserSession(chatId);
-        setUserState(chatId, '');
-  
-        return;
-      }
-  
       const appointment = getAppointmentById(
         session.reschedule_appointment_id
       );
@@ -169,12 +126,6 @@ function handleClientRescheduleState(
         appointment.appointment_id
       );
   
-      sendTelegramMessage(
-        settings.ClientBotToken,
-        chatId,
-        getMessage(MESSAGE_KEYS.APPOINTMENT_RESCHEDULED_CLIENT)
-      );
-  
       notifyAdminsAboutReschedule(
         updatedAppointment,
         oldStartAt,
@@ -188,6 +139,32 @@ function handleClientRescheduleState(
   
       clearUserSession(chatId);
       setUserState(chatId, '');
+
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        chatId,
+        getMessage(MESSAGE_KEYS.APPOINTMENT_RESCHEDULED_CLIENT),
+        buildKeyboardWithMainMenu([])
+      );
+
+      const service = findServiceById(
+        updatedAppointment.service_id
+      );
+      const provider = findProviderById(
+        updatedAppointment.provider_id
+      );
+      const location = findLocationById(
+        updatedAppointment.location_id
+      );
+
+      sendAppointmentCard(
+        chatId,
+        settings,
+        updatedAppointment,
+        service,
+        provider,
+        location
+      );
   
       return;
     }

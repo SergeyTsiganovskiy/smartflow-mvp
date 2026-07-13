@@ -188,6 +188,10 @@ After confirmation:
 - active admin recipients are notified;
 - Admin Bot appointment lists show the confirmation status.
 
+Changing an appointment date or time starts a new reminder-confirmation cycle.
+The reminder timestamps, customer confirmation flag, and confirmation timestamp
+are cleared so a new reminder can be sent and confirmed for the updated time.
+
 ## 7. Admin Bot functionality
 
 ### 7.1 Mobile-friendly main menu
@@ -256,9 +260,20 @@ Views include:
 
 Cards can show time, customer, phone, confirmation status, service, provider, location, note, and a manual-calendar marker.
 
+After a successful client reschedule, Client Bot replaces the time-slot keyboard
+with normal navigation and shows only the updated appointment card with its new
+date/time, service, provider, location, note, and available reschedule/cancel
+actions. Admin notification remains unchanged.
+When the card originates from a linked Google Calendar event, these actions still
+operate on the authoritative `Appointments` row; Calendar is updated only through
+the normal appointment synchronization path.
+
 ### 7.6 Customer management
 
-Features include profile lookup by phone, retry when not found, customer-specific services/pricing, and conflict management.
+Features include profile lookup by phone, retry when not found, customer-specific
+service settings, visit history, and conflict management. Customer lists and visit
+history use the shared `PaginationPageSize` setting with localized previous/next
+navigation buttons.
 
 ### 7.7 Provider management
 
@@ -278,9 +293,11 @@ Creation wizard:
 Name
 → Location
 → Phone
-→ Telegram ID
 → Create
 ```
+
+`telegram_id` is optional and is not requested during provider creation. It can
+be added later through provider editing.
 
 ### 7.8 Service management
 
@@ -312,7 +329,7 @@ Location features:
 - edit;
 - enable/disable.
 
-Fields include localized name/address keys, working hours, Instagram, Telegram, website, Google Maps URL, two phones, and active status.
+Fields include direct name and address values, working hours, Instagram, Telegram, website, Google Maps URL, two phones, and active status.
 
 Creation wizard:
 
@@ -331,9 +348,14 @@ Current languages:
 - Russian;
 - English.
 
-Visible text is stored in `Messages` and accessed through `MESSAGE_KEYS`.
+Static visible interface text is stored in `Messages` and accessed through `MESSAGE_KEYS`.
+Location, provider, and service names, as well as location addresses, are domain
+data and are stored directly in their respective sheets. They do not change when
+the interface language changes.
 
-Locations can store `name_key` and `address_key`, allowing dynamic business data to use the same localization system.
+Navigation footers and pagination labels are rebuilt in the selected interface
+language. Navigation handlers accept every configured translation, so buttons
+from the previously displayed keyboard remain safe to press after a language change.
 
 The target rule is: no hardcoded user-facing text.
 
@@ -431,6 +453,10 @@ The Configuration menu controls the `ReminderDayBefore` setting. When disabled, 
 
 `BookingDaysAhead` and `CalendarCacheDays` are editable integer horizons from 1 to 365 days. The cache horizon must be greater than or equal to the booking horizon so every client-selectable date is covered by Calendar synchronization.
 
+`PaginationPageSize` is a shared page size for every paginated Admin Bot view.
+It accepts values from 1 to 10 and defaults to 5 when the setting is missing or
+invalid.
+
 `DefaultWorkStartTime` and `DefaultWorkEndTime` are edited together as one `HH:MM-HH:MM` interval. The end must be later than the start. Updating these defaults affects newly created provider schedules and missing-time fallback behavior; it does not rewrite existing provider schedules.
 
 When a cross-setting horizon constraint fails, the bot keeps the current input state and displays the exact maximum or minimum acceptable value. Successful horizon updates return through the registered Configuration menu rather than the parent Settings menu.
@@ -438,6 +464,11 @@ When a cross-setting horizon constraint fails, the bot keeps the current input s
 After deploying the configuration workflow to an existing installation, run `migrateConfigurationMessages()` once from the Apps Script editor. The migration is safe to repeat and preserves existing message translations.
 
 Repeat `migrateConfigurationMessages()` after deploying newly added configuration editors. It appends only localization keys that are not already present.
+
+Run `migratePaginationConfiguration()` after deploying shared pagination settings.
+It creates or refreshes the pagination messages and sets `PaginationPageSize` to
+5 only when the current value is missing or outside the supported 1–10 range.
+Valid existing values are preserved.
 
 Existing installations that ran the first configuration migration should run `migrateConfigurationMenuIcon()` once to add the localized gear icon to the Configuration menu item.
 
@@ -450,6 +481,12 @@ The product intentionally does not store service prices or currency. Service man
 After enabling or disabling a service, Admin Bot automatically renders the Services menu.
 
 Run `migrateRemoveFinancialFields()` once after deploying the financial-field cleanup. It removes `BusinessName` and `Currency` Settings rows, obsolete price localization rows, price columns from `Services` and `CustomerServiceSettings`, obsolete price fields from `UserSessions`, and price values from valid session JSON. It is safe to repeat. Historical `AuditLog` payloads are preserved as immutable operational history.
+
+Run `migrateEntityNamesFromMessages()` once after deploying direct entity-name
+storage. It resolves every existing location name/address, provider name, and
+service name using the currently selected interface language (with safe language
+fallbacks), renames the corresponding columns, and then deletes only the migrated
+dynamic rows from `Messages`. The migration is safe to repeat.
 
 ### Parallel work
 

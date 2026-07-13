@@ -1,13 +1,15 @@
-function buildKeyboardWithMainMenu(rows) {
+function buildKeyboardWithMainMenu(rows, language) {
   const keyboardRows =
     rows ? rows.slice() : [];
+  const backText = getMessage(MESSAGE_KEYS.BACK, language);
+  const mainMenuText = getMessage(MESSAGE_KEYS.MAIN_MENU, language);
 
   const footer = [
     {
-      text: getMessage(MESSAGE_KEYS.BACK)
+      text: backText
     },
     {
-      text: getMessage(MESSAGE_KEYS.MAIN_MENU)
+      text: mainMenuText
     }
   ];
 
@@ -21,8 +23,8 @@ function buildKeyboardWithMainMenu(rows) {
         return (
           button &&
           (
-            button.text === getMessage(MESSAGE_KEYS.BACK) ||
-            button.text === getMessage(MESSAGE_KEYS.MAIN_MENU)
+            button.text === backText ||
+            button.text === mainMenuText
           )
         );
       });

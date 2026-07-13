@@ -38,15 +38,11 @@ function getServices() {
       continue;
     }
 
-    const nameKey = String(item.name_key || '').trim();
-    const serviceName = nameKey ? getMessage(nameKey) : '';
-
     result.push({
       id: item.service_id,
       service_id: item.service_id,
       location_id: item.location_id,
-      name_key: nameKey,
-      name: serviceName || nameKey || item.service_id,
+      name: String(item.name || '').trim() || item.service_id,
       duration_min: Number(item.duration_min || 0),
       duration_max: Number(item.duration_max || 0),
       active: String(item.active).toUpperCase() === 'TRUE',
@@ -192,15 +188,11 @@ function getServicesIncludingInactive() {
       item[header] = rows[i][index];
     });
 
-    const nameKey = String(item.name_key || '').trim();
-    const serviceName = nameKey ? getMessage(nameKey) : '';
-
     result.push({
       id: item.service_id,
       service_id: item.service_id,
       location_id: item.location_id,
-      name_key: nameKey,
-      name: serviceName || nameKey || item.service_id,
+      name: String(item.name || '').trim() || item.service_id,
       duration_min: Number(item.duration_min || 0),
       duration_max: Number(item.duration_max || 0),
       active: String(item.active).toUpperCase() === 'TRUE',

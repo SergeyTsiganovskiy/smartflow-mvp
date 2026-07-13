@@ -9,7 +9,7 @@ Conventions:
 - IDs are strings such as `loc_001`, `prov_001`, `srv_001`, `req_...`, `appt_...`;
 - timestamps are Google Sheets dates or ISO-compatible date-time values;
 - booleans may appear as `TRUE/FALSE` or boolean values;
-- localized entities can store message keys;
+- entity names and addresses are stored directly in their domain sheets;
 - inactive rows are retained instead of deleted.
 
 ## 2. Relationship overview
@@ -62,12 +62,16 @@ DefaultWorkEndTime
 ReminderDayBefore
 CalendarCacheDays
 BookingDaysAhead
+PaginationPageSize
 
 Admin Bot configuration writes are restricted by an application-level allowlist. Infrastructure secrets remain editable only directly in the protected Settings sheet. Updating a value invalidates the in-memory Settings cache immediately.
 
 `AdminTelegramIds` must be stored as plain text. Comma-separated Telegram IDs must never be stored as a numeric value because spreadsheet locale parsing and numeric precision can corrupt the list.
 
 `DefaultWorkStartTime` and `DefaultWorkEndTime` are active defaults used when a provider schedule is created and when an existing schedule day is enabled without usable times. Admin Bot validates and updates them together, but the update does not modify existing `ProviderSchedule` rows.
+
+`PaginationPageSize` controls every paginated Admin Bot view. Valid values are
+integers from 1 to 10; missing or invalid values safely fall back to 5.
 
 Financial and branding metadata are intentionally absent from Settings. The application does not store prices or currency.
 ```
@@ -80,7 +84,7 @@ Notes:
 
 ## 4. Messages
 
-Purpose: localization and dynamic localized entity values.
+Purpose: localization of static user-interface text.
 
 | Column | Type | Description |
 |---|---|---|
@@ -89,12 +93,7 @@ Purpose: localization and dynamic localized entity values.
 | `ru` | String | Russian |
 | `en` | String | English |
 
-Dynamic examples:
-
-```text
-LOCATION_NAME_001
-LOCATION_ADDRESS_001
-```
+Business entity values do not belong in this sheet.
 
 ## 5. UserStates
 
@@ -155,7 +154,6 @@ Provider fields:
 provider_name
 provider_location_id
 provider_phone
-provider_telegram_id
 edit_provider_id
 edit_provider_field
 schedule_provider_id
@@ -192,7 +190,6 @@ Appointment fields:
 
 ```text
 reschedule_appointment_id
-pending_calendar_event_id
 reschedule_date
 reschedule_time
 ```
@@ -244,8 +241,8 @@ Current columns:
 | Column | Type | Description |
 |---|---|---|
 | `location_id` | String | Primary ID |
-| `name_key` | String | Localized name key |
-| `address_key` | String | Localized address key |
+| `name` | String | Location name |
+| `address` | String | Location address |
 | `working_hours` | String | Human-readable hours |
 | `instagram` | String | Instagram |
 | `telegram` | String | Telegram |
@@ -258,7 +255,7 @@ Current columns:
 Example:
 
 ```text
-loc_001 | LOCATION_NAME_001 | LOCATION_ADDRESS_001 |
+loc_001 | Alice Hair Hub | Kyiv, Main Street 1 |
 Пн-Сб 09:00-18:00 | instagram.com/... | @... |
 https://... | https://maps.google.com/... |
 380000000001 | 380000000002 | TRUE
@@ -272,8 +269,7 @@ Purpose: staff/providers.
 |---|---|---|
 | `provider_id` | String | Primary ID |
 | `location_id` | String | Location |
-| `name_key` | String | Optional localized key |
-| `name` | String | Resolved/direct name |
+| `name` | String | Provider name |
 | `phone` | String | Phone |
 | `telegram_id` | String/Number | Optional Telegram ID |
 | `calendar_id` | String | Optional calendar |
@@ -317,8 +313,7 @@ Purpose: business services.
 |---|---|---|
 | `service_id` | String | Primary ID |
 | `location_id` | String | Location |
-| `name_key` | String | Optional localization key |
-| `name` | String | Resolved/direct name |
+| `name` | String | Service name |
 | `duration_min` | Number | Min minutes |
 | `duration_max` | Number | Max minutes |
 | `active` | Boolean | Active |
@@ -400,6 +395,9 @@ Purpose: confirmed bookings.
 | `customer_confirmed_at` | DateTime | Confirmation time |
 | `created_at` | DateTime | Created |
 | `updated_at` | DateTime | Updated |
+
+The reminder and customer-confirmation fields are cleared whenever `start_at` or
+`end_at` changes, including client rescheduling and Calendar synchronization.
 
 ## 17. CalendarCache
 
@@ -544,7 +542,8 @@ Use `active = FALSE` for entities instead of deleting rows.
 
 ### Localization
 
-Use message keys for localized entity values.
+Use message keys only for static user-interface text. Store entity names and
+addresses directly in `Locations`, `Providers`, and `Services`.
 
 ### Performance
 

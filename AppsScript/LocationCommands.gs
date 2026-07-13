@@ -77,40 +77,6 @@ function updateLocationField(
       continue;
     }
 
-    if (field === 'name') {
-
-      const key =
-        rows[i][
-          headers.indexOf('name_key')
-        ];
-
-      createOrUpdateMessageValues(
-        key,
-        createMessageValuesForAllLanguages(
-          value
-        )
-      );
-
-      break;
-    }
-
-    if (field === 'address') {
-
-      const key =
-        rows[i][
-          headers.indexOf('address_key')
-        ];
-
-      createOrUpdateMessageValues(
-        key,
-        createMessageValuesForAllLanguages(
-          value
-        )
-      );
-
-      break;
-    }
-
     const fieldIndex =
       headers.indexOf(field);
 

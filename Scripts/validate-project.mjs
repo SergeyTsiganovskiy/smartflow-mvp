@@ -87,6 +87,19 @@ for (const file of files) {
     errors.push(`Financial runtime reference in ${file}`);
   }
 
+  if (
+    file !== 'ConfigurationMigrations.gs' &&
+    /\b(?:name_key|address_key|SERVICE_NAME_|PROVIDER_NAME_|LOCATION_NAME_|LOCATION_ADDRESS_)\b/.test(source)
+  ) {
+    errors.push(`Localized entity storage reference in ${file}`);
+  }
+
+  if (
+    /\b(?:reschedule_calendar_event|confirm_reschedule_calendar_event|cancel_calendar_event|confirm_cancel_calendar_event|pending_calendar_event_id|updateCalendarEventDateTimeById|deleteCalendarEventById)\b/.test(source)
+  ) {
+    errors.push(`Direct Calendar mutation flow in ${file}`);
+  }
+
   if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
     messageKeysSource = source;
   }

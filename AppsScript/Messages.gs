@@ -4,12 +4,14 @@ function resetMessagesCache() {
   MESSAGES_CACHE = null;
 }
 
-function getMessage(messageKey) {
+function getMessage(messageKey, language) {
   if (!MESSAGES_CACHE) {
     MESSAGES_CACHE = loadMessagesCache();
   }
 
-  const lang = getSettings().Language || 'ru';
+  const lang = String(
+    language || getSettings().Language || 'ru'
+  ).trim();
 
   if (
     MESSAGES_CACHE[messageKey] &&
@@ -116,4 +118,21 @@ function getMessageValues(messageKey) {
   }
 
   return [];
+}
+
+function isMessageText(text, messageKey) {
+  if (!MESSAGES_CACHE) {
+    MESSAGES_CACHE = loadMessagesCache();
+  }
+
+  const targetText = String(text || '').trim();
+  const values = MESSAGES_CACHE[messageKey] || {};
+
+  for (const language in values) {
+    if (String(values[language] || '').trim() === targetText) {
+      return true;
+    }
+  }
+
+  return false;
 }

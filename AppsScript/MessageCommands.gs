@@ -42,27 +42,3 @@ function createOrUpdateMessageValues(messageKey, valuesByLang) {
     }
   });
 }
-
-function createMessageValuesForAllLanguages(value) {
-  const sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName(SHEET_NAMES.MESSAGES);
-
-  const headers =
-    sheet.getDataRange().getValues()[0];
-
-  const result = {};
-
-  headers.forEach(function(header) {
-    const columnName =
-      String(header).trim();
-
-    if (columnName === 'key') {
-      return;
-    }
-
-    result[columnName] = value;
-  });
-
-  return result;
-}

@@ -1,4 +1,4 @@
-function sendConfigurationMenu(chatId, settings) {
+function sendConfigurationMenu(chatId, settings, language) {
   navigateAdmin(chatId, ADMIN_MENUS.CONFIGURATION);
 
   setUserState(
@@ -9,15 +9,16 @@ function sendConfigurationMenu(chatId, settings) {
   sendTelegramMessage(
     settings.AdminBotToken,
     chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_TITLE),
+    getMessage(MESSAGE_KEYS.CONFIGURATION_TITLE, language),
     buildKeyboardWithMainMenu([
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_LANGUAGE) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_IDS) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_REMINDER_DAY_BEFORE) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS) }],
-      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_DEFAULT_WORK_HOURS) }]
-    ])
+      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_LANGUAGE, language) }],
+      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_ADMIN_IDS, language) }],
+      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_REMINDER_DAY_BEFORE, language) }],
+      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_BOOKING_DAYS, language) }],
+      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS, language) }],
+      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE, language) }],
+      [{ text: getMessage(MESSAGE_KEYS.CONFIGURATION_DEFAULT_WORK_HOURS, language) }]
+    ], language)
   );
 }
 
@@ -329,6 +330,7 @@ function processConfigurationLanguage(chatId, text, settings) {
   }
 
   const updatedSettings = getSettings();
+  resetMessagesCache();
   setUserState(chatId, '');
 
   addAuditLog(
@@ -343,10 +345,10 @@ function processConfigurationLanguage(chatId, text, settings) {
   sendTelegramMessage(
     updatedSettings.AdminBotToken,
     chatId,
-    getMessage(MESSAGE_KEYS.CONFIGURATION_LANGUAGE_UPDATED)
+    getMessage(MESSAGE_KEYS.CONFIGURATION_LANGUAGE_UPDATED, language)
   );
 
-  sendConfigurationMenu(chatId, updatedSettings);
+  sendConfigurationMenu(chatId, updatedSettings, language);
 }
 
 function handleAdminConfigurationState(chatId, text, state, settings) {
@@ -373,6 +375,11 @@ function handleAdminConfigurationState(chatId, text, state, settings) {
 
     if (text === getMessage(MESSAGE_KEYS.CONFIGURATION_CACHE_DAYS)) {
       startConfigurationCalendarCacheDays(chatId, settings);
+      return;
+    }
+
+    if (text === getMessage(MESSAGE_KEYS.CONFIGURATION_PAGE_SIZE)) {
+      startConfigurationPageSize(chatId, settings);
       return;
     }
 
@@ -426,6 +433,11 @@ function handleAdminConfigurationState(chatId, text, state, settings) {
 
   if (state === ADMIN_STATES.WAITING_CONFIGURATION_CACHE_DAYS) {
     processConfigurationCalendarCacheDays(chatId, text, settings);
+    return;
+  }
+
+  if (state === ADMIN_STATES.WAITING_CONFIGURATION_PAGE_SIZE) {
+    processConfigurationPageSize(chatId, text, settings);
     return;
   }
 

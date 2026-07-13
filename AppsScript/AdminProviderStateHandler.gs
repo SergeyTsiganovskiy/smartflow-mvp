@@ -23,11 +23,6 @@ function handleAdminProviderState(
   return;
   }
   
-  if (state === ADMIN_STATES.WAITING_PROVIDER_TELEGRAM_ID) {
-  processProviderTelegramId(chatId, text, settings);
-  return;
-  }
-  
   // =========================
   // EDIT PROVIDER STATES
   // =========================

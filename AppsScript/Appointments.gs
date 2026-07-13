@@ -184,6 +184,15 @@ function updateAppointmentDateTime(
   const reminder24hIndex =
     headers.indexOf('reminder_24h_sent_at');
 
+  const reminder2hIndex =
+    headers.indexOf('reminder_2h_sent_at');
+
+  const customerConfirmedIndex =
+    headers.indexOf('customer_confirmed');
+
+  const customerConfirmedAtIndex =
+    headers.indexOf('customer_confirmed_at');
+
   for (let i = 1; i < rows.length; i++) {
     if (
       String(rows[i][appointmentIdIndex]) ===
@@ -200,6 +209,24 @@ function updateAppointmentDateTime(
       if (reminder24hIndex !== -1) {
         sheet
           .getRange(i + 1, reminder24hIndex + 1)
+          .setValue('');
+      }
+
+      if (reminder2hIndex !== -1) {
+        sheet
+          .getRange(i + 1, reminder2hIndex + 1)
+          .setValue('');
+      }
+
+      if (customerConfirmedIndex !== -1) {
+        sheet
+          .getRange(i + 1, customerConfirmedIndex + 1)
+          .setValue('');
+      }
+
+      if (customerConfirmedAtIndex !== -1) {
+        sheet
+          .getRange(i + 1, customerConfirmedAtIndex + 1)
           .setValue('');
       }
 

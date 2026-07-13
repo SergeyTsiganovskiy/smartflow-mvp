@@ -30,9 +30,23 @@ function handleAdminCustomerCommand(chatId, text, settings) {
   return;
   }
   
-  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_NEXT)) {
+  if (isMessageText(text, MESSAGE_KEYS.CUSTOMER_LIST_NEXT)) {
   const session =
   getUserSession(chatId) || {};
+
+  if (session.customer_visit_history_phone) {
+  const visitPage = Number(
+  session.customer_visit_history_page || 1
+  );
+
+  showCustomerVisitHistoryPage(
+  chatId,
+  settings,
+  visitPage + 1
+  );
+
+  return;
+  }
   
   const page =
   Number(
@@ -57,9 +71,23 @@ function handleAdminCustomerCommand(chatId, text, settings) {
   return;
   }
   
-  if (text === getMessage(MESSAGE_KEYS.CUSTOMER_LIST_PREVIOUS)) {
+  if (isMessageText(text, MESSAGE_KEYS.CUSTOMER_LIST_PREVIOUS)) {
   const session =
   getUserSession(chatId) || {};
+
+  if (session.customer_visit_history_phone) {
+  const visitPage = Number(
+  session.customer_visit_history_page || 1
+  );
+
+  showCustomerVisitHistoryPage(
+  chatId,
+  settings,
+  Math.max(1, visitPage - 1)
+  );
+
+  return;
+  }
   
   const page =
   Number(

@@ -27,10 +27,7 @@ function send24hAppointmentReminders() {
 
   appointments.forEach(function(appointment) {
     appointment =
-      syncAppointmentWithCalendar(
-        appointment,
-        true
-      );
+      syncAppointmentWithCalendar(appointment);
 
     if (!appointment) {
       return;
@@ -189,8 +186,7 @@ function getAppointmentsFor24hReminder() {
     });
 
     appointment = syncAppointmentWithCalendar(
-      appointment,
-      true
+      appointment
     );
 
     const appointmentDateString =

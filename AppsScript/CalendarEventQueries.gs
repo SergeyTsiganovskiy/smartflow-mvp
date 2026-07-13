@@ -1,33 +1,3 @@
-function getCalendarEventById(calendarEventId) {
-  const settings = getSettings();
-
-  const calendarId =
-    settings.DefaultCalendarId || '';
-
-  const calendar = calendarId
-    ? CalendarApp.getCalendarById(calendarId)
-    : CalendarApp.getDefaultCalendar();
-
-  if (!calendar) {
-    return null;
-  }
-
-  const event =
-    calendar.getEventById(calendarEventId);
-
-  if (!event) {
-    return null;
-  }
-
-  return {
-    calendar_event_id: event.getId(),
-    title: event.getTitle(),
-    description: event.getDescription() || '',
-    start_at: event.getStartTime(),
-    end_at: event.getEndTime()
-  };
-}
-
 function getCalendarEventByAppointment(appointment) {
   const calendarEventId =
     String(appointment.calendar_event_id || '').trim();

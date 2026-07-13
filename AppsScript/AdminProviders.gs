@@ -157,7 +157,6 @@ function resetProviderWizardSession(chatId) {
       provider_name: '',
       provider_location_id: '',
       provider_phone: '',
-      provider_telegram_id: '',
 
       edit_provider_id: '',
       edit_provider_field: '',

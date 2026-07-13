@@ -5,20 +5,23 @@ function sendAppointmentCard(
   appointment,
   service,
   provider,
-  location
+  location,
+  heading
 ) {
   const customerNote =
     String(appointment.customer_note || '').trim() || '-';
 
   const text =
+    (heading ? '<b>' + heading + '</b>\n\n' : '') +
     formatDateTimeForDisplay(
       appointment.start_at
     ) +
     '\n\n' +
-    '💅 ' + service.name + '\n' +
-    '👩‍💼 ' + provider.name + '\n' +
-    '📍 ' + location.name + '\n' +
-    '📝 Комментарий: ' + customerNote;
+    '💅 ' + (service ? service.name : appointment.service_id) + '\n' +
+    '👩‍💼 ' + (provider ? provider.name : appointment.provider_id) + '\n' +
+    '📍 ' + (location ? location.name : appointment.location_id) + '\n' +
+    '📝 ' + getMessage(MESSAGE_KEYS.CALENDAR_LABEL_COMMENT) +
+    ': ' + customerNote;
 
   const inlineKeyboard = [
     [
@@ -139,16 +142,16 @@ function sendLinkedCalendarAppointmentCard(
       {
         text: getMessage(MESSAGE_KEYS.RESCHEDULE_APPOINTMENT_BUTTON),
         callback_data:
-          'reschedule_calendar_event|' +
-          appointment.calendar_event_id
+          'reschedule_appointment|' +
+          linkedAppointment.appointment_id
       }
     ],
     [
       {
         text: getMessage(MESSAGE_KEYS.CANCEL_APPOINTMENT_BUTTON),
         callback_data:
-          'cancel_calendar_event|' +
-          appointment.calendar_event_id
+          'cancel_appointment|' +
+          linkedAppointment.appointment_id
       }
     ]
   ];

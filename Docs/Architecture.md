@@ -205,6 +205,10 @@ The `AdminTelegramIds` Settings value is written with an explicit plain-text cel
 
 `migrateConfigurationMessages()` is an idempotent deployment migration. It validates the `Messages` columns, appends only missing configuration localization keys, resets the message cache, writes an audit event, and returns a migration summary. Repeated execution does not overwrite existing translations.
 
+Paginated Admin Bot views resolve their shared page size from
+`Settings.PaginationPageSize`. The validated range is 1–10, with a fallback of 5
+to protect Telegram message length when the setting is absent or malformed.
+
 ### Calendar, availability, and diagnostics
 
 - `Availability.gs` — provider-aware slot calculation;
@@ -426,7 +430,8 @@ Code uses:
 getMessage(MESSAGE_KEYS.KEY)
 ```
 
-Dynamic entities can also use message keys, for example location names and addresses.
+Dynamic business entities do not use message keys. Location names and addresses,
+provider names, and service names are read directly from their domain sheets.
 
 The target is zero hardcoded UI text.
 

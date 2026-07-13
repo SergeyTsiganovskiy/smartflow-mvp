@@ -62,14 +62,11 @@ function getProvidersIncludingInactive() {
       item[header] = rows[i][index];
     });
 
-    const nameKey = String(item.name_key || '').trim();
-
     result.push({
       id: item.provider_id,
       provider_id: item.provider_id,
       location_id: item.location_id,
-      name_key: nameKey,
-      name: getMessage(nameKey),
+      name: String(item.name || '').trim(),
       phone: item.phone,
       telegram_id: item.telegram_id,
       calendar_id: item.calendar_id,
@@ -222,9 +219,7 @@ function getProviderSchedules() {
 }
 
 function getProviderName(provider) {
-  return getMessage(
-    provider.name_key
-  );
+  return String(provider.name || '').trim();
 }
 function findProviderByName(providerName) {
   const providers = getProviders();
@@ -281,10 +276,5 @@ function getProviderCalendarId(providerId) {
 }
 
 function getLocalizedProviderName(provider) {
-  const settings = getSettings();
-  const lang = settings.Language || 'ru';
-
-  const key = 'name_' + lang;
-
-  return String(getProviderName(provider)).trim();
+  return getProviderName(provider);
 }

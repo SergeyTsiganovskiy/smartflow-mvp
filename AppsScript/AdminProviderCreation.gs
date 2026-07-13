@@ -147,34 +147,6 @@ function processProviderPhone(chatId, text, settings) {
     phone
   );
 
-  setUserState(
-    chatId,
-    ADMIN_STATES.WAITING_PROVIDER_TELEGRAM_ID
-  );
-
-  sendTelegramMessage(
-    settings.AdminBotToken,
-    chatId,
-    getMessage(MESSAGE_KEYS.ENTER_PROVIDER_TELEGRAM_ID)
-  );
-
-  buildKeyboardWithMainMenu([])
-}
-
-function processProviderTelegramId(
-  chatId,
-  text,
-  settings
-) {
-  const telegramId =
-    String(text || '').trim();
-
-  setUserSessionValue(
-    chatId,
-    'provider_telegram_id',
-    telegramId
-  );
-
   const session =
     getUserSession(chatId);
 

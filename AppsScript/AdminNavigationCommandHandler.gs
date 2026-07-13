@@ -1,5 +1,5 @@
 function handleAdminNavigationCommand(chatId, text, settings) {
-  if (text === getMessage(MESSAGE_KEYS.MAIN_MENU)) {
+  if (isMessageText(text, MESSAGE_KEYS.MAIN_MENU)) {
   clearUserSession(chatId);
   setUserState(chatId, '');
   
@@ -7,7 +7,7 @@ function handleAdminNavigationCommand(chatId, text, settings) {
   return;
   }
   
-  if (text === getMessage(MESSAGE_KEYS.BACK)) {
+  if (isMessageText(text, MESSAGE_KEYS.BACK)) {
   processAdminBack(chatId, settings);
   return;
   }

@@ -8,14 +8,11 @@ function createProviderFromAdminSession(session) {
   const phone =
     String(session.provider_phone || '').trim();
 
-  const telegramId =
-    String(session.provider_telegram_id || '').trim();
-
   return createProvider({
     name: providerName,
     location_id: locationId,
     phone: phone,
-    telegram_id: telegramId,
+    telegram_id: '',
     calendar_id: ''
   });
 }
@@ -28,36 +25,45 @@ function createProvider(providerData) {
   const providerId =
     generateProviderId();
 
-  const nameKey =
-    generateProviderNameKey(providerId);
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(function(header) {
+      return String(header || '').trim();
+    });
+  const newRow = new Array(headers.length).fill('');
+  const requiredHeaders = [
+    'provider_id',
+    'location_id',
+    'name',
+    'phone',
+    'telegram_id',
+    'calendar_id',
+    'active'
+  ];
 
-  createOrUpdateMessageValues(
-    nameKey,
-    createMessageValuesForAllLanguages(
-      providerData.name
-    )
-  );
+  requiredHeaders.forEach(function(header) {
+    if (headers.indexOf(header) === -1) {
+      throw new Error('Providers sheet is missing column: ' + header);
+    }
+  });
 
-  sheet.appendRow([
-    providerId,
-    providerData.location_id,
-    nameKey,
-    providerData.phone,
-    providerData.telegram_id,
-    providerData.calendar_id || '',
-    true
-  ]);
+  newRow[headers.indexOf('provider_id')] = providerId;
+  newRow[headers.indexOf('location_id')] = providerData.location_id;
+  newRow[headers.indexOf('name')] = providerData.name;
+  newRow[headers.indexOf('phone')] = providerData.phone;
+  newRow[headers.indexOf('telegram_id')] = providerData.telegram_id;
+  newRow[headers.indexOf('calendar_id')] = providerData.calendar_id || '';
+  newRow[headers.indexOf('active')] = true;
+
+  sheet.appendRow(newRow);
+
+  PROVIDERS_CACHE = null;
+  PROVIDERS_INCLUDING_INACTIVE_CACHE = null;
 
   createDefaultProviderSchedule(providerId);
 
   return providerId;
-}
-
-function generateProviderNameKey(providerId) {
-  return (
-    'PROVIDER_NAME_' +
-    String(providerId).replace('prov_', '')
-  );
 }
 
 function updateProviderField(
@@ -85,24 +91,6 @@ function updateProviderField(
       continue;
     }
 
-    const provider = {};
-
-    headers.forEach(function(header, index) {
-      provider[header] =
-        rows[i][index];
-    });
-
-    if (field === 'name') {
-      createOrUpdateMessageValues(
-        provider.name_key,
-        createMessageValuesForAllLanguages(
-          value
-        )
-      );
-
-      return;
-    }
-
     const fieldIndex =
       headers.indexOf(field);
 
@@ -119,6 +107,9 @@ function updateProviderField(
         fieldIndex + 1
       )
       .setValue(value);
+
+    PROVIDERS_CACHE = null;
+    PROVIDERS_INCLUDING_INACTIVE_CACHE = null;
 
     return;
   }

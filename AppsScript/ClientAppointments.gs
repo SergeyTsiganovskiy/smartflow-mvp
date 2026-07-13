@@ -27,10 +27,7 @@ function showMyAppointmentsByPhone(chatId, settings, phone) {
 
   appointments.forEach(function(appointment) {
     const syncedAppointment =
-      syncAppointmentWithCalendar(
-        appointment,
-        false
-      );
+      syncAppointmentWithCalendar(appointment);
 
     if (!syncedAppointment) {
       return;
@@ -75,7 +72,8 @@ function showMyAppointmentsByPhone(chatId, settings, phone) {
     chatId,
     '<b>' +
       getMessage(MESSAGE_KEYS.YOUR_APPOINTMENTS) +
-      '</b>'
+      '</b>',
+    buildKeyboardWithMainMenu([])
   );
 
   visibleAppointments.forEach(function(appointment) {
