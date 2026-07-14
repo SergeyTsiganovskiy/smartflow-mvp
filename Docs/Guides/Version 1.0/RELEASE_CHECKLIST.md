@@ -27,6 +27,15 @@ git diff --check
 
 ## 3. Публикация Apps Script
 
+Для клиентского production-профиля из корня репозитория предпочтительно выполнить:
+
+```text
+.\Scripts\deploy-client.cmd -Client salon-alice
+.\Scripts\deploy-client.cmd -Client salon-alice -Push
+```
+
+Первая команда выполняет preflight без загрузки. Вторая требует точного подтверждения имени профиля и запускает `clasp push`. Реальный Script ID хранится только в игнорируемом Git файле `deployments/salon-alice/deployment.local.json`.
+
 Из каталога `AppsScript` выполнить:
 
 ```text

@@ -88,6 +88,24 @@ node Scripts/validate-project.mjs
 node Scripts/run-tests.mjs
 ```
 
+## Client production upload
+
+Client-specific deployment profiles live under `deployments/`. Profiles committed to Git contain placeholders only; the actual `deployment.local.json` is ignored and must never contain Telegram tokens or customer data.
+
+Run a safe non-mutating preflight from the repository root before uploading a client installation:
+
+```text
+.\Scripts\deploy-client.cmd -Client salon-alice
+```
+
+After checking the displayed client name and Script ID, upload with:
+
+```text
+.\Scripts\deploy-client.cmd -Client salon-alice -Push
+```
+
+The utility refuses dirty worktrees and placeholder profiles, runs validation and tests, verifies access to the target Apps Script project, requires an exact client-name confirmation, and restores the developer `.clasp.json` afterward. It uploads source code only: updating the production Web App version, running migrations, health check, and release regression remain explicit post-upload steps.
+
 The unit-test harness loads selected Apps Script files into an isolated VM context. In addition to domain and validation functions, it now covers the critical appointment lifecycle with deterministic adapters: final request persistence, idempotent administrator approval and rejection, rescheduling state reset, cancellation, provider-specific availability, manual Calendar conflicts, and duplicate-safe visit synchronization. Real Google authorization, Telegram delivery, triggers, and Calendar mutations remain integration-regression scenarios.
 
 Before deployment or after an incident, run `runSmartFlowHealthCheck()` from the Apps Script editor. The read-only check validates the workbook schema, protected Settings, provider Calendar access, both Telegram webhooks, required triggers, duplicate triggers, and active request recipients without returning tokens or customer data.

@@ -10,6 +10,7 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 - Deterministic tests for critical validation, migration, notification, callback, and Telegram update flows.
 - Appointment-lifecycle smoke tests for request persistence, idempotent approval and rejection, rescheduling, cancellation, provider-specific Calendar conflicts, and duplicate-safe visit synchronization.
 - Version reporting through `getSmartFlowVersion()` and `runSmartFlowHealthCheck()`.
+- Guarded per-client production upload utility and the first `salon-alice` deployment profile.
 
 ### Changed
 
@@ -20,6 +21,7 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 - Client booking, rescheduling, cancellation, localization, pagination, and configuration workflows were simplified.
 - A newly created request is confirmed in the same message that restores the Client Bot main keyboard, without an extra action prompt.
 - Deployment and user documentation was expanded for pilot installations.
+- Client uploads now run validation, tests, clean-worktree and target-project checks before an explicitly confirmed `clasp push`.
 
 ### Security
 
