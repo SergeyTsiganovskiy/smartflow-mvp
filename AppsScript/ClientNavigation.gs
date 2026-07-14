@@ -71,12 +71,12 @@ function handleClientBackButton(chatId, settings) {
   openClientMenu(chatId, settings, current.menu);
 }
 
-function sendClientStartMenu(chatId, settings) {
+function sendClientStartMenu(chatId, settings, messageKey) {
   resetNavigation(chatId);
 
   pushNavigation(chatId, CLIENT_MENUS.MAIN);
 
-  const text = getMessage(MESSAGE_KEYS.MAIN_MENU_TEXT);
+  const text = getMessage(messageKey || MESSAGE_KEYS.MAIN_MENU_TEXT);
 
   const keyboard = {
     keyboard: [

@@ -196,11 +196,9 @@ function handleClientBookingState(chatId, text, state, settings) {
 
     notifyAdminsAboutRequestFromSession(session, requestId);
 
-    sendTelegramMessage(settings.ClientBotToken, chatId, getMessage(MESSAGE_KEYS.REQUEST_CREATED));
-
     clearUserSession(chatId);
     setUserState(chatId, '');
-    sendClientStartMenu(chatId, settings);
+    sendClientStartMenu(chatId, settings, MESSAGE_KEYS.REQUEST_CREATED);
 
     return;
   }

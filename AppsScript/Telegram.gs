@@ -1,6 +1,4 @@
 function sendTelegramMessage(botToken, chatId, text, keyboard) {
-  const url = 'https://api.telegram.org/bot' + botToken + '/sendMessage';
-
   const payload = {
     chat_id: String(chatId),
     text: text,
@@ -11,23 +9,10 @@ function sendTelegramMessage(botToken, chatId, text, keyboard) {
     payload.reply_markup = JSON.stringify(keyboard);
   }
 
-  const response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  const result = response.getContentText();
-
-  Logger.log(result);
-
-  return result;
+  return executeTelegramRequest('sendMessage', botToken, payload);
 }
 
 function sendTelegramMessageWithInlineKeyboard(botToken, chatId, text, inlineKeyboard) {
-  const url = 'https://api.telegram.org/bot' + botToken + '/sendMessage';
-
   const payload = {
     chat_id: String(chatId),
     text: text,
@@ -37,23 +22,10 @@ function sendTelegramMessageWithInlineKeyboard(botToken, chatId, text, inlineKey
     })
   };
 
-  const response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  const result = response.getContentText();
-
-  Logger.log(result);
-
-  return result;
+  return executeTelegramRequest('sendMessage', botToken, payload);
 }
 
 function editTelegramMessage(botToken, chatId, messageId, text) {
-  const url = 'https://api.telegram.org/bot' + botToken + '/editMessageText';
-
   const payload = {
     chat_id: String(chatId),
     message_id: messageId,
@@ -61,23 +33,10 @@ function editTelegramMessage(botToken, chatId, messageId, text) {
     parse_mode: 'HTML'
   };
 
-  const response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  const result = response.getContentText();
-
-  Logger.log(result);
-
-  return result;
+  return executeTelegramRequest('editMessageText', botToken, payload);
 }
 
 function editTelegramMessageWithInlineKeyboard(botToken, chatId, messageId, text, inlineKeyboard) {
-  const url = 'https://api.telegram.org/bot' + botToken + '/editMessageText';
-
   const payload = {
     chat_id: String(chatId),
     message_id: messageId,
@@ -88,34 +47,17 @@ function editTelegramMessageWithInlineKeyboard(botToken, chatId, messageId, text
     }
   };
 
-  const response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  const result = response.getContentText();
-
-  addAuditLog('EDIT_MESSAGE_WITH_KEYBOARD_RESULT', result);
-
-  return result;
+  return executeTelegramRequest('editMessageText', botToken, payload);
 }
 
 function answerTelegramCallbackQuery(botToken, callbackQueryId, text, showAlert) {
-  const url = 'https://api.telegram.org/bot' + botToken + '/answerCallbackQuery';
   const payload = {
     callback_query_id: callbackQueryId,
     text: text || '',
     show_alert: showAlert === true
   };
 
-  UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
+  return executeTelegramRequest('answerCallbackQuery', botToken, payload);
 }
 
 function answerCallbackQuery(callbackQueryId, text) {
@@ -124,18 +66,49 @@ function answerCallbackQuery(callbackQueryId, text) {
 }
 
 function editTelegramMessageReplyMarkup(botToken, chatId, messageId, replyMarkup) {
-  const url = 'https://api.telegram.org/bot' + botToken + '/editMessageReplyMarkup';
-
   const payload = {
     chat_id: chatId,
     message_id: messageId,
     reply_markup: replyMarkup || {}
   };
 
-  UrlFetchApp.fetch(url, {
+  return executeTelegramRequest('editMessageReplyMarkup', botToken, payload);
+}
+
+function executeTelegramRequest(methodName, botToken, payload) {
+  const url = 'https://api.telegram.org/bot' + botToken + '/' + methodName;
+  const response = UrlFetchApp.fetch(url, {
     method: 'post',
     contentType: 'application/json',
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   });
+
+  const responseText = response.getContentText();
+  const responseCode = typeof response.getResponseCode === 'function' ? response.getResponseCode() : 200;
+  let responseData = null;
+
+  try {
+    responseData = JSON.parse(responseText);
+  } catch (error) {
+    addAuditLog(
+      'TELEGRAM_API_ERROR',
+      JSON.stringify({ method: methodName, http_code: responseCode, error: 'INVALID_JSON_RESPONSE' })
+    );
+    return responseText;
+  }
+
+  if (responseCode < 200 || responseCode >= 300 || !responseData || responseData.ok !== true) {
+    addAuditLog(
+      'TELEGRAM_API_ERROR',
+      JSON.stringify({
+        method: methodName,
+        http_code: responseCode,
+        error_code: responseData && responseData.error_code ? responseData.error_code : '',
+        description: responseData && responseData.description ? String(responseData.description) : ''
+      })
+    );
+  }
+
+  return responseText;
 }

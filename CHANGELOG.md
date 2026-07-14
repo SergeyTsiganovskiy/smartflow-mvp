@@ -8,13 +8,16 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 
 - Installation health check for schema, settings, calendars, webhooks, triggers, and request recipients.
 - Deterministic tests for critical validation, migration, notification, callback, and Telegram update flows.
+- Appointment-lifecycle smoke tests for request persistence, idempotent approval and rejection, rescheduling, cancellation, provider-specific Calendar conflicts, and duplicate-safe visit synchronization.
 - Version reporting through `getSmartFlowVersion()` and `runSmartFlowHealthCheck()`.
 
 ### Changed
 
 - Administrative request notifications reach every configured administrator plus optional recipients.
+- Telegram API responses are checked centrally, while diagnostics exclude bot tokens, chat IDs, message text, and raw response bodies.
 - Appointment views read live data instead of the removed Calendar cache.
 - Client booking, rescheduling, cancellation, localization, pagination, and configuration workflows were simplified.
+- A newly created request is confirmed in the same message that restores the Client Bot main keyboard, without an extra action prompt.
 - Deployment and user documentation was expanded for pilot installations.
 
 ### Security

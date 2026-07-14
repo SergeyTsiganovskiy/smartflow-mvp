@@ -88,13 +88,15 @@ node Scripts/validate-project.mjs
 node Scripts/run-tests.mjs
 ```
 
-The unit-test harness loads selected Apps Script files into an isolated VM context. It is intentionally limited to pure domain and validation functions; Google Sheets, Calendar, Telegram, and trigger workflows remain integration-regression scenarios until adapters are introduced.
+The unit-test harness loads selected Apps Script files into an isolated VM context. In addition to domain and validation functions, it now covers the critical appointment lifecycle with deterministic adapters: final request persistence, idempotent administrator approval and rejection, rescheduling state reset, cancellation, provider-specific availability, manual Calendar conflicts, and duplicate-safe visit synchronization. Real Google authorization, Telegram delivery, triggers, and Calendar mutations remain integration-regression scenarios.
 
 Before deployment or after an incident, run `runSmartFlowHealthCheck()` from the Apps Script editor. The read-only check validates the workbook schema, protected Settings, provider Calendar access, both Telegram webhooks, required triggers, duplicate triggers, and active request recipients without returning tokens or customer data.
 
 The canonical application version is stored in `VERSION` and must match `SMARTFLOW_VERSION` in `AppsScript/Version.gs`. Both `getSmartFlowVersion()` and the health-check report expose this non-secret version for deployment verification.
 
 Webhook processing uses a locked, per-bot history of exact Telegram `update_id` values. An update is recorded only after successful handling, preventing duplicate mutations without losing failed or out-of-order deliveries.
+
+Outgoing Telegram calls share one response validator. Failed HTTP or Bot API responses create a sanitized `TELEGRAM_API_ERROR` audit event containing the method and status information, but never the bot token, chat ID, message text, or raw response body.
 
 Every ID in `AdminTelegramIds` automatically receives administrative notifications. Additional active `RequestRecipients` are merged without duplicates, while approve/reject callbacks remain restricted to current administrators.
 
