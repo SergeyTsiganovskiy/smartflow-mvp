@@ -259,7 +259,7 @@ function runSmartFlowHealthCheck() {
   }
 
   try {
-    checks.push(checkHealthRecipients(getActiveRequestRecipients()));
+    checks.push(checkHealthRecipients(getAdminNotificationRecipients(settings)));
   } catch (error) {
     checks.push(createHealthCheckItem('REQUEST_RECIPIENTS', false, 'check failed'));
   }

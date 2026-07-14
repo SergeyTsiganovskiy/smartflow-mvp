@@ -102,15 +102,12 @@ function editTelegramMessageWithInlineKeyboard(botToken, chatId, messageId, text
   return result;
 }
 
-function answerCallbackQuery(callbackQueryId, text) {
-  const settings = getSettings();
-
-  const url = 'https://api.telegram.org/bot' + settings.ClientBotToken + '/answerCallbackQuery';
-
+function answerTelegramCallbackQuery(botToken, callbackQueryId, text, showAlert) {
+  const url = 'https://api.telegram.org/bot' + botToken + '/answerCallbackQuery';
   const payload = {
     callback_query_id: callbackQueryId,
     text: text || '',
-    show_alert: false
+    show_alert: showAlert === true
   };
 
   UrlFetchApp.fetch(url, {
@@ -119,6 +116,11 @@ function answerCallbackQuery(callbackQueryId, text) {
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   });
+}
+
+function answerCallbackQuery(callbackQueryId, text) {
+  const settings = getSettings();
+  answerTelegramCallbackQuery(settings.ClientBotToken, callbackQueryId, text, false);
 }
 
 function editTelegramMessageReplyMarkup(botToken, chatId, messageId, replyMarkup) {

@@ -1,7 +1,5 @@
-function isAdminUser(chatId) {
-  const settings = getSettings();
-
-  const adminIds = String(settings.AdminTelegramIds || '')
+function getAdminTelegramIds(settings) {
+  return String((settings || {}).AdminTelegramIds || '')
     .split(',')
     .map(function (id) {
       return String(id).trim();
@@ -9,6 +7,10 @@ function isAdminUser(chatId) {
     .filter(function (id) {
       return id;
     });
+}
+
+function isAdminUser(chatId) {
+  const adminIds = getAdminTelegramIds(getSettings());
 
   const chatIdText = String(chatId).trim();
 

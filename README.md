@@ -90,6 +90,10 @@ The unit-test harness loads selected Apps Script files into an isolated VM conte
 
 Before deployment or after an incident, run `runSmartFlowHealthCheck()` from the Apps Script editor. The read-only check validates the workbook schema, protected Settings, provider Calendar access, both Telegram webhooks, required triggers, duplicate triggers, and active request recipients without returning tokens or customer data.
 
+Webhook processing uses a locked, per-bot history of exact Telegram `update_id` values. An update is recorded only after successful handling, preventing duplicate mutations without losing failed or out-of-order deliveries.
+
+Every ID in `AdminTelegramIds` automatically receives administrative notifications. Additional active `RequestRecipients` are merged without duplicates, while approve/reject callbacks remain restricted to current administrators.
+
 ## Current status
 
 Implemented foundations include:

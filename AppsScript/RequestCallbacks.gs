@@ -29,6 +29,7 @@ function processRequestApproveOption(callbackQuery, action, requestId) {
   }
 
   if (appointmentExistsForRequest(requestId)) {
+    editTelegramMessageReplyMarkup(settings.AdminBotToken, adminChatId, messageId);
     sendTelegramMessage(settings.AdminBotToken, adminChatId, getMessage(MESSAGE_KEYS.REQUEST_ALREADY_PROCESSED));
 
     return;
@@ -82,10 +83,14 @@ function processRequestApproveOption(callbackQuery, action, requestId) {
 
 function processRequestReject(callbackQuery, requestId) {
   const settings = getSettings();
-
   const adminChatId = callbackQuery.message.chat.id;
-
   const messageId = callbackQuery.message.message_id;
+
+  if (isRequestAlreadyProcessed(requestId) || appointmentExistsForRequest(requestId)) {
+    editTelegramMessageReplyMarkup(settings.AdminBotToken, adminChatId, messageId);
+    sendTelegramMessage(settings.AdminBotToken, adminChatId, getMessage(MESSAGE_KEYS.REQUEST_ALREADY_PROCESSED));
+    return;
+  }
 
   updateRequestStatus(requestId, 'rejected');
 

@@ -1,9 +1,9 @@
 function sendAdminNotification(text, inlineKeyboard) {
   const settings = getSettings();
-  const recipients = getActiveRequestRecipients();
+  const recipients = getAdminNotificationRecipients(settings);
 
   if (recipients.length === 0) {
-    addAuditLog('ADMIN_NOTIFICATION_SKIPPED', 'No active RequestRecipients');
+    addAuditLog('ADMIN_NOTIFICATION_SKIPPED', 'No administrator or active RequestRecipients');
 
     return false;
   }

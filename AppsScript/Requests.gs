@@ -113,3 +113,30 @@ function getActiveRequestRecipients() {
 
   return result;
 }
+
+function mergeAdminNotificationRecipients(adminIds, requestRecipients) {
+  const result = [];
+  const seen = {};
+
+  function addRecipient(recipient) {
+    const telegramId = String((recipient || {}).telegram_id || '').trim();
+
+    if (!telegramId || seen[telegramId]) {
+      return;
+    }
+
+    seen[telegramId] = true;
+    result.push(recipient);
+  }
+
+  adminIds.forEach(function (telegramId) {
+    addRecipient({ telegram_id: telegramId, source: 'AdminTelegramIds' });
+  });
+
+  requestRecipients.forEach(addRecipient);
+  return result;
+}
+
+function getAdminNotificationRecipients(settings) {
+  return mergeAdminNotificationRecipients(getAdminTelegramIds(settings || getSettings()), getActiveRequestRecipients());
+}

@@ -232,7 +232,8 @@ An admin notification contains:
 - approval buttons;
 - rejection button.
 
-Recipients are read from `RequestRecipients`.
+Recipients are formed from every `AdminTelegramIds` entry plus eligible
+`RequestRecipients`, deduplicated by Telegram ID.
 
 ### 7.3 Request approval
 
@@ -447,11 +448,16 @@ Providers may work in parallel. A busy interval belonging to one provider must n
 
 ### Bot roles
 
-The supported interaction roles are Client and Admin. Admin access uses `AdminTelegramIds`, and Admin notifications use eligible `RequestRecipients`.
+The supported interaction roles are Client and Admin. Admin access uses `AdminTelegramIds`. Every administrator automatically receives Admin notifications; eligible `RequestRecipients` add optional recipients.
 
 The Admin Bot Settings section includes a Configuration submenu. User-editable settings are explicitly allowlisted; bot tokens, webhook URLs, Calendar identifiers, and other infrastructure values are not exposed through the Telegram UI. The first supported configuration workflow changes the application language using localized values from `Messages`.
 
 Administrators manage `AdminTelegramIds` through separate Add and Delete actions. Each action accepts one numeric Telegram ID and persists the normalized complete list as a comma-separated Settings value. Adding preserves existing IDs and rejects duplicates. Deleting rejects unknown IDs and prevents the acting administrator from deleting their own access.
+
+Starting Admin Bot does not change notification routing. Membership in
+`AdminTelegramIds` is authoritative. Every Admin Bot callback rechecks this rule,
+and a stale reject callback cannot change a request already processed by another
+administrator.
 
 The Administrators menu also provides a read-only list action that displays every Telegram ID currently allowed to use Admin Bot.
 
@@ -526,6 +532,8 @@ The architecture can support businesses where a provider serves multiple clients
 ### Reliability
 
 - duplicate Telegram updates are ignored;
+- processed Telegram update IDs are stored separately per bot only after successful handling;
+- failed and out-of-order Telegram updates are not discarded by the duplicate guard;
 - callbacks should be idempotent;
 - request approval must not create duplicate appointments;
 - cache invalidation follows writes;

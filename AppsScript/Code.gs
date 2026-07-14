@@ -1,31 +1,14 @@
 function doPost(e) {
   try {
     const update = JSON.parse(e.postData.contents);
-
     const botType = e.parameter && e.parameter.bot ? e.parameter.bot : 'client';
 
-    if (update.update_id && isDuplicateTelegramUpdate(update.update_id, botType.toUpperCase())) {
-      return HtmlService.createHtmlOutput('OK');
-    }
-
-    if (botType === 'admin') {
-      if (update.message) {
-        handleAdminMessage(update.message);
-      }
-
-      if (update.callback_query) {
-        handleAdminCallback(update.callback_query);
-      }
-
-      return HtmlService.createHtmlOutput('OK');
-    }
-
-    if (update.message) {
-      handleClientMessage(update.message);
-    }
-
-    if (update.callback_query) {
-      handleClientCallback(update.callback_query);
+    if (update.update_id !== undefined && update.update_id !== null) {
+      processTelegramUpdateOnce(update.update_id, botType, function () {
+        routeTelegramUpdate(update, botType);
+      });
+    } else {
+      routeTelegramUpdate(update, botType);
     }
 
     return HtmlService.createHtmlOutput('OK');
@@ -36,7 +19,43 @@ function doPost(e) {
   }
 }
 
+function routeTelegramUpdate(update, botType) {
+  if (botType === 'admin') {
+    if (update.message) {
+      handleAdminMessage(update.message);
+    }
+
+    if (update.callback_query) {
+      handleAdminCallback(update.callback_query);
+    }
+
+    return;
+  }
+
+  if (update.message) {
+    handleClientMessage(update.message);
+  }
+
+  if (update.callback_query) {
+    handleClientCallback(update.callback_query);
+  }
+}
+
 function handleAdminCallback(callbackQuery) {
+  const settings = getSettings();
+  const actorId = callbackQuery.from && callbackQuery.from.id;
+
+  if (!isAdminUser(actorId)) {
+    answerTelegramCallbackQuery(
+      settings.AdminBotToken,
+      callbackQuery.id,
+      getMessage(MESSAGE_KEYS.ADMIN_ACCESS_DENIED),
+      true
+    );
+    addAuditLog('ADMIN_CALLBACK_ACCESS_DENIED', String(actorId || 'unknown'));
+    return;
+  }
+
   const data = callbackQuery.data || '';
 
   const parts = data.split('|');

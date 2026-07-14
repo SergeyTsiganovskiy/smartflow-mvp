@@ -564,7 +564,7 @@ The Client Bot writes a `Requests` row plus several `RequestOptions`.
 
 ## 15. Notifications
 
-Admin recipients come from `RequestRecipients`.
+Admin recipients come from `AdminTelegramIds` and `RequestRecipients`.
 
 Current eligibility:
 
@@ -576,6 +576,12 @@ telegram_id exists
 
 Customer confirmation notifications can reuse the same recipient mechanism.
 
+Every configured administrator is an automatic notification recipient.
+`RequestRecipients` remains available for additional explicitly routed recipients.
+The two sources are merged by Telegram ID, so an administrator listed in both
+receives only one message. Admin callback authorization is checked against the
+current `AdminTelegramIds` before approve/reject business logic runs.
+
 ## 16. Duplicate update protection
 
 Telegram may retry updates.
@@ -586,7 +592,13 @@ SmartFlow checks:
 update_id + bot_type
 ```
 
-before executing business logic.
+under a script lock before executing business logic. Client and Admin Bot keep
+separate bounded histories in Script Properties. An ID is stored only after its
+handler completes successfully, so a failed operation remains eligible for a safe
+retry. Exact IDs are compared instead of rejecting every value below a maximum,
+therefore concurrently delivered out-of-order updates are not lost. Histories keep
+up to 250 entries for seven days, and the legacy `*_LAST_UPDATE_ID` value is
+migrated automatically on first use.
 
 This is essential for approve/reject/cancel/reschedule/confirm operations.
 

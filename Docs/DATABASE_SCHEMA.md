@@ -439,6 +439,11 @@ receive_new_requests = TRUE
 telegram_id exists
 ```
 
+All IDs from Settings `AdminTelegramIds` are automatic notification recipients.
+Active `RequestRecipients` rows are additional recipients; the final list is
+deduplicated by Telegram ID. Only current administrators may execute Admin Bot
+callback actions even when another recipient can see a notification.
+
 ## 19. AuditLog
 
 Purpose: operational/debug logging.
@@ -460,17 +465,17 @@ APPROVE_OPTION_DEBUG
 ADMIN_BACK_STACK_DEBUG
 ```
 
-## 20. DuplicateUpdates
+## 20. Telegram update history
 
-Purpose: processed Telegram update tracking, if sheet-backed.
+Processed Telegram update IDs are not stored in a worksheet. Client and Admin Bot
+use separate bounded JSON histories in Apps Script Properties. Each compact entry
+contains the exact `update_id` and processing timestamp. The ID is written only
+after successful business handling; the script lock prevents concurrent delivery
+of the same update from executing twice.
 
-Typical columns:
-
-| Column | Type | Description |
-|---|---|---|
-| `update_id` | Number | Telegram update ID |
-| `bot_type` | String | CLIENT/ADMIN |
-| `processed_at` | DateTime | Processed |
+The history keeps up to 250 entries from the previous seven days. The former
+single `CLIENT_LAST_UPDATE_ID` / `ADMIN_LAST_UPDATE_ID` values are migrated
+automatically on first use and then removed.
 
 ## 21. Schema conventions
 
@@ -521,7 +526,7 @@ Google Sheets has no indexes. Use batch reads, maps keyed by ID, and caches for 
 - CustomerConflicts schema;
 - customer-specific services sheet name;
 - ProviderOverrides sheet name and columns;
-- duplicate update storage;
+- Telegram update history retention and Script Properties capacity;
 - final reminder columns;
 - final AuditLog columns.
 

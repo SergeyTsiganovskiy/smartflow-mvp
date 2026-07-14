@@ -119,6 +119,10 @@ for (const file of files) {
     errors.push(`Unfinished user-facing TODO in ${file}`);
   }
 
+  if (file === 'Code.gs' && /isDuplicateTelegramUpdate/.test(source)) {
+    errors.push('Legacy maximum-ID Telegram update guard in Code.gs');
+  }
+
   if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
     messageKeysSource = source;
   }
