@@ -88,6 +88,8 @@ node Scripts/run-tests.mjs
 
 The unit-test harness loads selected Apps Script files into an isolated VM context. It is intentionally limited to pure domain and validation functions; Google Sheets, Calendar, Telegram, and trigger workflows remain integration-regression scenarios until adapters are introduced.
 
+Before deployment or after an incident, run `runSmartFlowHealthCheck()` from the Apps Script editor. The read-only check validates the workbook schema, protected Settings, provider Calendar access, both Telegram webhooks, required triggers, duplicate triggers, and active request recipients without returning tokens or customer data.
+
 ## Current status
 
 Implemented foundations include:

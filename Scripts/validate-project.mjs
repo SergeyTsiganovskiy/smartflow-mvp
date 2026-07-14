@@ -115,6 +115,10 @@ for (const file of files) {
     errors.push('Legacy UserSessions column fallback in Sessions.gs');
   }
 
+  if (/sendTelegramMessage\([\s\S]{0,160}['"]TODO['"]/.test(source)) {
+    errors.push(`Unfinished user-facing TODO in ${file}`);
+  }
+
   if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
     messageKeysSource = source;
   }

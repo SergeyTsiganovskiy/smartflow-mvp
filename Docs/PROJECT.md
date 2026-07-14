@@ -510,6 +510,13 @@ unused `ProviderServices` and `Notifications` sheets. The migration is safe to
 repeat, but the backup is mandatory because the first run intentionally removes
 obsolete columns and sheets.
 
+`runSmartFlowHealthCheck()` is a read-only installation diagnostic. It returns a
+structured report for the required sheet headers, protected Settings, active
+provider Calendar access, client/admin webhook URLs, required and duplicate
+installable triggers, and active request recipients. The report contains only
+technical codes, counts, sheet/column names, and provider IDs; it never includes
+bot tokens or customer data.
+
 ### Parallel work
 
 The architecture can support businesses where a provider serves multiple clients in parallel. Strict slot exclusion is therefore configurable rather than universally assumed.
