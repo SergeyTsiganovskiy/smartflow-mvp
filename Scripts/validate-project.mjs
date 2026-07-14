@@ -111,6 +111,10 @@ for (const file of files) {
     errors.push(`Legacy CalendarCache reference in ${file}`);
   }
 
+  if (file === 'Sessions.gs' && /headers\.forEach|session\[header\]\s*=\s*rows/.test(source)) {
+    errors.push('Legacy UserSessions column fallback in Sessions.gs');
+  }
+
   if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
     messageKeysSource = source;
   }

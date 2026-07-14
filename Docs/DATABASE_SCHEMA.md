@@ -117,17 +117,19 @@ WAITING_LOCATION_NEW_VALUE
 
 Purpose: temporary wizard data, navigation, and interaction context.
 
-Core fields:
+Physical columns:
 
 ```text
 telegram_id
-updated_at
 session_data
-navigation_stack
-navigation_render_only
-previous_menu
-admin_back_menu
+updated_at
 ```
+
+`session_data` is serialized JSON. All fields below are JSON properties, not
+physical Sheet columns.
+
+Navigation fields include `navigation_stack`, `navigation_render_only`,
+`previous_menu`, and `admin_back_menu`.
 
 Booking fields:
 
@@ -446,7 +448,7 @@ Typical columns:
 | Column | Type | Description |
 |---|---|---|
 | `timestamp` | DateTime | Event time |
-| `event_type` | String | Type |
+| `action` | String | Event type |
 | `details` | String/JSON | Context |
 
 Examples:

@@ -859,3 +859,169 @@ function migrateEntityNamesFromMessages() {
 
   return result;
 }
+
+function migrateCleanupLegacyWorkbookSchema() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const auditLogSheet = spreadsheet.getSheetByName(SHEET_NAMES.AUDIT_LOG);
+  const messagesSheet = spreadsheet.getSheetByName(SHEET_NAMES.MESSAGES);
+  const sessionsSheet = spreadsheet.getSheetByName(SHEET_NAMES.USER_SESSIONS);
+
+  if (!auditLogSheet || !messagesSheet || !sessionsSheet) {
+    throw new Error('Required workbook sheet not found');
+  }
+
+  const auditLogHeaderCreated = ensureAuditLogHeaders(auditLogSheet);
+  const deletedMessageColumns = deleteBlankMessageColumns(messagesSheet);
+  const sessionResult = migrateLegacyUserSessions(sessionsSheet);
+  const deletedSheets = [];
+  const obsoleteSheets = [['Provider', 'Services'].join(''), ['Notifi', 'cations'].join('')];
+
+  obsoleteSheets.forEach(function (sheetName) {
+    const sheet = spreadsheet.getSheetByName(sheetName);
+
+    if (sheet) {
+      spreadsheet.deleteSheet(sheet);
+      deletedSheets.push(sheetName);
+    }
+  });
+
+  const result = {
+    migration: 'cleanup_legacy_workbook_schema_v1',
+    auditLogHeaderCreated: auditLogHeaderCreated,
+    deletedMessageColumns: deletedMessageColumns,
+    migratedSessionRows: sessionResult.migratedRows,
+    deletedSessionColumns: sessionResult.deletedColumns,
+    deletedSheets: deletedSheets
+  };
+
+  addAuditLog('LEGACY_WORKBOOK_SCHEMA_CLEANED', JSON.stringify(result));
+  Logger.log(JSON.stringify(result));
+  return result;
+}
+
+function ensureAuditLogHeaders(sheet) {
+  const expected = ['timestamp', 'action', 'details'];
+
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, expected.length).setValues([expected]);
+    return true;
+  }
+
+  const current = sheet
+    .getRange(1, 1, 1, expected.length)
+    .getValues()[0]
+    .map(function (value) {
+      return String(value || '').trim();
+    });
+
+  if (current.join('|') === expected.join('|')) {
+    return false;
+  }
+
+  if (!current.some(function (value) { return value; })) {
+    sheet.getRange(1, 1, 1, expected.length).setValues([expected]);
+    return true;
+  }
+
+  sheet.insertRowBefore(1);
+  sheet.getRange(1, 1, 1, expected.length).setValues([expected]);
+  return true;
+}
+
+function getBlankColumnIndexes(rows, protectedColumnCount) {
+  if (!rows.length) {
+    return [];
+  }
+
+  const result = [];
+
+  for (let columnIndex = protectedColumnCount; columnIndex < rows[0].length; columnIndex++) {
+    const isBlank = rows.every(function (row) {
+      return String(row[columnIndex] || '').trim() === '';
+    });
+
+    if (isBlank) {
+      result.push(columnIndex);
+    }
+  }
+
+  return result;
+}
+
+function deleteBlankMessageColumns(sheet) {
+  const indexes = getBlankColumnIndexes(sheet.getDataRange().getValues(), 4);
+
+  for (let i = indexes.length - 1; i >= 0; i--) {
+    sheet.deleteColumn(indexes[i] + 1);
+  }
+
+  return indexes.map(function (index) { return index + 1; });
+}
+
+function buildMigratedSessionData(headers, row) {
+  const sessionDataIndex = headers.indexOf('session_data');
+
+  if (sessionDataIndex === -1) {
+    throw new Error('UserSessions sheet is missing column: session_data');
+  }
+
+  const jsonText = String(row[sessionDataIndex] || '').trim();
+  const sessionData = jsonText ? JSON.parse(jsonText) : {};
+  const protectedHeaders = { telegram_id: true, session_data: true, updated_at: true };
+  let changed = false;
+
+  headers.forEach(function (header, index) {
+    const value = row[index];
+
+    if (!header || protectedHeaders[header] || value === '' || value === null || value === undefined) {
+      return;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(sessionData, header)) {
+      sessionData[header] = value;
+      changed = true;
+    }
+  });
+
+  return { changed: changed, jsonText: JSON.stringify(sessionData) };
+}
+
+function migrateLegacyUserSessions(sheet) {
+  const rows = sheet.getDataRange().getValues();
+
+  if (!rows.length) {
+    throw new Error('UserSessions sheet is empty');
+  }
+
+  const headers = rows[0].map(function (header) { return String(header || '').trim(); });
+  const requiredHeaders = ['telegram_id', 'session_data', 'updated_at'];
+
+  requiredHeaders.forEach(function (header) {
+    if (headers.indexOf(header) === -1) {
+      throw new Error('UserSessions sheet is missing column: ' + header);
+    }
+  });
+
+  const sessionDataIndex = headers.indexOf('session_data');
+  let migratedRows = 0;
+
+  for (let i = 1; i < rows.length; i++) {
+    const migrated = buildMigratedSessionData(headers, rows[i]);
+
+    if (migrated.changed) {
+      sheet.getRange(i + 1, sessionDataIndex + 1).setValue(migrated.jsonText);
+      migratedRows++;
+    }
+  }
+
+  const deletedColumns = [];
+
+  for (let i = headers.length - 1; i >= 0; i--) {
+    if (requiredHeaders.indexOf(headers[i]) === -1) {
+      sheet.deleteColumn(i + 1);
+      deletedColumns.push(headers[i] || 'column_' + String(i + 1));
+    }
+  }
+
+  return { migratedRows: migratedRows, deletedColumns: deletedColumns.reverse() };
+}

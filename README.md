@@ -77,6 +77,17 @@ Google Apps Script
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — modules, routing, navigation, caching, and integrations;
 - [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) — logical Google Sheets schema and relationships.
 
+## Local verification
+
+Run the static project validator and the deterministic unit tests with the bundled or local Node.js runtime:
+
+```text
+node Scripts/validate-project.mjs
+node Scripts/run-tests.mjs
+```
+
+The unit-test harness loads selected Apps Script files into an isolated VM context. It is intentionally limited to pure domain and validation functions; Google Sheets, Calendar, Telegram, and trigger workflows remain integration-regression scenarios until adapters are introduced.
+
 ## Current status
 
 Implemented foundations include:

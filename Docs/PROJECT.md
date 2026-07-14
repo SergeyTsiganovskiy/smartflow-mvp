@@ -501,6 +501,15 @@ creates the hourly `syncCompletedCustomerVisitsTrigger` if it is missing. The
 migration is safe to repeat. Appointment views read live `Appointments` and Google
 Calendar data after this deployment, so they no longer wait for a refresh trigger.
 
+After backing up an installation created from the legacy workbook, run
+`migrateCleanupLegacyWorkbookSchema()` once. It restores the `AuditLog` header
+without replacing its first event, removes only fully blank columns after the four
+localized `Messages` columns, migrates legacy `UserSessions` values into
+`session_data`, reduces that sheet to three physical columns, and deletes the
+unused `ProviderServices` and `Notifications` sheets. The migration is safe to
+repeat, but the backup is mandatory because the first run intentionally removes
+obsolete columns and sheets.
+
 ### Parallel work
 
 The architecture can support businesses where a provider serves multiple clients in parallel. Strict slot exclusion is therefore configurable rather than universally assumed.

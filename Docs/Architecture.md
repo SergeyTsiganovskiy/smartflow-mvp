@@ -260,6 +260,11 @@ MAIN
 
 Stored in `UserSessions` as serialized JSON.
 
+The physical `UserSessions` schema is limited to `telegram_id`, `session_data`,
+and `updated_at`. Wizard, navigation, booking, and editor fields exist only as JSON
+properties. `migrateCleanupLegacyWorkbookSchema()` moves non-empty legacy column
+values into JSON before removing the obsolete physical columns.
+
 Example:
 
 ```json
