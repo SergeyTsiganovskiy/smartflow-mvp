@@ -523,6 +523,8 @@ installable triggers, and active request recipients. The report contains only
 technical codes, counts, sheet/column names, and provider IDs; it never includes
 bot tokens or customer data.
 
+The pilot application version is stored in `VERSION` and mirrored by `SMARTFLOW_VERSION` in Apps Script. The health-check report includes this non-secret value to confirm which Web App version is deployed. Releases are recorded in `CHANGELOG.md` and follow the repeatable `Docs/Guides/Version 1.0/RELEASE_CHECKLIST.md`, including rollback criteria.
+
 ### Parallel work
 
 The architecture can support businesses where a provider serves multiple clients in parallel. Strict slot exclusion is therefore configurable rather than universally assumed.

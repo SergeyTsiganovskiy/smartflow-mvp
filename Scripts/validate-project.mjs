@@ -21,6 +21,7 @@ let messageKeysSource = '';
 let sheetNamesSource = '';
 let statesSource = '';
 let menusSource = '';
+let versionSource = '';
 
 for (const file of files) {
   const fullPath = path.join(sourceDir, file);
@@ -138,6 +139,19 @@ for (const file of files) {
   if (/^const\s+CLIENT_MENUS\s*=/m.test(source) && /^const\s+ADMIN_MENUS\s*=/m.test(source)) {
     menusSource = source;
   }
+
+  if (/^const\s+SMARTFLOW_VERSION\s*=/m.test(source)) {
+    versionSource = source;
+  }
+}
+
+const versionFile = fs.readFileSync(path.join(root, 'VERSION'), 'utf8').trim();
+const versionMatch = versionSource.match(/^const\s+SMARTFLOW_VERSION\s*=\s*['"]([^'"]+)['"];$/m);
+
+if (!versionMatch) {
+  errors.push('Missing SMARTFLOW_VERSION declaration');
+} else if (versionMatch[1] !== versionFile) {
+  errors.push(`Version mismatch: VERSION=${versionFile}, AppsScript=${versionMatch[1]}`);
 }
 
 for (const [name, locations] of functions) {

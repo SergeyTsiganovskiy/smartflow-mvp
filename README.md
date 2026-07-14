@@ -76,6 +76,8 @@ Google Apps Script
 - [`PROJECT.md`](PROJECT.md) — vision, scope, business rules, and functionality;
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — modules, routing, navigation, caching, and integrations;
 - [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) — logical Google Sheets schema and relationships.
+- [`CHANGELOG.md`](CHANGELOG.md) — release changes and security notes;
+- [`RELEASE_CHECKLIST.md`](Docs/Guides/Version%201.0/RELEASE_CHECKLIST.md) — repeatable pilot release procedure.
 
 ## Local verification
 
@@ -89,6 +91,8 @@ node Scripts/run-tests.mjs
 The unit-test harness loads selected Apps Script files into an isolated VM context. It is intentionally limited to pure domain and validation functions; Google Sheets, Calendar, Telegram, and trigger workflows remain integration-regression scenarios until adapters are introduced.
 
 Before deployment or after an incident, run `runSmartFlowHealthCheck()` from the Apps Script editor. The read-only check validates the workbook schema, protected Settings, provider Calendar access, both Telegram webhooks, required triggers, duplicate triggers, and active request recipients without returning tokens or customer data.
+
+The canonical application version is stored in `VERSION` and must match `SMARTFLOW_VERSION` in `AppsScript/Version.gs`. Both `getSmartFlowVersion()` and the health-check report expose this non-secret version for deployment verification.
 
 Webhook processing uses a locked, per-bot history of exact Telegram `update_id` values. An update is recorded only after successful handling, preventing duplicate mutations without losing failed or out-of-order deliveries.
 

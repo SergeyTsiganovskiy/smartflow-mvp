@@ -267,6 +267,7 @@ function runSmartFlowHealthCheck() {
   const failed = checks.filter(function (check) { return !check.ok; }).length;
   const report = {
     ok: failed === 0,
+    version: getSmartFlowVersion(),
     checked_at: new Date().toISOString(),
     passed: checks.length - failed,
     failed: failed,

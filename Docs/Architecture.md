@@ -634,6 +634,12 @@ Telegram helpers should expose failed API responses even when `muteHttpException
 
 Refactoring priority is security first, followed by preservation of current behavior and separation of responsibilities. Schema fields are not changed until their production meaning is explicitly established. Structural changes must be incremental, reviewable, and reversible.
 
+## Release identity
+
+`VERSION` is the repository source of truth for the application version and must match `SMARTFLOW_VERSION` in `AppsScript/Version.gs`. `getSmartFlowVersion()` exposes the deployed value, and `runSmartFlowHealthCheck()` includes it in its safe report so an operator can verify that the expected Apps Script version is active. `Scripts/validate-project.mjs` rejects a mismatch before deployment.
+
+Every pilot deployment follows `Docs/Guides/Version 1.0/RELEASE_CHECKLIST.md`. The checklist records the Git commit and Apps Script deployment version separately because pushing source code does not by itself update a versioned Web App deployment.
+
 ## 19. Extension points
 
 Future extensions:

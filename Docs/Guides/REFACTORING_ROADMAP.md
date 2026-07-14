@@ -61,6 +61,8 @@
 
 Добавить единую версию приложения, журнал изменений и короткий повторяемый release checklist: validate, regression, `clasp push`, deployment, migrations, triggers, webhooks, health check и rollback decision.
 
+Выполнено для пилотного чекпоинта: версия хранится в `VERSION` и `AppsScript/Version.gs`, health check возвращает её в отчёте, изменения ведутся в `CHANGELOG.md`, а обязательные шаги выпуска собраны в `Docs/Guides/Version 1.0/RELEASE_CHECKLIST.md`.
+
 ## 4. Приоритет P1: во время первых пилотов
 
 ### 4.1 Упрощение крупных роутеров по фактическим проблемам

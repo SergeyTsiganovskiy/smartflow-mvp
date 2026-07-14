@@ -2,12 +2,17 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { loadAppsScript } from './load-apps-script.mjs';
 
-const app = loadAppsScript(['Config.gs', 'HealthCheck.gs'], {
+const app = loadAppsScript(['Config.gs', 'Version.gs', 'HealthCheck.gs'], {
+  Logger: { log() {} },
   PropertiesService: {
     getScriptProperties() {
       return { getProperty() { return '0'; } };
     }
   }
+});
+
+test('application version is exposed for deployment verification', () => {
+  assert.equal(app.getSmartFlowVersion(), '0.1.0-alpha');
 });
 
 test('health check detects missing required headers', () => {
