@@ -11,7 +11,7 @@
 - [ ] В `CHANGELOG.md` описаны изменения выпуска и известные ограничения.
 - [ ] Создана резервная копия рабочей Google-таблицы перед миграциями.
 - [ ] Проверено, что в Git нет `.clasp.json`, токенов, Telegram ID клиентов и реальных выгрузок салона.
-- [ ] `ClientBotToken` и `AdminBotToken` пусты в Settings, а оба токена находятся только в Script Properties.
+- [ ] Строк `ClientBotToken` и `AdminBotToken` нет в Settings, а оба токена находятся только в Script Properties.
 
 ## 2. Локальная проверка
 
@@ -44,6 +44,7 @@ clasp push
 
 - [ ] Выполнены только миграции, указанные для этого выпуска в deployment guide или changelog.
 - [ ] Для существующей установки выполнена `migrateBotTokensToScriptProperties()`.
+- [ ] После переноса токенов выполнена `migrateRemoveLegacyBotTokenSettings()`.
 - [ ] Каждая миграция завершилась без ошибки; повторный запуск безопасен.
 - [ ] Проверены triggers `send24hAppointmentReminders` и `syncCompletedCustomerVisitsTrigger`.
 - [ ] Нет дублирующихся triggers.

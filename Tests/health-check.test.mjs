@@ -70,7 +70,7 @@ test('health check validates infrastructure settings without exposing values', (
       TimeZone: 'UTC',
       ClientBotToken: 'PASTE_CLIENT_BOT_TOKEN',
       AdminBotToken: '',
-      BotTokenStorage: 'SETTINGS_FALLBACK',
+      BotTokenStorage: 'INCOMPLETE',
       AppsScriptUrl: 'https://example.com/dev',
       AdminTelegramIds: 'invalid',
       BookingDaysAhead: 0,

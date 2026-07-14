@@ -19,7 +19,8 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 
 ### Security
 
-- Bot tokens are migrated from the Settings sheet to Script Properties, with precedence, fallback, diagnostics, and rotation instructions.
+- Bot tokens are migrated from the Settings sheet to Script Properties, with strict runtime resolution, diagnostics, and rotation instructions.
+- Obsolete bot-token rows are removed from the current Settings schema and clean deployment workbook.
 - Telegram updates are serialized and deduplicated per bot without losing failed or out-of-order updates.
 - Administrative callbacks require current administrator access and stale actions cannot create duplicates.
 - Legacy Owner, financial, localized-entity, and Calendar-cache concepts were removed from runtime code.

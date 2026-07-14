@@ -124,6 +124,10 @@ for (const file of files) {
     errors.push('Legacy maximum-ID Telegram update guard in Code.gs');
   }
 
+  if (file === 'Config.gs' && /SETTINGS_(?:TOKEN_)?FALLBACK|SETTINGS_FALLBACK|\bMIXED\b/.test(source)) {
+    errors.push('Legacy bot token Settings fallback in Config.gs');
+  }
+
   if (/^const\s+MESSAGE_KEYS\s*=/m.test(source)) {
     messageKeysSource = source;
   }

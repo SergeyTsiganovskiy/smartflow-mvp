@@ -1094,3 +1094,29 @@ function migrateBotTokensToScriptProperties() {
     lock.releaseLock();
   }
 }
+
+function migrateRemoveLegacyBotTokenSettings() {
+  const properties = PropertiesService.getScriptProperties();
+
+  Object.keys(BOT_TOKEN_PROPERTY_KEYS).forEach(function (settingKey) {
+    const token = properties.getProperty(BOT_TOKEN_PROPERTY_KEYS[settingKey]);
+
+    if (!isMigratableBotToken(token)) {
+      throw new Error(BOT_TOKEN_PROPERTY_KEYS[settingKey] + ' is missing or invalid');
+    }
+  });
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SETTINGS);
+
+  if (!sheet) {
+    throw new Error('Settings sheet not found');
+  }
+
+  const deletedRows = deleteSheetRowsByFirstColumnValue(sheet, Object.keys(BOT_TOKEN_PROPERTY_KEYS));
+  resetSettingsCache();
+
+  const result = { migration: 'remove_legacy_bot_token_settings_v1', deletedRows: deletedRows };
+  addAuditLog('MIGRATION_COMPLETE', JSON.stringify(result));
+  Logger.log(JSON.stringify(result));
+  return result;
+}

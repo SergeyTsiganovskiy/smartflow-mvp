@@ -51,8 +51,6 @@ Known keys:
 ```text
 Language
 TimeZone
-ClientBotToken
-AdminBotToken
 AdminTelegramIds
 AppsScriptUrl
 DefaultCalendarId
@@ -62,7 +60,7 @@ ReminderDayBefore
 BookingDaysAhead
 PaginationPageSize
 
-`ClientBotToken` and `AdminBotToken` are legacy migration keys only. Their values must be blank after installation. Runtime secrets are stored in Script Properties as `SMARTFLOW_CLIENT_BOT_TOKEN` and `SMARTFLOW_ADMIN_BOT_TOKEN`; `getSettings()` overlays those values without exposing the property names to normal configuration workflows. Temporary Settings fallback exists only so an existing installation can run the migration.
+Bot tokens are not Settings rows. Runtime secrets are stored only in Script Properties as `SMARTFLOW_CLIENT_BOT_TOKEN` and `SMARTFLOW_ADMIN_BOT_TOKEN`; `getSettings()` overlays those values without exposing the property names to normal configuration workflows. Existing installations first run `migrateBotTokensToScriptProperties()` and then `migrateRemoveLegacyBotTokenSettings()`.
 
 Admin Bot configuration writes are restricted by an application-level allowlist. Infrastructure secrets are managed only through Script Properties and are never configurable through bot UI. Updating a normal setting invalidates the in-memory Settings cache immediately.
 

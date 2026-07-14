@@ -61,8 +61,6 @@ Apple ID и Google Account — разные учётные записи. Apple I
 
 - `Language`: `uk`, `ru` или `en`;
 - `TimeZone`: например `Europe/Kyiv`;
-- `ClientBotToken`: токен Client Bot;
-- `AdminBotToken`: токен Admin Bot;
 - `AppsScriptUrl`: пока оставьте пустым, он появится после deployment;
 - `AdminTelegramIds`: Telegram ID первого администратора, несколько ID — через запятую без пробелов;
 - `ReminderDayBefore`: `TRUE` или `FALSE`;
@@ -71,9 +69,7 @@ Apple ID и Google Account — разные учётные записи. Apple I
 - `BookingDaysAhead`: от 1 до 365;
 - `PaginationPageSize`: от 1 до 10, рекомендуемое значение 5.
 
-Токены вводятся в Settings только временно для первого запуска. После загрузки кода обязательно выполните `migrateBotTokensToScriptProperties()`. Функция сначала проверяет оба токена, сохраняет их как `SMARTFLOW_CLIENT_BOT_TOKEN` и `SMARTFLOW_ADMIN_BOT_TOKEN` в Script Properties, затем очищает значения `ClientBotToken` и `AdminBotToken` в таблице. В AuditLog и результат миграции сами токены не попадают.
-
-До миграции сохранена временная совместимость чтения из Settings, однако health check будет красным. После успешной миграции строки ключей можно оставить, но их значения должны быть пустыми.
+Токены не вводятся в Settings. Откройте Apps Script → Project Settings → Script Properties и создайте `SMARTFLOW_CLIENT_BOT_TOKEN` и `SMARTFLOW_ADMIN_BOT_TOKEN`. В значения вставьте соответствующие токены из BotFather и сохраните свойства. Не записывайте токены в таблицу, AuditLog или журнал установки.
 
 Часовой пояс Apps Script, Settings и календарей должен совпадать. Несовпадение приводит к неверным слотам и напоминаниям.
 
@@ -116,7 +112,8 @@ Apple ID и Google Account — разные учётные записи. Apple I
 7. `migrateEntityNamesFromMessages()`;
 8. `migrateRemoveCalendarCache()`.
 9. `migrateCleanupLegacyWorkbookSchema()` — только после резервной копии legacy-таблицы.
-10. `migrateBotTokensToScriptProperties()` — после проверки обоих токенов; функция переносит секреты и очищает их в Settings.
+10. Только для legacy-установки со старыми строками токенов: `migrateBotTokensToScriptProperties()`.
+11. После успешного переноса: `migrateRemoveLegacyBotTokenSettings()` — проверяет оба Script Properties и удаляет obsolete-строки из Settings.
 
 Для ротации токена откройте Apps Script → Project Settings → Script Properties и замените соответствующее значение `SMARTFLOW_CLIENT_BOT_TOKEN` или `SMARTFLOW_ADMIN_BOT_TOKEN`. После ротации переустановите webhook изменённого бота и выполните `runSmartFlowHealthCheck()`. Не записывайте новый production-токен обратно в таблицу и не включайте его в журнал установки.
 

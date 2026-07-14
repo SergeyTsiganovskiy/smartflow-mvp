@@ -23,7 +23,6 @@ const SHEET_NAMES = {
 
 let SETTINGS_CACHE = null;
 let SETTINGS_CACHE_VERSION = null;
-let SETTINGS_TOKEN_FALLBACK = null;
 
 const BOT_TOKEN_PROPERTY_KEYS = {
   ClientBotToken: 'SMARTFLOW_CLIENT_BOT_TOKEN',
@@ -37,14 +36,12 @@ function resolveBotTokenSettings(settings, properties) {
   Object.keys(BOT_TOKEN_PROPERTY_KEYS).forEach(function (settingKey) {
     const propertyValue = String(properties.getProperty(BOT_TOKEN_PROPERTY_KEYS[settingKey]) || '').trim();
 
-    if (propertyValue) {
-      resolved[settingKey] = propertyValue;
-      propertyTokenCount++;
-    }
+    resolved[settingKey] = propertyValue;
+
+    if (propertyValue) propertyTokenCount++;
   });
 
-  resolved.BotTokenStorage =
-    propertyTokenCount === 2 ? 'SCRIPT_PROPERTIES' : propertyTokenCount === 0 ? 'SETTINGS_FALLBACK' : 'MIXED';
+  resolved.BotTokenStorage = propertyTokenCount === 2 ? 'SCRIPT_PROPERTIES' : 'INCOMPLETE';
 
   return resolved;
 }
@@ -57,8 +54,6 @@ function getSettings() {
   const currentVersion = getSettingsCacheVersion();
 
   if (SETTINGS_CACHE && SETTINGS_CACHE_VERSION === currentVersion) {
-    SETTINGS_CACHE.ClientBotToken = SETTINGS_TOKEN_FALLBACK.ClientBotToken;
-    SETTINGS_CACHE.AdminBotToken = SETTINGS_TOKEN_FALLBACK.AdminBotToken;
     resolveBotTokenSettings(SETTINGS_CACHE, PropertiesService.getScriptProperties());
     return SETTINGS_CACHE;
   }
@@ -78,10 +73,6 @@ function getSettings() {
     }
   }
 
-  SETTINGS_TOKEN_FALLBACK = {
-    ClientBotToken: settings.ClientBotToken,
-    AdminBotToken: settings.AdminBotToken
-  };
   resolveBotTokenSettings(settings, PropertiesService.getScriptProperties());
 
   SETTINGS_CACHE = settings;
@@ -93,7 +84,6 @@ function getSettings() {
 function resetSettingsCache() {
   SETTINGS_CACHE = null;
   SETTINGS_CACHE_VERSION = null;
-  SETTINGS_TOKEN_FALLBACK = null;
 
   PropertiesService.getScriptProperties().setProperty('SETTINGS_CACHE_VERSION', Utilities.getUuid());
 }
