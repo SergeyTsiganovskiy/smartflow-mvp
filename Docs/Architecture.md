@@ -656,14 +656,15 @@ Future extensions:
 - additional business templates;
 - automated installer.
 
-## 20. Remaining architectural work
+## 20. Post-pilot architectural work
 
-- complete Settings CRUD;
-- centralize cache invalidation;
-- split remaining large functions;
-- remove remaining hardcoded strings;
-- migrate historical `OWNER_*` storage keys in the `Messages` sheet to `ADMIN_*`; code identifiers and notification paths already use Admin terminology;
-- standardize CRUD helpers;
-- formalize date/time parsing;
-- add navigation/state tests;
-- document triggers and deployment.
+The pilot release already includes the allowlisted Settings UI, shared cache reset after configuration writes, deployment and trigger documentation, static validation, and focused lifecycle tests. Remaining structural work is intentionally deferred until pilot evidence identifies a concrete defect or maintenance cost:
+
+- simplify only routers that produce repeated regressions;
+- standardize mutation results where partial integration failures remain difficult to handle;
+- formalize additional date/time parsing only where validation gaps are observed;
+- extend navigation/state tests for confirmed regressions;
+- measure live Calendar and Sheets calls before optimizing them;
+- define retention and archival rules after measuring real table growth.
+
+Historical `OWNER_*` values remain internal storage keys in the `Messages` sheet for workbook compatibility. Runtime constants, roles, callbacks, and user-facing terminology use Admin. Renaming these persisted keys is not a release requirement and would require a separate repeat-safe schema migration.

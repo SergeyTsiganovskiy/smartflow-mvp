@@ -11,6 +11,7 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 - Appointment-lifecycle smoke tests for request persistence, idempotent approval and rejection, rescheduling, cancellation, provider-specific Calendar conflicts, and duplicate-safe visit synchronization.
 - Version reporting through `getSmartFlowVersion()` and `runSmartFlowHealthCheck()`.
 - Guarded per-client production upload utility and the first `salon-alice` deployment profile.
+- Release audit of tracked text, DOCX, PDF, and XLSX artifacts, plus local Markdown links.
 
 ### Changed
 
@@ -22,6 +23,7 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 - A newly created request is confirmed in the same message that restores the Client Bot main keyboard, without an extra action prompt.
 - Deployment and user documentation was expanded for pilot installations.
 - Client uploads now run validation, tests, clean-worktree and target-project checks before an explicitly confirmed `clasp push`.
+- The tracked demo workbook is now the same clean deployment template as the client workbook; stale implementation-status text and broken README document links were corrected.
 
 ### Security
 
@@ -30,6 +32,7 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 - Telegram updates are serialized and deduplicated per bot without losing failed or out-of-order updates.
 - Administrative callbacks require current administrator access and stale actions cannot create duplicates.
 - Legacy Owner, financial, localized-entity, and Calendar-cache concepts were removed from runtime code.
+- The optional `RequestRecipients` placeholder is disabled by default so an unconfigured text placeholder cannot receive production notifications.
 
 ## [0.1.0-alpha] - Unreleased
 

@@ -73,9 +73,9 @@ Google Apps Script
 
 ## Documentation
 
-- [`PROJECT.md`](PROJECT.md) — vision, scope, business rules, and functionality;
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — modules, routing, navigation, caching, and integrations;
-- [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) — logical Google Sheets schema and relationships.
+- [`PROJECT.md`](Docs/PROJECT.md) — vision, scope, business rules, and functionality;
+- [`Architecture.md`](Docs/Architecture.md) — modules, routing, navigation, caching, and integrations;
+- [`DATABASE_SCHEMA.md`](Docs/DATABASE_SCHEMA.md) — logical Google Sheets schema and relationships.
 - [`CHANGELOG.md`](CHANGELOG.md) — release changes and security notes;
 - [`RELEASE_CHECKLIST.md`](Docs/Guides/Version%201.0/RELEASE_CHECKLIST.md) — repeatable pilot release procedure.
 
@@ -136,7 +136,7 @@ Implemented foundations include:
 - audit logging;
 - configurable admin request recipients.
 
-The codebase has been decomposed into focused workflow, query, command, synchronization, and integration modules. The next major areas are router simplification, the complete **Settings** module, broader automated testing, and release preparation.
+The codebase has been decomposed into focused workflow, query, command, synchronization, and integration modules. The Settings UI, release checks, guarded client upload, and critical smoke coverage are implemented. Before further structural work, the current release candidate must prove a clean client installation and complete external pilot regression; later refactoring is driven only by observed defects or measured bottlenecks.
 
 ## Design principles
 

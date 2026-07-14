@@ -444,6 +444,8 @@ Active `RequestRecipients` rows are additional recipients; the final list is
 deduplicated by Telegram ID. Only current administrators may execute Admin Bot
 callback actions even when another recipient can see a notification.
 
+The clean deployment template contains one instructional optional-recipient row with `active = FALSE` and `receive_new_requests = FALSE`. Replace its Telegram ID and explicitly enable it only when a non-administrator must receive new-request notifications. Administrators from `AdminTelegramIds` must not be duplicated here.
+
 ## 19. AuditLog
 
 Purpose: operational/debug logging.

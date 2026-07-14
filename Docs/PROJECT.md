@@ -606,12 +606,19 @@ A client installation requires:
 - location CRUD;
 - compact admin menu.
 
-### In progress
+### Release candidate complete
 
-- full Settings module;
-- cache-reset UX;
-- remaining configuration editors;
-- global refactoring.
+- allowlisted Settings module and cache reset after configuration writes;
+- configuration editors required for the pilot;
+- guarded per-client source upload and deployment instructions;
+- health check, release checklist, and critical smoke tests;
+- Calendar retry safety and live Calendar-backed appointment views.
+
+### Required before stable 1.0
+
+- reproduce a clean installation from the client template;
+- complete external pilot regression without appointment loss or duplication;
+- record the release version, deployment version, health check, and rollback point.
 
 ### Planned
 
@@ -621,7 +628,7 @@ A client installation requires:
 - reusable business templates;
 - role-based permissions;
 - automated installation;
-- stronger automated tests;
+- additional automated tests only for confirmed defects or high-risk changes;
 - improved conflict analysis.
 
 ## 14. Success criteria
