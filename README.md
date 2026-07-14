@@ -98,6 +98,8 @@ Webhook processing uses a locked, per-bot history of exact Telegram `update_id` 
 
 Outgoing Telegram calls share one response validator. Failed HTTP or Bot API responses create a sanitized `TELEGRAM_API_ERROR` audit event containing the method and status information, but never the bot token, chat ID, message text, or raw response body.
 
+Calendar mutations are retry-safe at critical boundaries. A failed Calendar event creation leaves the request pending and reuses its incomplete appointment on retry. A failed reschedule restores the previous appointment time, reminder state, and customer confirmation. Event cancellation resolves the provider calendar instead of assuming the default calendar.
+
 Every ID in `AdminTelegramIds` automatically receives administrative notifications. Additional active `RequestRecipients` are merged without duplicates, while approve/reject callbacks remain restricted to current administrators.
 
 ## Current status

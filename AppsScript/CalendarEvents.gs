@@ -64,6 +64,13 @@ function createCalendarEventForAppointment(appointmentId) {
   const start = parseDateTimeForCalendar(appointment.start_at);
   const end = parseDateTimeForCalendar(appointment.end_at);
 
+  const existingEvent = findCalendarEventByAppointmentId(calendar, appointment, start, end);
+
+  if (existingEvent) {
+    updateAppointmentCalendarEventId(appointmentId, existingEvent.getId());
+    return existingEvent.getId();
+  }
+
   const event = calendar.createEvent(title, start, end, {
     description: description
   });
@@ -79,15 +86,27 @@ function deleteCalendarEvent(appointment) {
   }
 
   try {
-    const calendar = CalendarApp.getDefaultCalendar();
+    const calendarId = getProviderCalendarId(appointment.provider_id);
+    const calendar = calendarId ? CalendarApp.getCalendarById(calendarId) : null;
+
+    if (!calendar) {
+      addAuditLog(
+        'DELETE_CALENDAR_EVENT_ERROR',
+        JSON.stringify({ appointment_id: appointment.appointment_id, error: 'CALENDAR_NOT_AVAILABLE' })
+      );
+      return false;
+    }
 
     const event = calendar.getEventById(appointment.calendar_event_id);
 
     if (event) {
       event.deleteEvent();
     }
+
+    return true;
   } catch (error) {
     addAuditLog('DELETE_CALENDAR_EVENT_ERROR', error.toString());
+    return false;
   }
 }
 
@@ -113,7 +132,8 @@ function updateCalendarEventForAppointment(appointmentId) {
   const event = calendar.getEventById(appointment.calendar_event_id);
 
   if (!event) {
-    return '';
+    updateAppointmentCalendarEventId(appointmentId, '');
+    return createCalendarEventForAppointment(appointmentId);
   }
 
   const start = parseDateTimeForCalendar(appointment.start_at);
@@ -122,4 +142,19 @@ function updateCalendarEventForAppointment(appointmentId) {
   event.setTime(start, end);
 
   return event.getId();
+}
+
+function findCalendarEventByAppointmentId(calendar, appointment, start, end) {
+  const searchStart = new Date(start.getTime() - 60000);
+  const searchEnd = new Date(end.getTime() + 60000);
+  const marker = 'appointment_id=' + appointment.appointment_id;
+  const events = calendar.getEvents(searchStart, searchEnd);
+
+  for (let i = 0; i < events.length; i++) {
+    if (String(events[i].getDescription() || '').indexOf(marker) !== -1) {
+      return events[i];
+    }
+  }
+
+  return null;
 }

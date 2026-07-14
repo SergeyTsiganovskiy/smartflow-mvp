@@ -131,6 +131,10 @@ function getProviderAppointmentsForDate(providerId, dateValue) {
 }
 
 function appointmentExistsForRequest(requestId) {
+  return Boolean(getAppointmentByRequestId(requestId));
+}
+
+function getAppointmentByRequestId(requestId) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.APPOINTMENTS);
 
   const rows = sheet.getDataRange().getValues();
@@ -140,9 +144,15 @@ function appointmentExistsForRequest(requestId) {
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][requestIdIndex]) === String(requestId)) {
-      return true;
+      const appointment = {};
+
+      headers.forEach(function (header, index) {
+        appointment[header] = rows[i][index];
+      });
+
+      return appointment;
     }
   }
 
-  return false;
+  return null;
 }

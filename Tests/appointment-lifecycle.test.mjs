@@ -152,6 +152,31 @@ test('rescheduling updates dates and clears reminder and confirmation state', ()
   assert.equal(row[headers.indexOf('updated_at')] instanceof Date, true);
 });
 
+test('failed Calendar reschedule restores original dates, reminders, and confirmation', () => {
+  const calls = [];
+  const app = loadAppsScript(['ClientRescheduleStateHandler.gs'], {
+    updateAppointmentDateTime(...args) { calls.push(['date-time', ...args]); },
+    updateAppointmentField(...args) { calls.push(['field', ...args]); }
+  });
+  const appointment = {
+    appointment_id: 'appt_1',
+    reminder_24h_sent_at: 'sent-24h',
+    reminder_2h_sent_at: 'sent-2h',
+    customer_confirmed: true,
+    customer_confirmed_at: 'confirmed-at'
+  };
+
+  app.restoreAppointmentAfterRescheduleCalendarFailure(appointment, 'old-start', 'old-end');
+
+  assert.deepEqual(calls, [
+    ['date-time', 'appt_1', 'old-start', 'old-end'],
+    ['field', 'appt_1', 'reminder_24h_sent_at', 'sent-24h'],
+    ['field', 'appt_1', 'reminder_2h_sent_at', 'sent-2h'],
+    ['field', 'appt_1', 'customer_confirmed', true],
+    ['field', 'appt_1', 'customer_confirmed_at', 'confirmed-at']
+  ]);
+});
+
 test('confirmed cancellation updates storage, Calendar, admins, and sends an informational card', () => {
   const calls = [];
   const appointment = {
@@ -189,7 +214,8 @@ test('confirmed cancellation updates storage, Calendar, admins, and sends an inf
 
 test('administrator approval creates one appointment and a repeated action cannot duplicate it', () => {
   const calls = [];
-  let appointmentExists = false;
+  let requestStatus = 'pending';
+  let appointment = null;
   const app = loadAppsScript(['RequestCallbacks.gs'], {
     getSettings() { return { AdminBotToken: 'admin-token', ClientBotToken: 'client-token' }; },
     getRequestById() {
@@ -201,15 +227,23 @@ test('administrator approval creates one appointment and a repeated action canno
     getRequestOptionByPriority() {
       return { priority: 1, preferred_date: '2026-07-20', preferred_time: '10:00' };
     },
-    appointmentExistsForRequest() { return appointmentExists; },
+    isRequestAlreadyProcessed() { return requestStatus !== 'pending'; },
+    getAppointmentByRequestId() { return appointment; },
     createAppointmentFromRequest() {
       calls.push(['create-appointment']);
-      appointmentExists = true;
+      appointment = { appointment_id: 'appt_1', calendar_event_id: '' };
       return 'appt_1';
     },
-    createCalendarEventForAppointment(id) { calls.push(['create-calendar', id]); },
+    createCalendarEventForAppointment(id) {
+      calls.push(['create-calendar', id]);
+      appointment.calendar_event_id = 'event_1';
+      return 'event_1';
+    },
     updateCustomerStatus(...args) { calls.push(['customer-status', ...args]); },
-    updateRequestStatus(...args) { calls.push(['request-status', ...args]); },
+    updateRequestStatus(...args) {
+      calls.push(['request-status', ...args]);
+      requestStatus = args[1];
+    },
     updateRequestOptionsAfterApproval(...args) { calls.push(['option-status', ...args]); },
     getCustomerById() { return { telegram_id: '501' }; },
     findServiceById() { return { name: 'Service' }; },
@@ -238,6 +272,100 @@ test('administrator approval creates one appointment and a repeated action canno
   assert.deepEqual(calls.find((call) => call[0] === 'create-calendar'), ['create-calendar', 'appt_1']);
   assert.deepEqual(calls.find((call) => call[0] === 'request-status'), ['request-status', 'req_1', 'confirmed']);
   assert.equal(calls.filter((call) => call[0] === 'remove-keyboard').length, 1);
+});
+
+test('Calendar failure keeps request retryable and reuses the incomplete appointment', () => {
+  const calls = [];
+  let appointment = null;
+  let calendarAttempt = 0;
+  let requestStatus = 'pending';
+  const app = loadAppsScript(['RequestCallbacks.gs'], {
+    getSettings() { return { AdminBotToken: 'admin-token', ClientBotToken: 'client-token' }; },
+    getRequestById() {
+      return {
+        request_id: 'req_1', customer_id: 'customer_1', service_id: 'svc_1',
+        provider_id: 'provider_1', location_id: 'location_1'
+      };
+    },
+    getRequestOptionByPriority() {
+      return { priority: 1, preferred_date: '2026-07-20', preferred_time: '10:00' };
+    },
+    isRequestAlreadyProcessed() { return requestStatus !== 'pending'; },
+    getAppointmentByRequestId() { return appointment; },
+    createAppointmentFromRequest() {
+      calls.push(['create-appointment']);
+      appointment = { appointment_id: 'appt_1', calendar_event_id: '' };
+      return appointment.appointment_id;
+    },
+    createCalendarEventForAppointment() {
+      calendarAttempt += 1;
+      calls.push(['calendar-attempt', calendarAttempt]);
+      if (calendarAttempt === 1) return '';
+      appointment.calendar_event_id = 'event_1';
+      return 'event_1';
+    },
+    updateCustomerStatus(...args) { calls.push(['customer-status', ...args]); },
+    updateRequestStatus(requestId, status) {
+      calls.push(['request-status', requestId, status]);
+      requestStatus = status;
+    },
+    updateRequestOptionsAfterApproval(...args) { calls.push(['option-status', ...args]); },
+    getCustomerById() { return null; },
+    findServiceById() { return null; },
+    findProviderById() { return null; },
+    findLocationById() { return null; },
+    getRequestOptionsByRequestId() { return [{ priority: 1 }]; },
+    buildAdminRequestConfirmedText() { return 'Confirmed'; },
+    editTelegramMessage(...args) { calls.push(['edit-admin', ...args]); },
+    editTelegramMessageReplyMarkup() {},
+    sendTelegramMessage(...args) { calls.push(['send', ...args]); },
+    getMessage(key) { return key; },
+    MESSAGE_KEYS: {
+      REQUEST_CALENDAR_ERROR: 'REQUEST_CALENDAR_ERROR',
+      REQUEST_ALREADY_PROCESSED: 'REQUEST_ALREADY_PROCESSED'
+    },
+    addAuditLog() {}
+  });
+  const callback = { message: { chat: { id: 202 }, message_id: 77 } };
+
+  app.processRequestApproveOption(callback, 'approve_option_1', 'req_1');
+  assert.equal(requestStatus, 'pending');
+  assert.equal(calls.filter((call) => call[0] === 'create-appointment').length, 1);
+  assert.equal(calls.some((call) => call.includes('REQUEST_CALENDAR_ERROR')), true);
+
+  app.processRequestApproveOption(callback, 'approve_option_1', 'req_1');
+  assert.equal(requestStatus, 'confirmed');
+  assert.equal(calls.filter((call) => call[0] === 'create-appointment').length, 1);
+  assert.equal(calls.filter((call) => call[0] === 'calendar-attempt').length, 2);
+});
+
+test('appointment cancellation deletes the event from the provider calendar', () => {
+  const calls = [];
+  const event = { deleteEvent() { calls.push(['delete-event']); } };
+  const calendar = { getEventById(id) { calls.push(['get-event', id]); return event; } };
+  const app = loadAppsScript(['CalendarEvents.gs'], {
+    getProviderCalendarId(providerId) {
+      calls.push(['provider-calendar', providerId]);
+      return 'provider-calendar-id';
+    },
+    CalendarApp: {
+      getCalendarById(id) { calls.push(['get-calendar', id]); return calendar; },
+      getDefaultCalendar() { throw new Error('default calendar must not be used'); }
+    },
+    addAuditLog(...args) { calls.push(['audit', ...args]); }
+  });
+
+  const result = app.deleteCalendarEvent({
+    appointment_id: 'appt_1', provider_id: 'provider_1', calendar_event_id: 'event_1'
+  });
+
+  assert.equal(result, true);
+  assert.deepEqual(calls, [
+    ['provider-calendar', 'provider_1'],
+    ['get-calendar', 'provider-calendar-id'],
+    ['get-event', 'event_1'],
+    ['delete-event']
+  ]);
 });
 
 test('administrator rejection is applied once and a repeated action only removes stale buttons', () => {

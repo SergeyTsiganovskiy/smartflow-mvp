@@ -15,6 +15,7 @@ All notable changes to SmartFlow Beauty are documented here. The project follows
 
 - Administrative request notifications reach every configured administrator plus optional recipients.
 - Telegram API responses are checked centrally, while diagnostics exclude bot tokens, chat IDs, message text, and raw response bodies.
+- Calendar failures during request approval remain retryable without duplicate appointments; failed rescheduling restores the original appointment state, and cancellation uses the provider calendar.
 - Appointment views read live data instead of the removed Calendar cache.
 - Client booking, rescheduling, cancellation, localization, pagination, and configuration workflows were simplified.
 - A newly created request is confirmed in the same message that restores the Client Bot main keyboard, without an extra action prompt.

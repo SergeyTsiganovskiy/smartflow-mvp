@@ -72,7 +72,27 @@ function handleClientRescheduleState(chatId, text, state, settings) {
 
     updateAppointmentDateTime(appointment.appointment_id, startAt, endAt);
 
-    updateCalendarEventForAppointment(appointment.appointment_id);
+    let calendarEventId = '';
+
+    try {
+      calendarEventId = updateCalendarEventForAppointment(appointment.appointment_id);
+    } catch (error) {
+      addAuditLog(
+        'RESCHEDULE_CALENDAR_ERROR',
+        JSON.stringify({ appointment_id: appointment.appointment_id, error: String(error) })
+      );
+    }
+
+    if (!calendarEventId) {
+      restoreAppointmentAfterRescheduleCalendarFailure(appointment, oldStartAt, oldEndAt);
+      sendTelegramMessage(
+        settings.ClientBotToken,
+        chatId,
+        getMessage(MESSAGE_KEYS.APPOINTMENT_CALENDAR_ERROR),
+        buildKeyboardWithMainMenu([])
+      );
+      return;
+    }
 
     const updatedAppointment = getAppointmentById(appointment.appointment_id);
 
@@ -98,4 +118,18 @@ function handleClientRescheduleState(chatId, text, state, settings) {
 
     return;
   }
+}
+
+function restoreAppointmentAfterRescheduleCalendarFailure(appointment, oldStartAt, oldEndAt) {
+  updateAppointmentDateTime(appointment.appointment_id, oldStartAt, oldEndAt);
+
+  [
+    'reminder_24h_sent_at',
+    'reminder_2h_sent_at',
+    'customer_confirmed',
+    'customer_confirmed_at'
+  ].forEach(function (fieldName) {
+    const value = appointment[fieldName];
+    updateAppointmentField(appointment.appointment_id, fieldName, value === undefined || value === null ? '' : value);
+  });
 }

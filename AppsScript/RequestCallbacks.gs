@@ -10,6 +10,7 @@ function processRequestApproveOption(callbackQuery, action, requestId) {
   const request = getRequestById(requestId);
 
   const option = getRequestOptionByPriority(requestId, priority);
+  const existingAppointment = getAppointmentByRequestId(requestId);
 
   addAuditLog(
     'APPROVE_OPTION_DEBUG',
@@ -18,7 +19,7 @@ function processRequestApproveOption(callbackQuery, action, requestId) {
       priority: priority,
       request: request,
       option: option,
-      appointmentExists: appointmentExistsForRequest(requestId)
+      appointmentExists: Boolean(existingAppointment)
     })
   );
 
@@ -28,16 +29,33 @@ function processRequestApproveOption(callbackQuery, action, requestId) {
     return;
   }
 
-  if (appointmentExistsForRequest(requestId)) {
+  if (isRequestAlreadyProcessed(requestId)) {
     editTelegramMessageReplyMarkup(settings.AdminBotToken, adminChatId, messageId);
     sendTelegramMessage(settings.AdminBotToken, adminChatId, getMessage(MESSAGE_KEYS.REQUEST_ALREADY_PROCESSED));
 
     return;
   }
 
-  const appointmentId = createAppointmentFromRequest(request, option);
+  const appointmentId = existingAppointment
+    ? existingAppointment.appointment_id
+    : createAppointmentFromRequest(request, option);
+  let calendarEventId = existingAppointment ? existingAppointment.calendar_event_id : '';
 
-  createCalendarEventForAppointment(appointmentId);
+  try {
+    if (!calendarEventId) {
+      calendarEventId = createCalendarEventForAppointment(appointmentId);
+    }
+  } catch (error) {
+    addAuditLog(
+      'REQUEST_CALENDAR_ERROR',
+      JSON.stringify({ request_id: requestId, appointment_id: appointmentId, error: String(error) })
+    );
+  }
+
+  if (!calendarEventId) {
+    sendTelegramMessage(settings.AdminBotToken, adminChatId, getMessage(MESSAGE_KEYS.REQUEST_CALENDAR_ERROR));
+    return;
+  }
 
   updateCustomerStatus(request.customer_id, 'confirmed');
 

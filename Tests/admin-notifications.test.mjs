@@ -44,7 +44,6 @@ test('processed request cannot be rejected by a stale second-admin callback', ()
   const app = loadAppsScript(['RequestCallbacks.gs'], {
     getSettings() { return { AdminBotToken: 'admin-token' }; },
     isRequestAlreadyProcessed() { return true; },
-    appointmentExistsForRequest() { return true; },
     getMessage() { return 'Already processed'; },
     MESSAGE_KEYS: { REQUEST_ALREADY_PROCESSED: 'REQUEST_ALREADY_PROCESSED' },
     editTelegramMessageReplyMarkup(...args) { calls.push(['remove-keyboard', ...args]); },
@@ -69,7 +68,8 @@ test('processed request approval removes stale second-admin buttons', () => {
     getSettings() { return { AdminBotToken: 'admin-token' }; },
     getRequestById() { return { request_id: 'req_1' }; },
     getRequestOptionByPriority() { return { priority: 1 }; },
-    appointmentExistsForRequest() { return true; },
+    getAppointmentByRequestId() { return { appointment_id: 'appt_1', calendar_event_id: 'event_1' }; },
+    isRequestAlreadyProcessed() { return true; },
     addAuditLog() {},
     getMessage() { return 'Already processed'; },
     MESSAGE_KEYS: { REQUEST_ALREADY_PROCESSED: 'REQUEST_ALREADY_PROCESSED' },

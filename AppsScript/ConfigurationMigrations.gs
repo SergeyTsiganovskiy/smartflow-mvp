@@ -363,6 +363,28 @@ function migrateConfigurationMessages() {
   return result;
 }
 
+function migrateCalendarResilienceMessages() {
+  createOrUpdateMessageValues('REQUEST_CALENDAR_ERROR', {
+    uk: 'Не вдалося створити подію в календарі. Перевірте доступ до календаря майстра та повторіть підтвердження заявки.',
+    ru: 'Не удалось создать событие в календаре. Проверьте доступ к календарю мастера и повторите подтверждение заявки.',
+    en: 'Could not create the Calendar event. Check access to the provider calendar and confirm the request again.'
+  });
+
+  createOrUpdateMessageValues('APPOINTMENT_CALENDAR_ERROR', {
+    uk: 'Не вдалося оновити запис у календарі. Час запису не змінено. Спробуйте ще раз пізніше або зв’яжіться із салоном.',
+    ru: 'Не удалось обновить запись в календаре. Время записи не изменено. Попробуйте ещё раз позже или свяжитесь с салоном.',
+    en: 'Could not update the appointment in Calendar. The appointment time was not changed. Try again later or contact the salon.'
+  });
+
+  resetMessagesCache();
+
+  const result = { migration: 'calendar_resilience_messages_v1', updated: 2 };
+
+  addAuditLog('CALENDAR_RESILIENCE_MESSAGES_MIGRATION', JSON.stringify(result));
+  Logger.log(JSON.stringify(result));
+  return result;
+}
+
 function migrateSystemConfigurationSettings() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SETTINGS);
 
