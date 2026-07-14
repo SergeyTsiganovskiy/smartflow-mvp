@@ -446,6 +446,10 @@ The target is zero hardcoded UI text.
 
 `getSettings()` reads key/value rows and stores an in-memory object in `SETTINGS_CACHE`.
 
+Bot tokens are resolved from Script Properties (`SMARTFLOW_CLIENT_BOT_TOKEN` and `SMARTFLOW_ADMIN_BOT_TOKEN`) after the Settings sheet is read. Script Properties take precedence. A legacy sheet fallback remains temporarily available for migration, while `BotTokenStorage` exposes only the non-secret state `SCRIPT_PROPERTIES`, `SETTINGS_FALLBACK`, or `MIXED` to health diagnostics. Production health checks accept only `SCRIPT_PROPERTIES`.
+
+Token properties are resolved again even when normal Settings are served from the in-memory cache. This makes token rotation effective in warm Apps Script instances without logging or copying token values into cache-version properties; removing a property also restores only the current legacy sheet fallback and produces a failing storage status.
+
 The in-memory cache is guarded by a shared `SETTINGS_CACHE_VERSION` value in Script Properties. Every runtime instance compares its local version before returning cached settings. Settings writes replace the shared version with a UUID, forcing all warm Apps Script instances to reload the Sheet on their next settings read.
 
 Settings keys are trimmed when read. A command that finds a key containing leading or trailing whitespace rewrites column A with the canonical key before updating its value. This prevents visually identical keys from silently falling back to defaults.

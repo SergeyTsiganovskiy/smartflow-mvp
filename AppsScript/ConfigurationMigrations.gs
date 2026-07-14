@@ -1025,3 +1025,72 @@ function migrateLegacyUserSessions(sheet) {
 
   return { migratedRows: migratedRows, deletedColumns: deletedColumns.reverse() };
 }
+
+function isMigratableBotToken(value) {
+  const token = String(value || '').trim();
+  return /^\d+:[A-Za-z0-9_-]{20,}$/.test(token);
+}
+
+function getBotTokenSettingRows(sheet) {
+  const rows = sheet.getDataRange().getValues();
+  const result = {};
+
+  for (let i = 1; i < rows.length; i++) {
+    const key = String(rows[i][0] || '').trim();
+
+    if (Object.prototype.hasOwnProperty.call(BOT_TOKEN_PROPERTY_KEYS, key)) {
+      result[key] = { row: i + 1, value: String(rows[i][1] || '').trim() };
+    }
+  }
+
+  return result;
+}
+
+function migrateBotTokensToScriptProperties() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.SETTINGS);
+
+    if (!sheet) {
+      throw new Error('Settings sheet not found');
+    }
+
+    const properties = PropertiesService.getScriptProperties();
+    const settingRows = getBotTokenSettingRows(sheet);
+    const tokens = {};
+
+    Object.keys(BOT_TOKEN_PROPERTY_KEYS).forEach(function (settingKey) {
+      const storedToken = String(properties.getProperty(BOT_TOKEN_PROPERTY_KEYS[settingKey]) || '').trim();
+      const sheetToken = settingRows[settingKey] ? settingRows[settingKey].value : '';
+      const token = storedToken || sheetToken;
+
+      if (!isMigratableBotToken(token)) {
+        throw new Error(settingKey + ' is missing or invalid');
+      }
+
+      tokens[settingKey] = token;
+    });
+
+    Object.keys(BOT_TOKEN_PROPERTY_KEYS).forEach(function (settingKey) {
+      properties.setProperty(BOT_TOKEN_PROPERTY_KEYS[settingKey], tokens[settingKey]);
+    });
+
+    Object.keys(BOT_TOKEN_PROPERTY_KEYS).forEach(function (settingKey) {
+      if (settingRows[settingKey] && settingRows[settingKey].value) {
+        sheet.getRange(settingRows[settingKey].row, 2).clearContent();
+      }
+    });
+
+    SpreadsheetApp.flush();
+    resetSettingsCache();
+
+    const result = { migration: 'bot_tokens_to_script_properties_v1', migrated: true, clearedSettings: true };
+    addAuditLog('MIGRATION_COMPLETE', JSON.stringify(result));
+    Logger.log(JSON.stringify(result));
+    return result;
+  } finally {
+    lock.releaseLock();
+  }
+}

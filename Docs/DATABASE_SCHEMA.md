@@ -62,7 +62,9 @@ ReminderDayBefore
 BookingDaysAhead
 PaginationPageSize
 
-Admin Bot configuration writes are restricted by an application-level allowlist. Infrastructure secrets remain editable only directly in the protected Settings sheet. Updating a value invalidates the in-memory Settings cache immediately.
+`ClientBotToken` and `AdminBotToken` are legacy migration keys only. Their values must be blank after installation. Runtime secrets are stored in Script Properties as `SMARTFLOW_CLIENT_BOT_TOKEN` and `SMARTFLOW_ADMIN_BOT_TOKEN`; `getSettings()` overlays those values without exposing the property names to normal configuration workflows. Temporary Settings fallback exists only so an existing installation can run the migration.
+
+Admin Bot configuration writes are restricted by an application-level allowlist. Infrastructure secrets are managed only through Script Properties and are never configurable through bot UI. Updating a normal setting invalidates the in-memory Settings cache immediately.
 
 `AdminTelegramIds` must be stored as plain text. Comma-separated Telegram IDs must never be stored as a numeric value because spreadsheet locale parsing and numeric precision can corrupt the list.
 

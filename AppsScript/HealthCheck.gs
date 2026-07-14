@@ -116,6 +116,10 @@ function checkHealthSettings(settings, spreadsheet, scriptTimezone) {
     problems.push('AdminBotToken is missing');
   }
 
+  if (settings.BotTokenStorage !== 'SCRIPT_PROPERTIES') {
+    problems.push('bot tokens must be stored in Script Properties');
+  }
+
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(String(settings.AppsScriptUrl || '').trim())) {
     problems.push('AppsScriptUrl must be a production /exec URL');
   }

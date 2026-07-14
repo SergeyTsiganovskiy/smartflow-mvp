@@ -523,6 +523,8 @@ installable triggers, and active request recipients. The report contains only
 technical codes, counts, sheet/column names, and provider IDs; it never includes
 bot tokens or customer data.
 
+Production bot tokens are stored in Apps Script Script Properties rather than the shared Settings sheet. Existing installations migrate with `migrateBotTokensToScriptProperties()`, which validates both tokens before writing either property and clears the legacy cells only after both properties are stored. Runtime fallback keeps the bots available before migration, but health check treats fallback or mixed storage as a release blocker.
+
 The pilot application version is stored in `VERSION` and mirrored by `SMARTFLOW_VERSION` in Apps Script. The health-check report includes this non-secret value to confirm which Web App version is deployed. Releases are recorded in `CHANGELOG.md` and follow the repeatable `Docs/Guides/Version 1.0/RELEASE_CHECKLIST.md`, including rollback criteria.
 
 ### Parallel work
